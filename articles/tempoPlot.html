@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.2</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@ Visualization</h1>
             
             <h4 data-toc-skip class="date">2026-11-02</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/vignettes/tempoPlot.Rmd" class="external-link"><code>vignettes/tempoPlot.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/plot-swimmer/vignettes/tempoPlot.Rmd" class="external-link"><code>vignettes/tempoPlot.Rmd</code></a></small>
       <div class="hidden name"><code>tempoPlot.Rmd</code></div>
 
     </div>
@@ -94,9 +94,21 @@ and <em><a href="https://bioconductor.org/packages/3.24/mia" class="external-lin
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/0xMuluh/tempoPlot" class="external-link">tempoPlot</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="swimmer-plot">Swimmer plot<a class="anchor" aria-label="anchor" href="#swimmer-plot"></a>
+</h2>
+<p><code><a href="../reference/plotSwimmer.html">plotSwimmer()</a></code> shows when each subject was sampled.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"hitchip1006"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">hitchip1006</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">x</span><span class="op">[</span>, <span class="va">x</span><span class="op">$</span><span class="va">subject</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">subject</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="fu"><a href="../reference/plotSwimmer.html">plotSwimmer</a></span><span class="op">(</span><span class="va">x</span>, time.col <span class="op">=</span> <span class="st">"time"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span>
+<span>    colour.by <span class="op">=</span> <span class="st">"bmi_group"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="tempoPlot_files/figure-html/plot-swimmer-1.png" class="r-plt" alt="" width="700"></p>
+</div>
+<div class="section level2">
 <h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -121,33 +133,49 @@ and <em><a href="https://bioconductor.org/packages/3.24/mia" class="external-lin
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] tempoPlot_0.99.1 knitr_1.52       BiocStyle_2.41.0</span></span>
+<span><span class="co">#&gt; [1] tempoPlot_0.99.2 knitr_1.52       BiocStyle_2.41.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] Matrix_1.7-6                jsonlite_2.0.0             </span></span>
-<span><span class="co">#&gt;  [3] compiler_4.6.1              BiocManager_1.30.27        </span></span>
-<span><span class="co">#&gt;  [5] SummarizedExperiment_1.43.0 Biobase_2.73.2             </span></span>
-<span><span class="co">#&gt;  [7] GenomicRanges_1.65.4        jquerylib_0.1.4            </span></span>
-<span><span class="co">#&gt;  [9] systemfonts_1.3.2           IRanges_2.47.5             </span></span>
-<span><span class="co">#&gt; [11] Seqinfo_1.3.2               textshaping_1.0.5          </span></span>
-<span><span class="co">#&gt; [13] yaml_2.3.12                 fastmap_1.2.0              </span></span>
-<span><span class="co">#&gt; [15] lattice_0.23-1              XVector_0.53.0             </span></span>
-<span><span class="co">#&gt; [17] R6_2.6.1                    S4Arrays_1.13.2            </span></span>
-<span><span class="co">#&gt; [19] generics_0.1.4              BiocGenerics_0.59.12       </span></span>
-<span><span class="co">#&gt; [21] htmlwidgets_1.6.4           DelayedArray_0.39.8        </span></span>
-<span><span class="co">#&gt; [23] bookdown_0.48               desc_1.4.3                 </span></span>
-<span><span class="co">#&gt; [25] MatrixGenerics_1.25.0       bslib_0.12.0               </span></span>
-<span><span class="co">#&gt; [27] rlang_1.3.0                 cachem_1.1.0               </span></span>
-<span><span class="co">#&gt; [29] xfun_0.62                   fs_2.1.0                   </span></span>
-<span><span class="co">#&gt; [31] sass_0.4.10                 otel_0.2.0                 </span></span>
-<span><span class="co">#&gt; [33] SparseArray_1.13.4          cli_3.6.6                  </span></span>
-<span><span class="co">#&gt; [35] pkgdown_2.2.1               grid_4.6.1                 </span></span>
-<span><span class="co">#&gt; [37] digest_0.6.39               lifecycle_1.0.5            </span></span>
-<span><span class="co">#&gt; [39] S4Vectors_0.51.10           SingleCellExperiment_1.35.2</span></span>
-<span><span class="co">#&gt; [41] evaluate_1.0.5              ragg_1.5.2                 </span></span>
-<span><span class="co">#&gt; [43] abind_1.4-8                 stats4_4.6.1               </span></span>
-<span><span class="co">#&gt; [45] rmarkdown_2.32              matrixStats_1.5.0          </span></span>
-<span><span class="co">#&gt; [47] tools_4.6.1                 htmltools_0.5.9</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] SummarizedExperiment_1.43.0     gtable_0.3.6                   </span></span>
+<span><span class="co">#&gt;  [3] xfun_0.62                       bslib_0.12.0                   </span></span>
+<span><span class="co">#&gt;  [5] ggplot2_4.0.3                   htmlwidgets_1.6.4              </span></span>
+<span><span class="co">#&gt;  [7] Biobase_2.73.2                  lattice_0.23-1                 </span></span>
+<span><span class="co">#&gt;  [9] yulab.utils_0.2.5               vctrs_0.7.3                    </span></span>
+<span><span class="co">#&gt; [11] tools_4.6.1                     generics_0.1.4                 </span></span>
+<span><span class="co">#&gt; [13] stats4_4.6.1                    parallel_4.6.1                 </span></span>
+<span><span class="co">#&gt; [15] tibble_3.3.1                    pkgconfig_2.0.3                </span></span>
+<span><span class="co">#&gt; [17] Matrix_1.7-6                    RColorBrewer_1.1-3             </span></span>
+<span><span class="co">#&gt; [19] S7_0.2.2                        desc_1.4.3                     </span></span>
+<span><span class="co">#&gt; [21] S4Vectors_0.51.10               lifecycle_1.0.5                </span></span>
+<span><span class="co">#&gt; [23] compiler_4.6.1                  farver_2.1.2                   </span></span>
+<span><span class="co">#&gt; [25] treeio_1.37.1                   textshaping_1.0.5              </span></span>
+<span><span class="co">#&gt; [27] Biostrings_2.81.9               Seqinfo_1.3.2                  </span></span>
+<span><span class="co">#&gt; [29] codetools_0.2-20                htmltools_0.5.9                </span></span>
+<span><span class="co">#&gt; [31] sass_0.4.10                     lazyeval_0.2.3                 </span></span>
+<span><span class="co">#&gt; [33] yaml_2.3.12                     tidyr_1.3.2                    </span></span>
+<span><span class="co">#&gt; [35] crayon_1.5.3                    pkgdown_2.2.1                  </span></span>
+<span><span class="co">#&gt; [37] pillar_1.11.1                   jquerylib_0.1.4                </span></span>
+<span><span class="co">#&gt; [39] BiocParallel_1.47.0             SingleCellExperiment_1.35.2    </span></span>
+<span><span class="co">#&gt; [41] DelayedArray_0.39.8             cachem_1.1.0                   </span></span>
+<span><span class="co">#&gt; [43] abind_1.4-8                     nlme_3.1-171                   </span></span>
+<span><span class="co">#&gt; [45] tidyselect_1.2.1                digest_0.6.39                  </span></span>
+<span><span class="co">#&gt; [47] purrr_1.2.2                     dplyr_1.2.1                    </span></span>
+<span><span class="co">#&gt; [49] bookdown_0.48                   labeling_0.4.3                 </span></span>
+<span><span class="co">#&gt; [51] TreeSummarizedExperiment_2.21.0 fastmap_1.2.0                  </span></span>
+<span><span class="co">#&gt; [53] grid_4.6.1                      cli_3.6.6                      </span></span>
+<span><span class="co">#&gt; [55] SparseArray_1.13.4              magrittr_2.0.5                 </span></span>
+<span><span class="co">#&gt; [57] S4Arrays_1.13.2                 ape_5.8-1                      </span></span>
+<span><span class="co">#&gt; [59] withr_3.0.3                     rappdirs_0.3.4                 </span></span>
+<span><span class="co">#&gt; [61] scales_1.4.0                    rmarkdown_2.32                 </span></span>
+<span><span class="co">#&gt; [63] XVector_0.53.0                  matrixStats_1.5.0              </span></span>
+<span><span class="co">#&gt; [65] otel_0.2.0                      ragg_1.5.2                     </span></span>
+<span><span class="co">#&gt; [67] evaluate_1.0.5                  GenomicRanges_1.65.4           </span></span>
+<span><span class="co">#&gt; [69] IRanges_2.47.5                  rlang_1.3.0                    </span></span>
+<span><span class="co">#&gt; [71] Rcpp_1.1.2                      tidytree_0.4.8                 </span></span>
+<span><span class="co">#&gt; [73] glue_1.8.1                      BiocManager_1.30.27            </span></span>
+<span><span class="co">#&gt; [75] BiocGenerics_0.59.12            jsonlite_2.0.0                 </span></span>
+<span><span class="co">#&gt; [77] R6_2.6.1                        MatrixGenerics_1.25.0          </span></span>
+<span><span class="co">#&gt; [79] systemfonts_1.3.2               fs_2.1.0</span></span></code></pre></div>
 </div>
   </div>
 
