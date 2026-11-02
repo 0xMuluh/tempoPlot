@@ -51,6 +51,20 @@ remotes::install_github("0xMuluh/tempoPlot")
 library(tempoPlot)
 ```
 
+## Swimmer plot
+
+`plotSwimmer()` shows when each subject was sampled.
+
+```{r}
+#| label: plot-swimmer
+
+data("hitchip1006", package = "miaTime")
+x <- hitchip1006
+x <- x[, x$subject %in% names(which(table(x$subject) >= 3))]
+plotSwimmer(x, time.col = "time", group = "subject",
+    colour.by = "bmi_group")
+```
+
 ## Session info
 
 ```{r}
