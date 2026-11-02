@@ -1,0 +1,25 @@
+Package: tempoPlot
+Title: Microbiome Time Series Visualization
+Version: 0.99.0
+Authors@R: 
+    person("0xMuluh", , , "rysdaena8@gmail.com", role = c("aut", "cre"))
+Description: Plots longitudinal microbiome data stored in
+    (Tree)SummarizedExperiment and MultiAssayExperiment objects: sampling
+    timelines, trajectories of subjects and features, ordination paths and
+    community composition over time. Plots use results computed with
+    miaTime and mia and are returned as ggplot2 objects.
+License: MIT + file LICENSE
+URL: https://github.com/0xMuluh/tempoPlot
+BugReports: https://github.com/0xMuluh/tempoPlot/issues
+Depends: 
+    R (>= 4.5.0)
+Suggests: 
+    BiocStyle,
+    knitr,
+    rmarkdown
+VignetteBuilder: 
+    knitr
+biocViews: Microbiome, Software, Visualization, TimeCourse
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1

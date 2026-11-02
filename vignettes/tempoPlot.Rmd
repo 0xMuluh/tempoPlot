@@ -1,0 +1,60 @@
+---
+title: "tempoPlot: Microbiome Time Series Visualization"
+date: "`r Sys.Date()`"
+package: 
+    tempoPlot
+output: 
+    BiocStyle::html_document:
+        fig_height: 7
+        fig_width: 10
+        toc: yes
+        toc_depth: 2
+        number_sections: true
+vignette: >
+    %\VignetteIndexEntry{tempoPlot}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(knitr)
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    message = FALSE,
+    warning = FALSE,
+    echo = TRUE
+)
+```
+
+## Introduction
+
+`tempoPlot` is a package in the `r BiocStyle::Biocpkg("mia")` family for
+visualizing longitudinal microbiome data. It plots results computed with
+`r BiocStyle::Biocpkg("miaTime")` and `r BiocStyle::Biocpkg("mia")`.
+
+## Installation
+
+```{r}
+#| label: install
+#| eval: false
+
+remotes::install_github("0xMuluh/tempoPlot")
+```
+
+```{r}
+#| label: load
+
+library(tempoPlot)
+```
+
+## Session info
+
+```{r}
+#| label: session-info
+
+sessionInfo()
+```
