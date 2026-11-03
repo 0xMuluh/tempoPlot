@@ -60,12 +60,7 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
         .check_longitudinal(x, time.col, group)
         # Errors on character and other unsupported time types.
         .time_type(x, time.col)
-        if (!is.null(colour.by) &&
-                !(.is_one_name(colour.by) &&
-                    colour.by %in% names(colData(x)))) {
-            stop("'colour.by' must be NULL or one column name of colData(x).",
-                call. = FALSE)
-        }
+        .check_column(x, colour.by)
 
         cols <- unique(c(time.col, group, colour.by))
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
