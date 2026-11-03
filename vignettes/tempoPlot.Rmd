@@ -65,6 +65,19 @@ plotSwimmer(x, time.col = "time", group = "subject",
     colour.by = "bmi_group")
 ```
 
+## Trend plot
+
+`plotTrend()` visualizes the trajectory of a feature, colData column, or
+ordination component over time for each subject.
+
+```{r}
+#| label: plot-trend
+
+data("minimalgut", package = "miaTime")
+plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", smooth = "loess")
+```
+
 ## Session info
 
 ```{r}

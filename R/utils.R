@@ -10,16 +10,11 @@
     if (!inherits(x, "SummarizedExperiment")) {
         stop("'x' must be a SummarizedExperiment.", call. = FALSE)
     }
-    cd_names <- names(colData(x))
-    if (!.is_one_name(time.col) || !time.col %in% cd_names) {
+    if (!.is_one_name(time.col) || !time.col %in% names(colData(x))) {
         stop("'time.col' must be one column name of colData(x).",
             call. = FALSE)
     }
-    if (!is.null(group) &&
-            (!.is_one_name(group) || !group %in% cd_names)) {
-        stop("'group' must be NULL or one column name of colData(x).",
-            call. = FALSE)
-    }
+    .check_column(x, group)
 
     time <- colData(x)[[time.col]]
     if (anyNA(time)) {
@@ -174,6 +169,16 @@
 # TRUE when x is a single non-NA character string.
 .is_one_name <- function(x) {
     is.character(x) && length(x) == 1L && !is.na(x)
+}
+
+# Error unless col is NULL or one column name of colData(x). The message
+# names the argument passed as col.
+#' @importFrom SummarizedExperiment colData
+.check_column <- function(x, col, arg = deparse(substitute(col))) {
+    if (!is.null(col) && !(.is_one_name(col) && col %in% names(colData(x)))) {
+        stop("'", arg, "' must be NULL or one column name of colData(x).",
+            call. = FALSE)
+    }
 }
 
 # If y is "<dimred>:<component>", return list(dimred, j) for the matching
