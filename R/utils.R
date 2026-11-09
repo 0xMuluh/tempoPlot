@@ -115,11 +115,12 @@
 }
 
 # Resolve y to a numeric vector of length ncol(x), named by colnames(x).
-# Places checked: colData column, assay row, "<dimred>:<component>".
+# Places checked: colData column, assay row, "<dimred>:<component>". Error
+# messages name the argument arg.
 #' @importFrom SummarizedExperiment assay colData
-.resolve_y <- function(x, y, assay.type = NULL) {
+.resolve_y <- function(x, y, assay.type = NULL, arg = "y") {
     if (!.is_one_name(y)) {
-        stop("'y' must be a single column, feature or dimred name.",
+        stop("'", arg, "' must be a single column, feature or dimred name.",
             call. = FALSE)
     }
 
@@ -137,21 +138,21 @@
 
     if (length(places) > 1L) {
         stop(
-            "'y' was found in more than one place: ",
+            "'", arg, "' was found in more than one place: ",
             paste(places, collapse = ", "),
             ".",
             call. = FALSE
         )
     }
     if (length(places) == 0L) {
-        stop("'y' was not found in colData, assay rows or reducedDim ",
+        stop("'", arg, "' was not found in colData, assay rows or reducedDim ",
             "components.", call. = FALSE)
     }
 
     if (identical(places, "colData")) {
         col <- colData(x)[[y]]
         if (!is.numeric(col)) {
-            stop("'y' must be a numeric column of colData(x).",
+            stop("'", arg, "' must be a numeric column of colData(x).",
                 call. = FALSE)
         }
         value <- as.numeric(col)
@@ -171,13 +172,16 @@
     is.character(x) && length(x) == 1L && !is.na(x)
 }
 
-# Error unless col is NULL or one column name of colData(x). The message
-# names the argument passed as col.
-#' @importFrom SummarizedExperiment colData
-.check_column <- function(x, col, arg = deparse(substitute(col))) {
-    if (!is.null(col) && !(.is_one_name(col) && col %in% names(colData(x)))) {
-        stop("'", arg, "' must be NULL or one column name of colData(x).",
-            call. = FALSE)
+# Error unless col is NULL or one column name of colData(x) or rowData(x).
+# The message names the argument passed as col.
+#' @importFrom SummarizedExperiment colData rowData
+.check_column <- function(x, col, arg = deparse(substitute(col)),
+        where = c("colData", "rowData")) {
+    where <- match.arg(where)
+    cols <- names(if (where == "colData") colData(x) else rowData(x))
+    if (!is.null(col) && !(.is_one_name(col) && col %in% cols)) {
+        stop("'", arg, "' must be NULL or one column name of ", where,
+            "(x).", call. = FALSE)
     }
 }
 
