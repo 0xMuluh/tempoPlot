@@ -16,6 +16,9 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     container: ghcr.io/bioconductor/bioconductor_docker:devel
+    env:
+      # Lets remotes install GitHub dependencies listed under Remotes.
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       topics: ${{ steps.topics.outputs.topics }}
     steps:
@@ -33,7 +36,7 @@ jobs:
         else
             topics=$(grep -E '^(R|man)/' <<< "$changed" | xargs -r basename -a |
                 sed -E 's/\.(R|Rd)$//' | sort -u |
-                while read -r t; do [ -f "man/$t.Rd" ] && echo "$t"; done)
+                while read -r t; do if [ -f "man/$t.Rd" ]; then echo "$t"; fi; done)
         fi
         echo "topics=$(echo $topics)" >> "$GITHUB_OUTPUT"
     - name: Install package
