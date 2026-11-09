@@ -16,6 +16,9 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     container: ghcr.io/bioconductor/bioconductor_docker:devel
+    env:
+      # Lets remotes install GitHub dependencies listed under Remotes.
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       topics: ${{ steps.topics.outputs.topics }}
     steps:
