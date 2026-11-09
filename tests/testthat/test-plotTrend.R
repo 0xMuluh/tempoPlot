@@ -34,7 +34,7 @@ test_that("plotTrend checks its arguments", {
     expect_error(
         plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
             baseline = "yes"),
-        "'baseline'"
+        "should be one of"
     )
     expect_error(
         plotTrend(x, "Acetate", "Time_hr_num"),
@@ -107,6 +107,33 @@ test_that("smooth = 'mean' draws the mean per time point on top", {
     expect_equal(ld_mean$y, expected_means)
 })
 
+test_that("individuals fade under a summary, which is drawn thicker", {
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier")
+    expect_true(all(is.na(layer_data(p, 1L)$alpha)))
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        smooth = "mean")
+    expect_true(all(layer_data(p, 1L)$alpha == 0.3))
+    expect_true(all(layer_data(p, 2L)$alpha == 0.3))
+    expect_gt(layer_data(p, 3L)$linewidth[1L],
+        layer_data(p, 1L)$linewidth[1L])
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        layout = "box")
+    expect_true(all(layer_data(p, 2L)$alpha == 0.3))
+
+    # Individual points replace the outlier points of the boxes.
+    data("hitchip1006", package = "miaTime")
+    h <- hitchip1006[, hitchip1006$subject %in%
+        names(which(table(hitchip1006$subject) >= 3))]
+    h$visit <- factor(ave(h$time, h$subject, FUN = rank))
+    outliers <- function(show) {
+        p <- plotTrend(h, "diversity", "visit", "subject", layout = "box",
+            show.individuals = show)
+        sum(lengths(layer_data(p, 1L)$outliers))
+    }
+    expect_identical(outliers(TRUE), 0L)
+    expect_gt(outliers(FALSE), 0L)
+})
+
 test_that("smooth = 'loess' overlays a loess curve", {
     p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
         smooth = "loess")
@@ -116,22 +143,50 @@ test_that("smooth = 'loess' overlays a loess curve", {
     expect_s3_class(p$layers[[3L]]$stat, "StatSmooth")
 })
 
-test_that("baseline = TRUE subtracts each subject's first value", {
+test_that("baseline expresses values relative to the first sample", {
     # Value at the earliest time of each subject line.
     first_y <- function(p) {
         ld <- layer_data(p, 1L)
         vapply(split(ld, ld$group), function(d) d$y[which.min(d$x)],
             numeric(1))
     }
-    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
-        baseline = TRUE)
-    expect_equal(unname(first_y(p)), rep(0, n_subjects))
+    expected <- c(difference = 0, fold = 1, log2fold = 0)
+    labels <- c(difference = "Change in Acetate",
+        fold = "Fold change in Acetate",
+        log2fold = "log2 fold change in Acetate")
+    for (b in names(expected)) {
+        p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+            baseline = b)
+        expect_equal(unname(first_y(p)), rep(expected[[b]], n_subjects))
+        expect_identical(get_labs(p)$y, labels[[b]])
+    }
+
+    # Last value of one bioreactor against its first, from the data.
+    a <- x[, x$StudyIdentifier == "Bioreactor A"]
+    a <- a[, order(a$Time_hr_num)]
+    ratio <- a$Acetate[ncol(a)] / a$Acetate[1L]
+    last_y <- function(b) {
+        ld <- layer_data(plotTrend(a, "Acetate", "Time_hr_num",
+            "StudyIdentifier", baseline = b), 1L)
+        ld$y[which.max(ld$x)]
+    }
+    expect_equal(last_y("difference"), a$Acetate[ncol(a)] - a$Acetate[1L])
+    expect_equal(last_y("fold"), ratio)
+    expect_equal(last_y("log2fold"), log2(ratio))
 
     # Samples stored in reverse time order, starting after time 0.
     x_rev <- x[, rev(which(x$Time_hr_num >= 48))]
     p_rev <- plotTrend(x_rev, "Acetate", "Time_hr_num", "StudyIdentifier",
-        baseline = TRUE)
+        baseline = "difference")
     expect_equal(unname(first_y(p_rev)), rep(0, n_subjects))
+
+    # Ratios need positive first values.
+    x_zero <- x
+    x_zero$Acetate[which.min(x_zero$Time_hr_num)] <- 0
+    expect_error(plotTrend(x_zero, "Acetate", "Time_hr_num",
+        "StudyIdentifier", baseline = "fold"), "positive")
+    expect_no_error(plotTrend(x_zero, "Acetate", "Time_hr_num",
+        "StudyIdentifier", baseline = "difference"))
 })
 
 test_that("group.by colours subjects and smooths", {
@@ -213,4 +268,52 @@ test_that("plotTrend handles Date and factor time types", {
         sort(unique(as.integer(layer_data(p_fac, 2L)$x))),
         sort(unique(as.integer(x_fac$visit)))
     )
+})
+
+test_that("plotTrend draws fitted values per sample", {
+    cd <- as.data.frame(colData(x))
+    model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
+    x$fitted <- fitted(model)
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", fit = "fitted")
+    ld <- layer_data(p, 3L)
+    ord <- order(x$StudyIdentifier, x$Time_hr_num)
+    expect_equal(ld$y, unname(x$fitted[ord]))
+    expect_true(all(ld$linetype == "dashed"))
+    expect_true(all(layer_data(p, 1L)$alpha == 0.3))
+
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = "StudyIdentifier"), "numeric")
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = "missing"), "'fit'")
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = "fitted", baseline = "difference"), "baseline")
+})
+
+test_that("plotTrend draws a table of model results with intervals", {
+    cd <- as.data.frame(colData(x))
+    model <- lm(Acetate ~ poly(Time_hr_num, 2) * StudyIdentifier, data = cd)
+    grid <- expand.grid(Time_hr_num = c(0, 100, 200, 300, 400),
+        StudyIdentifier = unique(x$StudyIdentifier))
+    grid <- cbind(grid, predict(model, grid, interval = "confidence"))
+    names(grid)[3:5] <- c("estimate", "lower", "upper")
+
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", fit = grid)
+    ribbon <- layer_data(p, 3L)
+    line <- layer_data(p, 4L)
+    expect_equal(sort(ribbon$ymin), sort(grid$lower))
+    expect_equal(sort(ribbon$ymax), sort(grid$upper))
+    expect_equal(sort(line$y), sort(grid$estimate))
+    expect_length(unique(line$colour), n_subjects)
+
+    # Without an interval or groups: one line and no ribbon.
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = grid[grid$StudyIdentifier == "Bioreactor A",
+            c("Time_hr_num", "estimate")])
+    expect_length(p$layers, 3L)
+    expect_length(unique(layer_data(p, 3L)$group), 1L)
+
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = grid[, c("StudyIdentifier", "estimate")]), "estimate")
 })

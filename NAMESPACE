@@ -23,6 +23,7 @@ importFrom(ggplot2,
   geom_line,
   geom_linerange,
   geom_point,
+  geom_ribbon,
   geom_smooth,
   ggplot,
   labs,
@@ -35,3 +36,4 @@ importFrom(methods,
   setMethod
 )
 importFrom(stats,ave)
+importFrom(utils,modifyList)
