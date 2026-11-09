@@ -10,3 +10,9 @@ setGeneric("plotSwimmer", signature = "x",
 setGeneric("plotTrend", signature = "x",
     function(x, ...) standardGeneric("plotTrend"))
 
+
+#' @rdname plotLagProfile
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotLagProfile", signature = "x",
+    function(x, ...) standardGeneric("plotLagProfile"))
