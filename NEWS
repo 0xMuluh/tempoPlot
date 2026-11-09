@@ -1,3 +1,7 @@
+Changes in version 0.99.4 (2026-11-09)
++ Vignette loads miaTime once; examples use tse
++ plotTrend: baseline takes "none", "difference", "fold" or "log2fold"; individuals fade under a summary
+
 Changes in version 0.99.3 (2026-11-03)
 + Added plotTrend
 

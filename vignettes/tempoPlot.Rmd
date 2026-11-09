@@ -49,39 +49,65 @@ remotes::install_github("0xMuluh/tempoPlot")
 #| label: load
 
 library(tempoPlot)
+library(miaTime)
 ```
 
 ## Swimmer plot
 
-`plotSwimmer()` shows when each subject was sampled.
+`plotSwimmer()` shows when each subject was sampled. In `hitchip1006`, the
+subjects followed longest are mostly overweight or obese, while those with
+short follow-up are mostly lean.
 
 ```{r}
 #| label: plot-swimmer
 
-data("hitchip1006", package = "miaTime")
-x <- hitchip1006
-x <- x[, x$subject %in% names(which(table(x$subject) >= 3))]
-plotSwimmer(x, time.col = "time", group = "subject",
+data(hitchip1006)
+tse <- hitchip1006
+# Some profiles are stored twice; keep the first copy
+tse <- tse[, !duplicated(t(assay(tse, "counts")))]
+tse <- tse[, tse$subject %in% names(which(table(tse$subject) >= 3))]
+plotSwimmer(tse, time.col = "time", group = "subject",
     colour.by = "bmi_group")
 ```
 
 ## Trend plot
 
-`plotTrend()` visualizes the trajectory of a feature, colData column, or
-ordination component over time for each subject.
+`plotTrend()` shows one value over time for each subject: a colData
+column, such as a result from miaTime, a feature or an ordination
+component. Here, the divergence of each subject from their first sample,
+computed with `addBaselineDivergence()`. The subjects were sampled at
+different times, so the plot uses visits, the order of each subject's
+samples: boxes per visit, with each subject's line drawn over them.
 
 ```{r}
 #| label: plot-trend
 
-data("minimalgut", package = "miaTime")
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
-    group = "StudyIdentifier", smooth = "loess")
+tse <- addBaselineDivergence(tse, group = "subject", time.col = "time",
+    assay.type = "counts")
+tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
+plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
+    layout = "box")
+```
+
+`baseline` expresses a value relative to each subject's first sample, as a
+difference, a ratio or a log2 ratio.
+
+```{r}
+#| label: plot-trend-baseline
+
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    group.by = "sex", baseline = "difference", smooth = "mean")
 ```
 
 ## Session info
+
+<details>
+<summary>Show session info</summary>
 
 ```{r}
 #| label: session-info
 
 sessionInfo()
 ```
+
+</details>
