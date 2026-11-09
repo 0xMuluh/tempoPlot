@@ -20,7 +20,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.9</span>
       </span>
     </div>
 
@@ -71,6 +71,7 @@ subject's first sample.</p>
 <span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"line"</span>, <span class="st">"box"</span><span class="op">)</span>,</span>
 <span>  show.individuals <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  smooth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"loess"</span><span class="op">)</span>,</span>
+<span>  fit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  baseline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"difference"</span>, <span class="st">"fold"</span>, <span class="st">"log2fold"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -136,6 +137,15 @@ points, leaving only boxes or the smooth curve. (Default: <code>TRUE</code>)</p>
 <code>"loess"</code> (loess curve). (Default: <code>"none"</code>)</p></dd>
 
 
+<dt id="arg-fit">fit<a class="anchor" aria-label="anchor" href="#arg-fit"></a></dt>
+<dd><p>Model results to draw over the data: the name of a numeric
+<code>colData(x)</code> column of fitted values per sample, drawn as a dashed
+line per subject, or a table with the columns <code>time.col</code> and
+<code>estimate</code>, optionally <code>lower</code> and <code>upper</code> for an
+interval and the <code>group.by</code> column for groups. Not combined with
+<code>baseline</code>. (Default: <code>NULL</code>)</p></dd>
+
+
 <dt id="arg-baseline">baseline<a class="anchor" aria-label="anchor" href="#arg-baseline"></a></dt>
 <dd><p><code>Character scalar</code>. Expresses <code>y</code> relative to
 each subject's first sample: unchanged (<code>"none"</code>), as the
@@ -194,11 +204,31 @@ drawn in level order, including levels without samples.</p>
 <span class="r-in"><span>    group.by <span class="op">=</span> <span class="st">"sex"</span>, baseline <span class="op">=</span> <span class="st">"difference"</span>, smooth <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTrend-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Acetate in three replicate bioreactors sampled every few hours</span></span></span>
+<span class="r-in"><span><span class="co"># Mean diversity per visit and sex from a linear model, with 95%</span></span></span>
+<span class="r-in"><span><span class="co"># confidence intervals</span></span></span>
+<span class="r-in"><span><span class="va">cd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">diversity</span> <span class="op">~</span> <span class="va">visit</span> <span class="op">*</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">cd</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">means</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">visit</span><span class="op">)</span>, sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">means</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">means</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">means</span>, interval <span class="op">=</span> <span class="st">"confidence"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">means</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate"</span>, <span class="st">"lower"</span>, <span class="st">"upper"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"diversity"</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
+<span class="r-in"><span>    group.by <span class="op">=</span> <span class="st">"sex"</span>, fit <span class="op">=</span> <span class="va">means</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotTrend-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Fitted acetate of each bioreactor from a cubic time trend per reactor</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">minimalgut</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">Acetate</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/poly.html" class="external-link">poly</a></span><span class="op">(</span><span class="va">Time_hr_num</span>, <span class="fl">3</span><span class="op">)</span> <span class="op">*</span> <span class="va">StudyIdentifier</span>, data <span class="op">=</span> <span class="va">cd</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">minimalgut</span><span class="op">$</span><span class="va">fitted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
+<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
+<span class="r-in"><span>    fit <span class="op">=</span> <span class="st">"fitted"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotTrend-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Acetate in three replicate bioreactors sampled every few hours</span></span></span>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-3.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTrend-5.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
