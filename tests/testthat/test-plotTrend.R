@@ -269,3 +269,51 @@ test_that("plotTrend handles Date and factor time types", {
         sort(unique(as.integer(x_fac$visit)))
     )
 })
+
+test_that("plotTrend draws fitted values per sample", {
+    cd <- as.data.frame(colData(x))
+    model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
+    x$fitted <- fitted(model)
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", fit = "fitted")
+    ld <- layer_data(p, 3L)
+    ord <- order(x$StudyIdentifier, x$Time_hr_num)
+    expect_equal(ld$y, unname(x$fitted[ord]))
+    expect_true(all(ld$linetype == "dashed"))
+    expect_true(all(layer_data(p, 1L)$alpha == 0.3))
+
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = "StudyIdentifier"), "numeric")
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = "missing"), "'fit'")
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = "fitted", baseline = "difference"), "baseline")
+})
+
+test_that("plotTrend draws a table of model results with intervals", {
+    cd <- as.data.frame(colData(x))
+    model <- lm(Acetate ~ poly(Time_hr_num, 2) * StudyIdentifier, data = cd)
+    grid <- expand.grid(Time_hr_num = c(0, 100, 200, 300, 400),
+        StudyIdentifier = unique(x$StudyIdentifier))
+    grid <- cbind(grid, predict(model, grid, interval = "confidence"))
+    names(grid)[3:5] <- c("estimate", "lower", "upper")
+
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", fit = grid)
+    ribbon <- layer_data(p, 3L)
+    line <- layer_data(p, 4L)
+    expect_equal(sort(ribbon$ymin), sort(grid$lower))
+    expect_equal(sort(ribbon$ymax), sort(grid$upper))
+    expect_equal(sort(line$y), sort(grid$estimate))
+    expect_length(unique(line$colour), n_subjects)
+
+    # Without an interval or groups: one line and no ribbon.
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = grid[grid$StudyIdentifier == "Bioreactor A",
+            c("Time_hr_num", "estimate")])
+    expect_length(p$layers, 3L)
+    expect_length(unique(layer_data(p, 3L)$group), 1L)
+
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        fit = grid[, c("StudyIdentifier", "estimate")]), "estimate")
+})

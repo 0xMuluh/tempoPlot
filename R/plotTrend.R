@@ -35,6 +35,13 @@
 #'   \code{"none"}, \code{"mean"} (mean at each time point), or
 #'   \code{"loess"} (loess curve). (Default: \code{"none"})
 #'
+#' @param fit Model results to draw over the data: the name of a numeric
+#'   \code{colData(x)} column of fitted values per sample, drawn as a dashed
+#'   line per subject, or a table with the columns \code{time.col} and
+#'   \code{estimate}, optionally \code{lower} and \code{upper} for an
+#'   interval and the \code{group.by} column for groups. Not combined with
+#'   \code{baseline}. (Default: \code{NULL})
+#'
 #' @param baseline \code{Character scalar}. Expresses \code{y} relative to
 #'   each subject's first sample: unchanged (\code{"none"}), as the
 #'   difference (\code{"difference"}), the ratio (\code{"fold"}) or its log2
@@ -86,8 +93,26 @@
 #' plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
 #'     group.by = "sex", baseline = "difference", smooth = "mean")
 #'
-#' # Acetate in three replicate bioreactors sampled every few hours
+#' # Mean diversity per visit and sex from a linear model, with 95%
+#' # confidence intervals
+#' cd <- as.data.frame(SummarizedExperiment::colData(tse))
+#' model <- lm(diversity ~ visit * sex, data = cd)
+#' means <- expand.grid(visit = levels(tse$visit), sex = levels(tse$sex))
+#' means <- cbind(means, predict(model, means, interval = "confidence"))
+#' names(means)[3:5] <- c("estimate", "lower", "upper")
+#' plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+#'     group.by = "sex", fit = means)
+#'
+#' # Fitted acetate of each bioreactor from a cubic time trend per reactor
 #' data("minimalgut", package = "miaTime")
+#' cd <- as.data.frame(SummarizedExperiment::colData(minimalgut))
+#' model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
+#' minimalgut$fitted <- fitted(model)
+#' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", group.by = "StudyIdentifier",
+#'     fit = "fitted")
+#'
+#' # Acetate in three replicate bioreactors sampled every few hours
 #' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 #'     group = "StudyIdentifier", group.by = "StudyIdentifier")
 NULL
@@ -100,7 +125,7 @@ NULL
 setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     function(x, y, time.col, group = NULL, assay.type = NULL,
             layout = c("line", "box"), show.individuals = TRUE,
-            smooth = c("none", "mean", "loess"),
+            smooth = c("none", "mean", "loess"), fit = NULL,
             baseline = c("none", "difference", "fold", "log2fold"),
             group.by = NULL, facet.by = NULL, max.gap = NULL, ...) {
         layout <- match.arg(layout)
@@ -114,11 +139,31 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         .time_type(x, time.col)
         .check_column(x, group.by)
         .check_column(x, facet.by)
+        if (is.character(fit)) {
+            .check_column(x, fit)
+            if (!is.numeric(colData(x)[[fit]])) {
+                stop("'fit' must be a numeric column of colData(x).",
+                    call. = FALSE)
+            }
+        } else if (!is.null(fit)) {
+            fit <- as.data.frame(fit)
+            if (!all(c(time.col, "estimate") %in% names(fit))) {
+                stop("'fit' must be a colData column or a table with the ",
+                    "columns '", time.col, "' and estimate.", call. = FALSE)
+            }
+        }
+        if (!is.null(fit) && baseline != "none") {
+            stop("'fit' cannot be combined with 'baseline'.", call. = FALSE)
+        }
 
-        cols <- unique(c(time.col, group, group.by, facet.by))
+        cols <- unique(c(time.col, group, group.by, facet.by,
+            if (is.character(fit)) fit))
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
         df$.y <- unname(.resolve_y(x, y, assay.type))
+        if (is.character(fit)) {
+            df$.fit <- df[[fit]]
+        }
         df <- .order_time(df, time.col, group)
         df <- .break_gaps(df, time.col, group, max.gap)
 
@@ -139,7 +184,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             fold = paste("Fold change in", y),
             log2fold = paste("log2 fold change in", y))
         .plot_trend(df, time.col, ylab, layout, show.individuals, smooth,
-            group.by, facet.by, ...)
+            fit, group.by, facet.by, ...)
     }
 )
 
@@ -147,7 +192,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_boxplot
 #'   geom_smooth stat_summary facet_wrap vars labs scale_x_discrete
 .plot_trend <- function(df, time.col, ylab, layout, show.individuals, smooth,
-        group.by = NULL, facet.by = NULL, ...) {
+        fit = NULL, group.by = NULL, facet.by = NULL, ...) {
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
         colour = if (!is.null(group.by)) .data[[group.by]]))
     dots <- list(...)
@@ -157,9 +202,9 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             colour = NULL)), modifyList(list(outliers = !show.individuals),
             dots)))
     }
-    # Individuals fade when boxes or a smooth summarise them.
-    fade <- if (layout == "line" && smooth == "none") list() else
-        list(alpha = 0.3)
+    # Individuals fade when boxes, a smooth or a fit summarise them.
+    fade <- if (layout == "line" && smooth == "none" && is.null(fit)) list()
+        else list(alpha = 0.3)
     if (show.individuals) {
         line_args <- if (layout == "line") modifyList(fade, dots) else fade
         p <- p + do.call(geom_line, c(list(aes(group = .data$.line)),
@@ -174,6 +219,12 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         p <- p + geom_smooth(summary_group, method = "loess",
             formula = y ~ x, se = FALSE, linewidth = 1)
     }
+    if (is.character(fit)) {
+        p <- p + geom_line(aes(y = .data$.fit, group = .data$.line),
+            linetype = "dashed", linewidth = 1)
+    } else if (!is.null(fit)) {
+        p <- p + .fit_layers(fit, time.col, group.by)
+    }
     if (!is.null(facet.by)) {
         p <- p + facet_wrap(vars(.data[[facet.by]]))
     }
@@ -181,4 +232,24 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         p <- p + scale_x_discrete(drop = FALSE)
     }
     p + labs(x = time.col, y = ylab, colour = group.by)
+}
+
+# Line and interval of a results table, one per group.by group if the
+# table has that column.
+#' @importFrom ggplot2 aes .data geom_line geom_ribbon labs
+.fit_layers <- function(fit, time.col, group.by) {
+    fit_by <- if (!is.null(group.by) && group.by %in% names(fit)) group.by
+    layers <- list(geom_line(aes(x = .data[[time.col]], y = .data$estimate,
+            group = if (is.null(fit_by)) 1L else .data[[fit_by]],
+            colour = if (!is.null(fit_by)) .data[[fit_by]]),
+        data = fit, inherit.aes = FALSE, linewidth = 1))
+    if (all(c("lower", "upper") %in% names(fit))) {
+        layers <- c(list(geom_ribbon(aes(x = .data[[time.col]],
+                ymin = .data$lower, ymax = .data$upper,
+                group = if (is.null(fit_by)) 1L else .data[[fit_by]],
+                fill = if (!is.null(fit_by)) .data[[fit_by]]),
+            data = fit, inherit.aes = FALSE, alpha = 0.2)), layers,
+            list(labs(fill = fit_by)))
+    }
+    layers
 }

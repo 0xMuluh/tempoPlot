@@ -16,6 +16,7 @@ plotTrend(x, ...)
   layout = c("line", "box"),
   show.individuals = TRUE,
   smooth = c("none", "mean", "loess"),
+  fit = NULL,
   baseline = c("none", "difference", "fold", "log2fold"),
   group.by = NULL,
   facet.by = NULL,
@@ -58,6 +59,13 @@ points, leaving only boxes or the smooth curve. (Default: \code{TRUE})}
 \item{smooth}{\code{Character scalar}. Specifies a group summary on top:
 \code{"none"}, \code{"mean"} (mean at each time point), or
 \code{"loess"} (loess curve). (Default: \code{"none"})}
+
+\item{fit}{Model results to draw over the data: the name of a numeric
+\code{colData(x)} column of fitted values per sample, drawn as a dashed
+line per subject, or a table with the columns \code{time.col} and
+\code{estimate}, optionally \code{lower} and \code{upper} for an
+interval and the \code{group.by} column for groups. Not combined with
+\code{baseline}. (Default: \code{NULL})}
 
 \item{baseline}{\code{Character scalar}. Expresses \code{y} relative to
 each subject's first sample: unchanged (\code{"none"}), as the
@@ -109,8 +117,26 @@ plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", baseline = "difference", smooth = "mean")
 
-# Acetate in three replicate bioreactors sampled every few hours
+# Mean diversity per visit and sex from a linear model, with 95\%
+# confidence intervals
+cd <- as.data.frame(SummarizedExperiment::colData(tse))
+model <- lm(diversity ~ visit * sex, data = cd)
+means <- expand.grid(visit = levels(tse$visit), sex = levels(tse$sex))
+means <- cbind(means, predict(model, means, interval = "confidence"))
+names(means)[3:5] <- c("estimate", "lower", "upper")
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    group.by = "sex", fit = means)
+
+# Fitted acetate of each bioreactor from a cubic time trend per reactor
 data("minimalgut", package = "miaTime")
+cd <- as.data.frame(SummarizedExperiment::colData(minimalgut))
+model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
+minimalgut$fitted <- fitted(model)
+plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier",
+    fit = "fitted")
+
+# Acetate in three replicate bioreactors sampled every few hours
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier")
 }
