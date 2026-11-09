@@ -1,0 +1,112 @@
+name: PR figures
+# Runs the examples of the help pages a pull request changes and shows the
+# plots in a comment. Changing this workflow or its script renders all pages.
+'on':
+  pull_request:
+    paths:
+    - 'R/**'
+    - 'man/**'
+    - '.github/workflows/pr-figures.yml'
+    - '.github/scripts/pr-figures.R'
+concurrency:
+  group: pr-figures-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  render:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: ghcr.io/bioconductor/bioconductor_docker:devel
+    outputs:
+      topics: ${{ steps.topics.outputs.topics }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Find changed help pages
+      id: topics
+      shell: bash
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+        if grep -qE '^\.github/(workflows|scripts)/pr-figures\.' <<< "$changed"; then
+            topics=$(basename -s .Rd man/*.Rd)
+        else
+            topics=$(grep -E '^(R|man)/' <<< "$changed" | xargs -r basename -a |
+                sed -E 's/\.(R|Rd)$//' | sort -u |
+                while read -r t; do [ -f "man/$t.Rd" ] && echo "$t"; done)
+        fi
+        echo "topics=$(echo $topics)" >> "$GITHUB_OUTPUT"
+    - name: Install package
+      if: steps.topics.outputs.topics != ''
+      run: |
+        Rscript -e 'options(repos = BiocManager::repositories())' \
+            -e 'install.packages("remotes")' \
+            -e 'remotes::install_local(".", dependencies = TRUE, upgrade = "never")'
+    - name: Render figures
+      if: steps.topics.outputs.topics != ''
+      run: Rscript .github/scripts/pr-figures.R figures ${{ steps.topics.outputs.topics }}
+    - uses: actions/upload-artifact@v4
+      if: steps.topics.outputs.topics != ''
+      with:
+        name: pr-figures
+        path: figures
+  publish:
+    needs: render
+    if: needs.render.outputs.topics != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      TOPICS: ${{ needs.render.outputs.topics }}
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: pr-figures
+        path: figures
+    - name: Store figures on the pr-figures branch
+      id: store
+      run: |
+        url="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+        if ! git clone -q --single-branch --branch pr-figures "$url" store; then
+            git init -q store
+            git -C store checkout -q --orphan pr-figures
+            git -C store remote add origin "$url"
+        fi
+        cd store
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        rm -rf "pr-$PR" && mkdir "pr-$PR" && cp ../figures/*.png "pr-$PR/"
+        git add -A
+        git diff --cached --quiet || git commit -q -m "Figures for #$PR"
+        # Each pull request writes only its own folder, so rebasing is safe.
+        for i in 1 2 3 4 5; do
+            git push -q origin pr-figures && break
+            git pull -q --rebase origin pr-figures
+        done
+        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+    - name: Comment on the pull request
+      run: |
+        marker="<!-- pr-figures -->"
+        base="https://raw.githubusercontent.com/${REPO}/${{ steps.store.outputs.sha }}/pr-$PR"
+        {
+            echo "$marker"
+            echo "Figures from the examples of the changed help pages."
+            for t in $TOPICS; do
+                ls figures/"$t"-*.png >/dev/null 2>&1 || continue
+                printf '\n### %s\n\n' "$t"
+                for f in figures/"$t"-*.png; do
+                    echo "![$t]($base/$(basename "$f"))"
+                done
+            done
+        } > body.md
+        id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n 1)
+        if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@body.md
+        else
+            gh api "repos/$REPO/issues/$PR/comments" -F body=@body.md
+        fi
