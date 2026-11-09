@@ -31,3 +31,4 @@ importFrom(methods,
   setMethod
 )
 importFrom(stats,ave)
+importFrom(utils,modifyList)
