@@ -16,7 +16,8 @@ plotTrend(x, ...)
   layout = c("line", "box"),
   show.individuals = TRUE,
   smooth = c("none", "mean", "loess"),
-  baseline = FALSE,
+  fit = NULL,
+  baseline = c("none", "difference", "fold", "log2fold"),
   group.by = NULL,
   facet.by = NULL,
   max.gap = NULL,
@@ -59,8 +60,18 @@ points, leaving only boxes or the smooth curve. (Default: \code{TRUE})}
 \code{"none"}, \code{"mean"} (mean at each time point), or
 \code{"loess"} (loess curve). (Default: \code{"none"})}
 
-\item{baseline}{\code{Logical scalar}. When \code{TRUE}, subtracts each
-subject's first value from their trajectory. (Default: \code{FALSE})}
+\item{fit}{Model results to draw over the data: the name of a numeric
+\code{colData(x)} column of fitted values per sample, drawn as a dashed
+line per subject, or a table with the columns \code{time.col} and
+\code{estimate}, optionally \code{lower} and \code{upper} for an
+interval and the \code{group.by} column for groups. Not combined with
+\code{baseline}. (Default: \code{NULL})}
+
+\item{baseline}{\code{Character scalar}. Expresses \code{y} relative to
+each subject's first sample: unchanged (\code{"none"}), as the
+difference (\code{"difference"}), the ratio (\code{"fold"}) or its log2
+(\code{"log2fold"}). Ratios need positive first values.
+(Default: \code{"none"})}
 
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} to colour subjects and smooth curves.
@@ -79,20 +90,53 @@ A \code{ggplot} object.
 \description{
 \code{plotTrend()} plots the trajectory of a feature, colData column or
 ordination component over time for each subject, with optional group
-summaries, boxplot paired layouts, and baseline subtraction.
+summaries, boxplot paired layouts, and values relative to each
+subject's first sample.
 }
 \details{
 Numeric and \code{Date} times are drawn on a continuous axis. Visits are
 drawn in level order, including levels without samples.
 }
 \examples{
+data("hitchip1006", package = "miaTime")
+tse <- hitchip1006
+# Some profiles are stored twice; keep the first copy
+counts <- SummarizedExperiment::assay(tse, "counts")
+tse <- tse[, !duplicated(t(counts))]
+tse <- tse[, tse$subject \%in\% names(which(table(tse$subject) >= 3))]
+
+# Divergence from each subject's first sample, computed by miaTime,
+# per visit (the order of each subject's samples)
+tse <- miaTime::addBaselineDivergence(tse, group = "subject",
+    time.col = "time", assay.type = "counts")
+tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
+plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
+    layout = "box")
+
+# Change in diversity from the first visit, mean by sex
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    group.by = "sex", baseline = "difference", smooth = "mean")
+
+# Mean diversity per visit and sex from a linear model, with 95\%
+# confidence intervals
+cd <- as.data.frame(SummarizedExperiment::colData(tse))
+model <- lm(diversity ~ visit * sex, data = cd)
+means <- expand.grid(visit = levels(tse$visit), sex = levels(tse$sex))
+means <- cbind(means, predict(model, means, interval = "confidence"))
+names(means)[3:5] <- c("estimate", "lower", "upper")
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    group.by = "sex", fit = means)
+
+# Fitted acetate of each bioreactor from a cubic time trend per reactor
 data("minimalgut", package = "miaTime")
+cd <- as.data.frame(SummarizedExperiment::colData(minimalgut))
+model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
+minimalgut$fitted <- fitted(model)
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
-    group = "StudyIdentifier")
+    group = "StudyIdentifier", group.by = "StudyIdentifier",
+    fit = "fitted")
 
+# Acetate in three replicate bioreactors sampled every few hours
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
-    group = "StudyIdentifier", smooth = "loess")
-
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
-    group = "StudyIdentifier", layout = "box")
+    group = "StudyIdentifier", group.by = "StudyIdentifier")
 }

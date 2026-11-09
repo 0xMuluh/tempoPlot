@@ -39,9 +39,9 @@
 #'
 #' @examples
 #' data("hitchip1006", package = "miaTime")
-#' x <- hitchip1006
-#' x <- x[, x$subject %in% names(which(table(x$subject) >= 3))]
-#' plotSwimmer(x, time.col = "time", group = "subject",
+#' tse <- hitchip1006
+#' tse <- tse[, tse$subject %in% names(which(table(tse$subject) >= 3))]
+#' plotSwimmer(tse, time.col = "time", group = "subject",
 #'     colour.by = "bmi_group")
 NULL
 

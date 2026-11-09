@@ -1,5 +1,15 @@
-Changes in version 0.99.6 (2026-11-09)
+Changes in version 0.99.11 (2026-11-09)
 + Added plotPath
+
+Changes in version 0.99.10 (2026-11-09)
++ Added plotStats
+
+Changes in version 0.99.9 (2026-11-09)
++ plotTrend: fit draws fitted values per sample or a table of model results
+
+Changes in version 0.99.4 (2026-11-09)
++ Vignette loads miaTime once; examples use tse
++ plotTrend: baseline takes "none", "difference", "fold" or "log2fold"; individuals fade under a summary
 
 Changes in version 0.99.3 (2026-11-03)
 + Added plotTrend

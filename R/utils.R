@@ -172,13 +172,16 @@
     is.character(x) && length(x) == 1L && !is.na(x)
 }
 
-# Error unless col is NULL or one column name of colData(x). The message
-# names the argument passed as col.
-#' @importFrom SummarizedExperiment colData
-.check_column <- function(x, col, arg = deparse(substitute(col))) {
-    if (!is.null(col) && !(.is_one_name(col) && col %in% names(colData(x)))) {
-        stop("'", arg, "' must be NULL or one column name of colData(x).",
-            call. = FALSE)
+# Error unless col is NULL or one column name of colData(x) or rowData(x).
+# The message names the argument passed as col.
+#' @importFrom SummarizedExperiment colData rowData
+.check_column <- function(x, col, arg = deparse(substitute(col)),
+        where = c("colData", "rowData")) {
+    where <- match.arg(where)
+    cols <- names(if (where == "colData") colData(x) else rowData(x))
+    if (!is.null(col) && !(.is_one_name(col) && col %in% cols)) {
+        stop("'", arg, "' must be NULL or one column name of ", where,
+            "(x).", call. = FALSE)
     }
 }
 
