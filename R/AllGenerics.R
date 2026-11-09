@@ -21,3 +21,9 @@ setGeneric("plotStats", signature = "x",
 #' @export
 setGeneric("plotPath", signature = "x",
     function(x, ...) standardGeneric("plotPath"))
+
+#' @rdname plotComposition
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotComposition", signature = "x",
+    function(x, ...) standardGeneric("plotComposition"))
