@@ -10,3 +10,9 @@ setGeneric("plotSwimmer", signature = "x",
 setGeneric("plotTrend", signature = "x",
     function(x, ...) standardGeneric("plotTrend"))
 
+
+#' @rdname plotPath
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotPath", signature = "x",
+    function(x, ...) standardGeneric("plotPath"))
