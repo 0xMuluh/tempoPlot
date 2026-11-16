@@ -81,6 +81,15 @@
 #'   these values of \code{y}, such as a normal range.
 #'   (Default: \code{NULL})
 #'
+#' @param events \code{data.frame}. Events or intervals to mark, one per
+#'   row, with columns \code{start} and optionally \code{end} and
+#'   \code{label}, in the units of \code{time.col} (visit levels for
+#'   visits): interventions such as antibiotic courses, or the time
+#'   intervals where groups differ, as estimated by MetaLonDA or
+#'   SplinectomeR. Rows with an \code{end} are drawn as grey bands with
+#'   their label at the top, the others as vertical lines. Events apply to
+#'   all subjects. (Default: \code{NULL})
+#'
 #' @param align.to \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} with the time of an event for each subject, such as
 #'   the start of a treatment, in the units of \code{time.col}. Time is then
@@ -181,6 +190,13 @@
 #'     group.by = "sex", smooth = "median", band = c(0.25, 0.75),
 #'     show.individuals = FALSE)
 #'
+#' # Acetate with the batch phase and the addition of Blautia marked
+#' events <- data.frame(start = c(0, 152), end = c(24, NA),
+#'     label = c("batch", "Blautia added"))
+#' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", group.by = "StudyIdentifier",
+#'     events = events)
+#'
 #' # Distribution of diversity at each visit
 #' plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
 #'     layout = "ridge")
@@ -200,7 +216,8 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             baseline = c("none", "difference", "fold", "log2fold"),
             rolling = c("none", "mean", "variance", "acf1", "slope"),
             window = 5,
-            period = NULL, reference = NULL, limits = NULL, align.to = NULL,
+            period = NULL, reference = NULL, limits = NULL, events = NULL,
+            align.to = NULL,
             group.by = NULL, facet.by = NULL, max.gap = NULL, ...) {
         layout <- match.arg(layout)
         smooth <- match.arg(smooth)
@@ -252,6 +269,16 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
                 stop("'reference' must be a table with the columns '",
                     time.col, "' and estimate.", call. = FALSE)
             }
+        }
+        if (!is.null(events) && !is.null(align.to)) {
+            # Times are relative to the event, so only check the columns.
+            if (!is.data.frame(events) || !"start" %in% names(events)) {
+                stop("'events' must be a data.frame with a column 'start'.",
+                    call. = FALSE)
+            }
+            events <- as.data.frame(events)
+        } else {
+            events <- .check_events(events, x, time.col)
         }
         if (!is.null(limits) && !(is.numeric(limits) &&
                 length(limits) == 2L && !anyNA(limits))) {
@@ -342,8 +369,8 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             return(.plot_ridges(df, time.col, ylab, group.by, ...))
         }
         .plot_trend(df, time.col, ylab, layout, show.individuals, smooth,
-            band,
-            fit, group.by, facet.by, reference, limits, xlab, ...)
+            band, fit, group.by, facet.by, reference, limits, xlab,
+            events, ...)
     }
 )
 
@@ -353,12 +380,13 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 #'   scale_x_discrete annotate geom_ribbon
 #' @importFrom stats median quantile
 .plot_trend <- function(df, time.col, ylab, layout, show.individuals, smooth,
-        band = NULL,
-        fit = NULL, group.by = NULL, facet.by = NULL, reference = NULL,
-        limits = NULL, xlab = time.col, ...) {
+        band = NULL, fit = NULL, group.by = NULL, facet.by = NULL,
+        reference = NULL, limits = NULL, xlab = time.col, events = NULL,
+        ...) {
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
         colour = if (!is.null(group.by)) .data[[group.by]]))
-    # Reference band and curve go behind the data.
+    # Event bands, reference band and curve go behind the data.
+    p <- p + .trend_event_bands(events)
     if (!is.null(limits)) {
         p <- p + annotate("rect", xmin = -Inf, xmax = Inf,
             ymin = min(limits), ymax = max(limits), fill = "grey50",
@@ -418,6 +446,10 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     } else if (!is.null(fit)) {
         p <- p + .fit_layers(fit, time.col, group.by)
     }
+    p <- p + .events_layer(events, "markers")
+    if (!is.null(events) && "label" %in% names(events)) {
+        p <- p + labs(linetype = "event")
+    }
     if (!is.null(facet.by)) {
         p <- p + facet_wrap(vars(.data[[facet.by]]))
     }
@@ -474,4 +506,23 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             fill = if (!is.null(group.by)) .data[[group.by]])) +
         ggridges::geom_density_ridges(alpha = 0.6, ...) +
         labs(x = ylab, y = time.col, fill = group.by)
+}
+
+# Grey bands for events with an end, labelled at the top. The fill scale
+# stays free for group.by.
+#' @importFrom ggplot2 geom_text aes .data
+.trend_event_bands <- function(events) {
+    if (is.null(events) || !"end" %in% names(events)) {
+        return(list())
+    }
+    bands <- events[!is.na(events$end), , drop = FALSE]
+    layers <- .events_layer(bands[setdiff(names(bands), "label")], "bands")
+    if (nrow(bands) && "label" %in% names(bands)) {
+        pos <- function(v) if (is.factor(v)) as.integer(v) else v
+        bands$.start <- pos(bands$start)
+        layers <- c(layers, list(geom_text(aes(x = .data$.start, y = Inf,
+            label = .data$label), data = bands, inherit.aes = FALSE,
+            hjust = -0.05, vjust = 1.5, size = 3, colour = "grey30")))
+    }
+    layers
 }
