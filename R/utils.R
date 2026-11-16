@@ -360,3 +360,63 @@
     list(lower = c(t[1L] - (mid[1L] - t[1L]), mid),
         upper = c(mid, t[n] + (t[n] - mid[n - 1L])))
 }
+
+# Features given, checked against rownames, or the top ones by mean.
+.select_features <- function(mat, features, top) {
+    if (!is.null(features)) {
+        if (!is.character(features) || !all(features %in% rownames(mat))) {
+            stop("'features' must be row names of 'x'.", call. = FALSE)
+        }
+        return(unique(features))
+    }
+    if (!(is.numeric(top) && length(top) == 1L && top >= 1)) {
+        stop("'top' must be a single number of at least 1.", call. = FALSE)
+    }
+    m <- rowMeans(mat, na.rm = TRUE)
+    rownames(mat)[order(-m)][seq_len(min(top, nrow(mat)))]
+}
+
+# Long table of assay values of the selected features: columns .feature,
+# .panel (subject, group.by group or ""), .time (numeric) and .value.
+# value "change" subtracts the first sample of each subject and
+# "occupancy" marks values above zero. level "group" averages over the
+# samples of each panel at each time.
+#' @importFrom SummarizedExperiment colData assay assayNames
+#' @importFrom stats aggregate na.pass
+.feature_table <- function(x, time.col, group, assay.type, features, top,
+        value = "raw", level = "subject", group.by = NULL) {
+    .check_longitudinal(x, time.col, group)
+    .time_type(x, time.col)
+    .check_column(x, group.by)
+    if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
+        stop("'assay.type' must be one of assayNames(x).", call. = FALSE)
+    }
+    mat <- as.matrix(assay(x, assay.type))
+    features <- .select_features(mat, features, top)
+    mat <- mat[features, , drop = FALSE]
+
+    time <- .time_numeric(colData(x)[[time.col]])
+    subject <- if (is.null(group)) rep("", ncol(x)) else
+        as.character(colData(x)[[group]])
+    if (value == "change") {
+        first <- vapply(split(seq_len(ncol(x)), subject),
+            function(i) i[which.min(time[i])], integer(1))
+        mat <- mat - mat[, first[match(subject, names(first))],
+            drop = FALSE]
+    } else if (value == "occupancy") {
+        mat <- (mat > 0) + 0
+    }
+
+    panel <- if (level == "subject") subject else if (is.null(group.by))
+        rep("", ncol(x)) else as.character(colData(x)[[group.by]])
+    df <- data.frame(
+        .feature = rep(features, times = ncol(x)),
+        .panel = rep(panel, each = length(features)),
+        .time = rep(time, each = length(features)),
+        .value = as.vector(mat))
+    if (level == "group") {
+        df <- aggregate(.value ~ .feature + .panel + .time, data = df,
+            FUN = mean, na.action = na.pass)
+    }
+    df
+}
