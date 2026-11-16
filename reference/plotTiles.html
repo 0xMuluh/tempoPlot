@@ -18,7 +18,7 @@ panel per subject or per group of subjects."><!-- mathjax --><script src="https:
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.48</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.45</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@ panel per subject or per group of subjects."><!-- mathjax --><script src="https:
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot features over time as tiles</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/lag-profile-extensions/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/lag-profile-extensions/R/plotTiles.R" class="external-link"><code>R/plotTiles.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTiles.R" class="external-link"><code>R/plotTiles.R</code></a></small>
     <div class="hidden name"><code>plotTiles.Rd</code></div>
     </div>
 
@@ -70,20 +70,6 @@ panel per subject or per group of subjects.</p>
 <span>  level <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"subject"</span>, <span class="st">"group"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># S4 method for class 'data.frame'</span></span>
-<span><span class="fu">plotTiles</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">time.col</span>,</span>
-<span>  <span class="va">effect</span>,</span>
-<span>  p.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  top <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  order.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"cluster"</span><span class="op">)</span>,</span>
-<span>  feature.col <span class="op">=</span> <span class="st">"feature"</span>,</span>
-<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -93,8 +79,7 @@ panel per subject or per group of subjects.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>a <code><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">SummarizedExperiment</a></code>
-object, or a <code>data.frame</code> of results with one row per feature
-and time point, such as differential abundance at each visit.</p></dd>
+object.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -134,8 +119,7 @@ form one series. (Default: <code>NULL</code>)</p></dd>
 <dd><p><code>Character scalar</code>. Plots the assay values
 (<code>"raw"</code>), their change from the first sample of each subject
 (<code>"change"</code>), or presence, a value above zero
-(<code>"occupancy"</code>). Effects from a results table are drawn by the
-<code>data.frame</code> method. (Default: <code>"raw"</code>)</p></dd>
+(<code>"occupancy"</code>). (Default: <code>"raw"</code>)</p></dd>
 
 
 <dt id="arg-order-by">order.by<a class="anchor" aria-label="anchor" href="#arg-order-by"></a></dt>
@@ -155,27 +139,6 @@ of subjects with the feature. (Default: <code>"subject"</code>)</p></dd>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> that groups subjects when <code>level = "group"</code>. If
 <code>NULL</code>, all subjects form one group. (Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-effect">effect<a class="anchor" aria-label="anchor" href="#arg-effect"></a></dt>
-<dd><p><code>Character scalar</code>. For a <code>data.frame</code>, the
-column of effects, such as log fold changes at each time point.</p></dd>
-
-
-<dt id="arg-p-col">p.col<a class="anchor" aria-label="anchor" href="#arg-p-col"></a></dt>
-<dd><p><code>Character scalar</code>. For a <code>data.frame</code>, the column
-of p-values or adjusted p-values; cells below <code>threshold</code> are
-marked with a dot. (Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
-<dd><p><code>Numeric scalar</code>. Significance level for
-<code>p.col</code>. (Default: <code>0.05</code>)</p></dd>
-
-
-<dt id="arg-feature-col">feature.col<a class="anchor" aria-label="anchor" href="#arg-feature-col"></a></dt>
-<dd><p><code>Character scalar</code>. For a <code>data.frame</code>, the
-column of feature names. (Default: <code>"feature"</code>)</p></dd>
 
 </dl></div>
     <div id="value">
@@ -204,26 +167,6 @@ blank.</p>
 <span class="r-in"><span>    assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, value <span class="op">=</span> <span class="st">"change"</span>,</span></span>
 <span class="r-in"><span>    order.by <span class="op">=</span> <span class="st">"cluster"</span>, level <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTiles-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Clr difference between men and women at each visit, with Wilcoxon</span></span></span>
-<span class="r-in"><span><span class="co"># q-values below 0.05 marked</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"hitchip1006"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">hitchip1006</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">hitchip1006</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="va">tse</span><span class="op">$</span><span class="va">visit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ave.html" class="external-link">ave</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">time</span>, <span class="va">tse</span><span class="op">$</span><span class="va">subject</span>, FUN <span class="op">=</span> <span class="va">rank</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/transformAssay.html" class="external-link">transformAssay</a></span><span class="op">(</span><span class="va">tse</span>, method <span class="op">=</span> <span class="st">"clr"</span>, pseudocount <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">assay</a></span><span class="op">(</span><span class="va">tse</span>, <span class="st">"clr"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="va">m</span> <span class="op">&lt;-</span> <span class="va">mat</span><span class="op">[</span>, <span class="va">tse</span><span class="op">$</span><span class="va">visit</span> <span class="op">==</span> <span class="va">v</span><span class="op">]</span></span></span>
-<span class="r-in"><span>    <span class="va">male</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">$</span><span class="va">sex</span><span class="op">[</span><span class="va">tse</span><span class="op">$</span><span class="va">visit</span> <span class="op">==</span> <span class="va">v</span><span class="op">]</span> <span class="op">==</span> <span class="st">"male"</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>feature <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span>, visit <span class="op">=</span> <span class="va">v</span>,</span></span>
-<span class="r-in"><span>        difference <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="va">m</span><span class="op">[</span>, <span class="va">male</span><span class="op">]</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="va">m</span><span class="op">[</span>, <span class="op">!</span><span class="va">male</span><span class="op">]</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>        p <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">1</span>, <span class="kw">function</span><span class="op">(</span><span class="va">f</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">f</span><span class="op">[</span><span class="va">male</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>            <span class="va">f</span><span class="op">[</span><span class="op">!</span><span class="va">male</span><span class="op">]</span><span class="op">)</span><span class="op">$</span><span class="va">p.value</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">q</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">p</span>, method <span class="op">=</span> <span class="st">"fdr"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotTiles</span><span class="op">(</span><span class="va">res</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, effect <span class="op">=</span> <span class="st">"difference"</span>, p.col <span class="op">=</span> <span class="st">"q"</span>,</span></span>
-<span class="r-in"><span>    top <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTiles-3.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
