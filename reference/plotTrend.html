@@ -20,7 +20,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.51</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.50</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot longitudinal trends</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/trend-events/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/trend-events/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/plot-accumulation/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/plot-accumulation/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a></small>
     <div class="hidden name"><code>plotTrend.Rd</code></div>
     </div>
 
@@ -68,18 +68,16 @@ subject's first sample.</p>
 <span>  <span class="va">time.col</span>,</span>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"line"</span>, <span class="st">"box"</span>, <span class="st">"violin"</span>, <span class="st">"ridge"</span><span class="op">)</span>,</span>
+<span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"line"</span>, <span class="st">"box"</span>, <span class="st">"ridge"</span><span class="op">)</span>,</span>
 <span>  show.individuals <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  smooth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"median"</span>, <span class="st">"loess"</span><span class="op">)</span>,</span>
-<span>  band <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  smooth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"loess"</span><span class="op">)</span>,</span>
 <span>  fit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  baseline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"difference"</span>, <span class="st">"fold"</span>, <span class="st">"log2fold"</span><span class="op">)</span>,</span>
-<span>  rolling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"variance"</span>, <span class="st">"acf1"</span>, <span class="st">"slope"</span><span class="op">)</span>,</span>
+<span>  rolling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"variance"</span>, <span class="st">"acf1"</span><span class="op">)</span>,</span>
 <span>  window <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reference <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  events <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  align.to <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -99,9 +97,7 @@ object.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>additional arguments passed to the main layer
-(<code><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></code> for <code>layout = "line"</code>,
-<code><a href="https://ggplot2.tidyverse.org/reference/geom_violin.html" class="external-link">geom_violin</a></code> for
-<code>layout = "violin"</code>
+(<code><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></code> for <code>layout = "line"</code>
 or <code><a href="https://ggplot2.tidyverse.org/reference/geom_boxplot.html" class="external-link">geom_boxplot</a></code> for
 <code>layout = "box"</code>).</p></dd>
 
@@ -131,10 +127,9 @@ feature name. (Default: <code>NULL</code>)</p></dd>
 
 <dt id="arg-layout">layout<a class="anchor" aria-label="anchor" href="#arg-layout"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the plot layout:
-<code>"line"</code> draws one line per subject; <code>"box"</code> and
-<code>"violin"</code> draw boxes or violins of <code>y</code> per time point;
-<code>"ridge"</code> draws the density of <code>y</code> at each time point as
-stacked ridges (needs ggridges).
+<code>"line"</code> draws one line per subject; <code>"box"</code> draws boxes of
+<code>y</code> per time point; <code>"ridge"</code> draws the density of <code>y</code>
+at each time point as stacked ridges (needs ggridges).
 (Default: <code>"line"</code>)</p></dd>
 
 
@@ -146,15 +141,8 @@ points, leaving only boxes or the smooth curve. (Default: <code>TRUE</code>)</p>
 
 <dt id="arg-smooth">smooth<a class="anchor" aria-label="anchor" href="#arg-smooth"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies a group summary on top:
-<code>"none"</code>, <code>"mean"</code> or <code>"median"</code> (at each time point),
-or <code>"loess"</code> (loess curve). (Default: <code>"none"</code>)</p></dd>
-
-
-<dt id="arg-band">band<a class="anchor" aria-label="anchor" href="#arg-band"></a></dt>
-<dd><p><code>Numeric vector</code> of length 2. Draws the range between
-these quantiles of <code>y</code> at each time point, such as
-<code>c(0.25, 0.75)</code> for the interquartile range, per
-<code>group.by</code> group. (Default: <code>NULL</code>)</p></dd>
+<code>"none"</code>, <code>"mean"</code> (mean at each time point), or
+<code>"loess"</code> (loess curve). (Default: <code>"none"</code>)</p></dd>
 
 
 <dt id="arg-fit">fit<a class="anchor" aria-label="anchor" href="#arg-fit"></a></dt>
@@ -177,11 +165,9 @@ difference (<code>"difference"</code>), the ratio (<code>"fold"</code>) or its l
 <dt id="arg-rolling">rolling<a class="anchor" aria-label="anchor" href="#arg-rolling"></a></dt>
 <dd><p><code>Character scalar</code>. Replaces <code>y</code> by a rolling
 statistic over the last <code>window</code> samples of each subject:
-<code>"mean"</code>, <code>"variance"</code>, <code>"acf1"</code> (lag-1
-autocorrelation) or <code>"slope"</code> (change of <code>y</code> per
-<code>time.col</code> unit, from a least-squares line; per visit step for
-visits). Rising variance and autocorrelation are early warning signals
-of a transition. (Default: <code>"none"</code>)</p></dd>
+<code>"mean"</code>, <code>"variance"</code> or <code>"acf1"</code> (lag-1
+autocorrelation). Rising variance and autocorrelation are early
+warning signals of a transition. (Default: <code>"none"</code>)</p></dd>
 
 
 <dt id="arg-window">window<a class="anchor" aria-label="anchor" href="#arg-window"></a></dt>
@@ -207,17 +193,6 @@ microbiota-for-age: a table with the columns <code>time.col</code> and
 <dd><p><code>Numeric vector</code> of length 2. Draws a band between
 these values of <code>y</code>, such as a normal range.
 (Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-events">events<a class="anchor" aria-label="anchor" href="#arg-events"></a></dt>
-<dd><p><code>data.frame</code>. Events or intervals to mark, one per
-row, with columns <code>start</code> and optionally <code>end</code> and
-<code>label</code>, in the units of <code>time.col</code> (visit levels for
-visits): interventions such as antibiotic courses, or the time
-intervals where groups differ, as estimated by MetaLonDA or
-SplinectomeR. Rows with an <code>end</code> are drawn as grey bands with
-their label at the top, the others as vertical lines. Events apply to
-all subjects. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-align-to">align.to<a class="anchor" aria-label="anchor" href="#arg-align-to"></a></dt>
@@ -326,25 +301,11 @@ relative to the event as well; for <code>Date</code> times they are in days.</p>
 <span class="r-in"><span>    rolling <span class="op">=</span> <span class="st">"variance"</span>, window <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTrend-8.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Median diversity with the interquartile range, by sex</span></span></span>
-<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"diversity"</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
-<span class="r-in"><span>    group.by <span class="op">=</span> <span class="st">"sex"</span>, smooth <span class="op">=</span> <span class="st">"median"</span>, band <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.75</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    show.individuals <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-9.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Acetate with the batch phase and the addition of Blautia marked</span></span></span>
-<span class="r-in"><span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">152</span><span class="op">)</span>, end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span>, <span class="cn">NA</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"Blautia added"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
-<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
-<span class="r-in"><span>    events <span class="op">=</span> <span class="va">events</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-10.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Distribution of diversity at each visit</span></span></span>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"diversity"</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
 <span class="r-in"><span>    layout <span class="op">=</span> <span class="st">"ridge"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Picking joint bandwidth of 0.0643</span>
-<span class="r-plt img"><img src="plotTrend-11.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTrend-9.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
