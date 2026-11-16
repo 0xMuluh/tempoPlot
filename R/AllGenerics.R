@@ -105,3 +105,9 @@ setGeneric("plotSubjectScatter", signature = "x",
 #' @export
 setGeneric("plotCalendar", signature = "x",
     function(x, ...) standardGeneric("plotCalendar"))
+
+#' @rdname plotRanks
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotRanks", signature = "x",
+    function(x, ...) standardGeneric("plotRanks"))
