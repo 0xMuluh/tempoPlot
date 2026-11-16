@@ -1,3 +1,6 @@
+Changes in version 0.99.37 (2026-11-16)
++ Added plotLagHeatmap
+
 Changes in version 0.99.36 (2026-11-16)
 + Added plotFeatureScatter
 
