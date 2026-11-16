@@ -1,3 +1,6 @@
+Changes in version 0.99.28 (2026-11-16)
++ plotComposition: shares of states
+
 Changes in version 0.99.27 (2026-11-16)
 + plotPath: centroids, movement field, lag plots and animation
 

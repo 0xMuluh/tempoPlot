@@ -27,6 +27,11 @@
 #'   mean proportion, to show; the rest are summed into "Other".
 #'   (Default: \code{5})
 #'
+#' @param y \code{Character scalar}. Specifies a categorical column from
+#'   \code{colData(x)}, such as a state, to plot instead of the assay: the
+#'   share of samples in each state at each time, one panel per
+#'   \code{group.by} group. (Default: \code{NULL})
+#'
 #' @param layout \code{Character scalar}. Draws stacked bars (\code{"bar"})
 #'   or stacked areas (\code{"area"}). (Default: \code{"bar"})
 #'
@@ -66,6 +71,11 @@
 #' # Mean phylum composition by sex at each visit
 #' plotComposition(tse, time.col = "visit", group = "subject",
 #'     rank = "Phylum", level = "group", group.by = "sex")
+#'
+#' # Share of samples by dominant genus at each visit
+#' tse <- mia::addDominant(tse, name = "dominant", n = 4)
+#' plotComposition(tse, time.col = "visit", group = "subject",
+#'     y = "dominant")
 NULL
 
 #' @rdname plotComposition
@@ -75,7 +85,7 @@ NULL
 #' @export
 setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = NULL, rank = NULL,
-            top = 5, layout = c("bar", "area"),
+            top = 5, y = NULL, layout = c("bar", "area"),
             level = c("subject", "group"), group.by = NULL, ...) {
         layout <- match.arg(layout)
         level <- match.arg(level)
@@ -90,6 +100,11 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         }
         if (level == "group" && is.null(group.by)) {
             stop("'level' = \"group\" needs 'group.by'.", call. = FALSE)
+        }
+        if (!is.null(y)) {
+            df <- .state_shares(x, y, time.col, group.by)
+            return(.plot_composition(df, time.col, group.by, layout, y,
+                ylab = "Share of samples", ...))
         }
 
         mat <- as.matrix(assay(x, assay.type %||% 1L))
@@ -122,14 +137,47 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     }
 )
 
+# Share of samples in each state of the colData column y at each time,
+# within each group.by group.
+#' @importFrom SummarizedExperiment colData
+.state_shares <- function(x, y, time.col, group.by) {
+    .check_column(x, y)
+    if (is.null(y)) {
+        stop("'y' must be one column name of colData(x).", call. = FALSE)
+    }
+    state <- colData(x)[[y]]
+    if (!(is.factor(state) || is.character(state) || is.logical(state))) {
+        stop("'y' must be a factor, character or logical column.",
+            call. = FALSE)
+    }
+    cols <- unique(c(time.col, group.by))
+    cd <- as.data.frame(colData(x)[, cols, drop = FALSE], optional = TRUE)
+    cd$.feature <- factor(state)
+    cd <- cd[!is.na(cd$.feature), , drop = FALSE]
+    tab <- as.data.frame(table(cd[c(time.col, group.by, ".feature")]),
+        responseName = ".n")
+    tab$.value <- tab$.n / ave(tab$.n, tab[c(time.col, group.by)],
+        FUN = sum)
+    tab <- tab[!is.nan(tab$.value), , drop = FALSE]
+    # table() turns times into factors; restore numeric and Date times.
+    time <- colData(x)[[time.col]]
+    if (!is.factor(time)) {
+        lv <- as.character(tab[[time.col]])
+        tab[[time.col]] <- sort(unique(time))[match(lv,
+            as.character(sort(unique(time))))]
+    }
+    tab
+}
+
 #' @importFrom ggplot2 ggplot aes .data geom_col geom_area facet_wrap vars
 #'   labs scale_x_discrete
-.plot_composition <- function(df, time.col, panel, layout, fill, ...) {
+.plot_composition <- function(df, time.col, panel, layout, fill,
+        ylab = "Relative abundance", ...) {
     geom <- switch(layout, bar = geom_col, area = geom_area)
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
             fill = .data$.feature, group = .data$.feature)) +
-        geom(...) +
-        labs(x = time.col, y = "Relative abundance", fill = fill)
+        geom(...)
+    p <- p + labs(x = time.col, y = ylab, fill = fill)
     if (!is.null(panel)) {
         p <- p + facet_wrap(vars(.data[[panel]]))
     }

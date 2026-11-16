@@ -14,6 +14,7 @@ plotComposition(x, ...)
   assay.type = NULL,
   rank = NULL,
   top = 5,
+  y = NULL,
   layout = c("bar", "area"),
   level = c("subject", "group"),
   group.by = NULL,
@@ -47,6 +48,11 @@ before plotting. (Default: \code{NULL})}
 \item{top}{\code{Integer scalar}. Number of most abundant features, by
 mean proportion, to show; the rest are summed into "Other".
 (Default: \code{5})}
+
+\item{y}{\code{Character scalar}. Specifies a categorical column from
+\code{colData(x)}, such as a state, to plot instead of the assay: the
+share of samples in each state at each time, one panel per
+\code{group.by} group. (Default: \code{NULL})}
 
 \item{layout}{\code{Character scalar}. Draws stacked bars (\code{"bar"})
 or stacked areas (\code{"area"}). (Default: \code{"bar"})}
@@ -86,4 +92,9 @@ plotComposition(tse, time.col = "visit", group = "subject",
 # Mean phylum composition by sex at each visit
 plotComposition(tse, time.col = "visit", group = "subject",
     rank = "Phylum", level = "group", group.by = "sex")
+
+# Share of samples by dominant genus at each visit
+tse <- mia::addDominant(tse, name = "dominant", n = 4)
+plotComposition(tse, time.col = "visit", group = "subject",
+    y = "dominant")
 }
