@@ -28,3 +28,22 @@ test_that("plotLagHeatmap pairs samples within subjects only", {
     df <- plotLagHeatmap(toy, "y", "t", group = "id", max.lag = 1)$data
     expect_equal(df$.r[df$.feature == "b" & df$.lag == 0], 1)
 })
+
+test_that("plotLagHeatmap takes the target from another experiment", {
+    toy$id <- rep(c("s1", "s2"), each = 10)
+    colnames(toy) <- paste0("p", 1:20)
+    cd <- colData(toy)
+    tgt <- SummarizedExperiment(matrix(cd$y, 1L,
+        dimnames = list("y", colnames(toy))))
+    mae <- MultiAssayExperiment::MultiAssayExperiment(
+        list(features = toy, target = tgt[, 20:1]), colData = cd)
+    p <- plotLagHeatmap(mae, target = "y", time.col = "t", group = "id",
+        experiment = "features", target.experiment = "target",
+        max.lag = 1)
+    q <- plotLagHeatmap(toy, "y", "t", group = "id", max.lag = 1)
+    expect_equal(p$data$.r, q$data$.r)
+    expect_error(plotLagHeatmap(mae, "y", "t", experiment = "none",
+        target.experiment = "target"), "'experiment'")
+    expect_error(plotLagHeatmap(mae, "y", "none", experiment = "features",
+        target.experiment = "target"), "'time.col'")
+})
