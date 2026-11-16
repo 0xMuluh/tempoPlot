@@ -4,7 +4,10 @@
 #' and one point per sample. A lane joins the samples of each subject.
 #'
 #' @param x a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-#'   object.
+#'   or \code{\link[MultiAssayExperiment]{MultiAssayExperiment}} object.
+#'   For a \code{MultiAssayExperiment}, \code{time.col} and \code{group}
+#'   are columns of its \code{colData}, and each subject row has one band
+#'   per experiment that marks the samples it contains.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
@@ -80,6 +83,20 @@
 #'     label = c("batch", "Blautia added", "double dilution rate"))
 #' plotSwimmer(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
 #'     events = events)
+#'
+#' # Which samples have species counts, short-chain fatty acids and
+#' # optical density
+#' cd <- SummarizedExperiment::colData(minimalgut)
+#' od <- !is.na(cd$OpticalDensity)
+#' mae <- MultiAssayExperiment::MultiAssayExperiment(
+#'     experiments = list(
+#'         species = minimalgut,
+#'         SCFA = SummarizedExperiment::SummarizedExperiment(
+#'             t(as.matrix(cd[, c("Acetate", "Butyrate", "Propionate")]))),
+#'         density = SummarizedExperiment::SummarizedExperiment(
+#'             t(as.matrix(cd[od, "OpticalDensity", drop = FALSE])))),
+#'     colData = cd)
+#' plotSwimmer(mae, time.col = "Time.hr", group = "StudyIdentifier")
 NULL
 
 #' @rdname plotSwimmer
@@ -208,6 +225,69 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
         p <- p + do.call(labs, as.list(setNames(rep("event",
             length(scales)), scales)))
     }
+    if (is.factor(df[[time.col]])) {
+        p <- p + scale_x_discrete(drop = FALSE)
+    }
+    p
+}
+
+#' @rdname plotSwimmer
+#' @importFrom MultiAssayExperiment sampleMap
+#' @importFrom SummarizedExperiment colData
+#' @importFrom methods setMethod
+#' @export
+setMethod("plotSwimmer", signature = c(x = "MultiAssayExperiment"),
+    function(x, time.col, group, order.by = c("first", "n"), ...) {
+        order.by <- match.arg(order.by)
+        cd <- colData(x)
+        for (arg in c("time.col", "group")) {
+            v <- get(arg)
+            if (!.is_one_name(v) || !v %in% names(cd)) {
+                stop("'", arg, "' must be one column name of colData(x).",
+                    call. = FALSE)
+            }
+        }
+        time <- cd[[time.col]]
+        if (!(is.numeric(time) || inherits(time, "Date") ||
+                is.factor(time))) {
+            stop("'time.col' must be numeric, Date or factor.",
+                call. = FALSE)
+        }
+        map <- as.data.frame(sampleMap(x))
+        exps <- levels(factor(map$assay))
+        df <- data.frame(.primary = map$primary,
+            .experiment = factor(map$assay, levels = exps))
+        df[[time.col]] <- time[match(df$.primary, rownames(cd))]
+        df[[group]] <- as.character(cd[[group]])[match(df$.primary,
+            rownames(cd))]
+        df <- df[!is.na(df[[group]]) & !is.na(df[[time.col]]), ,
+            drop = FALSE]
+
+        # Order subjects as the SummarizedExperiment method does.
+        tnum <- .time_numeric(time)
+        subject <- as.character(cd[[group]])
+        first <- tapply(tnum, subject, min)
+        n <- tapply(tnum, subject, length)
+        key <- if (order.by == "first") first else -n
+        rows <- rev(names(key)[order(key)])
+        df$.row <- match(df[[group]], rows)
+        k <- length(exps)
+        offset <- if (k == 1L) 0 else seq(0.3, -0.3, length.out = k)
+        df$.y <- df$.row + offset[as.integer(df$.experiment)]
+        .plot_swimmer_mae(df, time.col, group, rows, ...)
+    }
+)
+
+#' @importFrom ggplot2 ggplot aes .data geom_line geom_point labs
+#'   scale_y_continuous scale_x_discrete
+.plot_swimmer_mae <- function(df, time.col, group, rows, ...) {
+    p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
+            colour = .data$.experiment)) +
+        geom_line(aes(group = interaction(.data$.row,
+            .data$.experiment)), alpha = 0.4) +
+        geom_point(...) +
+        scale_y_continuous(breaks = seq_along(rows), labels = rows) +
+        labs(x = time.col, y = group, colour = "experiment")
     if (is.factor(df[[time.col]])) {
         p <- p + scale_x_discrete(drop = FALSE)
     }

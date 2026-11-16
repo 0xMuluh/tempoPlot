@@ -200,3 +200,24 @@ test_that("plotSwimmer draws visit events at their levels", {
     band <- layer_data(p, 1L)
     expect_equal(as.numeric(c(band$xmin, band$xmax)), c(2, 3))
 })
+
+test_that("plotSwimmer draws one band per experiment", {
+    cd <- DataFrame(id = c("s1", "s1", "s2", "s2"), t = c(0, 1, 0, 2),
+        row.names = paste0("p", 1:4))
+    e1 <- SummarizedExperiment(matrix(1, 1L, 4L,
+        dimnames = list("f", paste0("p", 1:4))))
+    e2 <- SummarizedExperiment(matrix(1, 1L, 2L,
+        dimnames = list("g", c("p1", "p4"))))
+    mae <- MultiAssayExperiment::MultiAssayExperiment(
+        list(a = e1, b = e2), colData = cd)
+    p <- plotSwimmer(mae, "t", "id")
+    df <- p$data
+    expect_identical(nrow(df), 6L)
+    expect_identical(as.character(df$.primary[df$.experiment == "b"]),
+        c("p1", "p4"))
+    # Both subjects start at 0; ties keep their order, s1 on top.
+    expect_equal(sort(unique(df$.row[df$id == "s1"])), 2)
+    expect_equal(unique(df$.y[df$.experiment == "a" & df$id == "s1"]),
+        2.3)
+    expect_error(plotSwimmer(mae, "none", "id"), "'time.col'")
+})
