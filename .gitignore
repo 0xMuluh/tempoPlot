@@ -9,3 +9,4 @@ docs
 dev
 inst/doc
 vignettes/*.R
+Rplots.pdf
