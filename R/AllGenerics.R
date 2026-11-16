@@ -117,3 +117,9 @@ setGeneric("plotRanks", signature = "x",
 #' @export
 setGeneric("plotDirection", signature = "x",
     function(x, ...) standardGeneric("plotDirection"))
+
+#' @rdname plotLandscape
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotLandscape", signature = "x",
+    function(x, ...) standardGeneric("plotLandscape"))

@@ -8,6 +8,7 @@ export(plotGaps)
 export(plotHorizon)
 export(plotIndividuality)
 export(plotLagProfile)
+export(plotLandscape)
 export(plotPath)
 export(plotRanks)
 export(plotRecurrence)
@@ -28,6 +29,7 @@ exportMethods(plotGaps)
 exportMethods(plotHorizon)
 exportMethods(plotIndividuality)
 exportMethods(plotLagProfile)
+exportMethods(plotLandscape)
 exportMethods(plotPath)
 exportMethods(plotRanks)
 exportMethods(plotRecurrence)
@@ -75,6 +77,7 @@ importFrom(ggplot2,
   geom_pointrange,
   geom_rect,
   geom_ribbon,
+  geom_rug,
   geom_segment,
   geom_smooth,
   geom_step,
@@ -113,6 +116,7 @@ importFrom(methods,
 importFrom(stats,
   aggregate,
   ave,
+  density,
   dist,
   hclust,
   median,
