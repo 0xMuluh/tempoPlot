@@ -1,3 +1,6 @@
+Changes in version 0.99.27 (2026-11-16)
++ plotPath: centroids, movement field, lag plots and animation
+
 Changes in version 0.99.26 (2026-11-16)
 + plotTrend: reference curves, limits and alignment to an event
 
