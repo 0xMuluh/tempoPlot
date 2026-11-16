@@ -9,6 +9,7 @@ export(plotFingerprint)
 export(plotGaps)
 export(plotHorizon)
 export(plotIndividuality)
+export(plotLagHeatmap)
 export(plotLagProfile)
 export(plotLandscape)
 export(plotPath)
@@ -34,6 +35,7 @@ exportMethods(plotFingerprint)
 exportMethods(plotGaps)
 exportMethods(plotHorizon)
 exportMethods(plotIndividuality)
+exportMethods(plotLagHeatmap)
 exportMethods(plotLagProfile)
 exportMethods(plotLandscape)
 exportMethods(plotPath)
@@ -128,6 +130,7 @@ importFrom(stats,
   aggregate,
   ave,
   coef,
+  cor,
   density,
   dist,
   hclust,

@@ -147,3 +147,9 @@ setGeneric("plotSpectrum", signature = "x",
 #' @export
 setGeneric("plotFeatureScatter", signature = "x",
     function(x, ...) standardGeneric("plotFeatureScatter"))
+
+#' @rdname plotLagHeatmap
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotLagHeatmap", signature = "x",
+    function(x, ...) standardGeneric("plotLagHeatmap"))
