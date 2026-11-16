@@ -14,6 +14,8 @@ plotSwimmer(x, ...)
   colour.by = NULL,
   order.by = c("first", "n"),
   max.gap = NULL,
+  missing = c("break", "show", "drop"),
+  events = NULL,
   ...
 )
 }
@@ -41,7 +43,25 @@ at the top. (Default: \code{"first"})}
 
 \item{max.gap}{\code{Numeric scalar}. Breaks a lane where consecutive
 samples of a subject are further apart than this, in \code{time.col}
-units. \code{NULL} never breaks lanes. (Default: \code{NULL})}
+units. For visits, \code{NULL} breaks lanes at visits without a
+sample; otherwise \code{NULL} never breaks lanes. (Default: \code{NULL})}
+
+\item{missing}{\code{Character scalar}. How to draw missing samples:
+break the lane (\code{"break"}), join the samples around them with a
+dashed line and mark missed visits with open circles (\code{"show"}),
+or remove subjects with any missing sample (\code{"drop"}).
+(Default: \code{"break"})}
+
+\item{events}{\code{data.frame}. Events to draw, one per row, with
+columns \code{start}, and optionally \code{end}, \code{label} and the
+\code{group} column. \code{start} and \code{end} have the type of
+\code{time.col}; for visits, they are visit levels. Events with an
+\code{end} are drawn as bands, the others as markers. Events with a
+subject in the \code{group} column are drawn on the row of that
+subject; the others span all subjects. \code{label} sets the fill of
+bands and markers on a row and the line type of markers that span all
+subjects.
+(Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.
@@ -53,6 +73,12 @@ and one point per sample. A lane joins the samples of each subject.
 \details{
 Numeric and \code{Date} times are drawn on a continuous axis. Visits are
 drawn in level order, including levels without samples.
+
+For visits, a sample is missing when a subject has no sample at a visit
+after its first one, including visits after its last sample (dropout).
+For numeric and \code{Date} times, a gap longer than \code{max.gap} is
+missing; \code{missing = "show"} and \code{"drop"} then require
+\code{max.gap}.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -60,4 +86,17 @@ tse <- hitchip1006
 tse <- tse[, tse$subject \%in\% names(which(table(tse$subject) >= 3))]
 plotSwimmer(tse, time.col = "time", group = "subject",
     colour.by = "bmi_group")
+
+# Mark gaps longer than a year
+plotSwimmer(tse, time.col = "time", group = "subject", max.gap = 1,
+    missing = "show")
+
+# Perturbations of three bioreactors run on the same schedule
+data("minimalgut", package = "miaTime")
+events <- data.frame(
+    start = c(0, 152, 432),
+    end = c(24, NA, 436),
+    label = c("batch", "Blautia added", "double dilution rate"))
+plotSwimmer(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+    events = events)
 }

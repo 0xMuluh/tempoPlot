@@ -92,3 +92,111 @@ test_that("plotSwimmer draws Date times on a continuous axis", {
     expect_s3_class(layer_scales(p)$x, "ScaleContinuousDate")
     expect_equal(sort(layer_data(p, 2L)$x), sort(as.numeric(x$date)))
 })
+
+test_that("plotSwimmer checks missing and events", {
+    expect_error(plotSwimmer(x, "time", "subject", missing = "skip"))
+    expect_error(
+        plotSwimmer(x, "time", "subject", missing = "show"),
+        "requires 'max.gap'"
+    )
+    expect_error(
+        plotSwimmer(x, "time", "subject", events = data.frame(end = 1)),
+        "'start'"
+    )
+    expect_error(
+        plotSwimmer(x, "time", "subject",
+            events = data.frame(start = "a")),
+        "type of 'time.col'"
+    )
+    expect_error(
+        plotSwimmer(x, "time", "subject",
+            events = data.frame(start = 2, end = 1)),
+        "before"
+    )
+    x$visit <- factor(x$time)
+    expect_error(
+        plotSwimmer(x, "visit", "subject",
+            events = data.frame(start = "not a visit")),
+        "levels"
+    )
+})
+
+# Subjects 1-3 have visits 1-3; subject 2 misses visit 2 and subject 3
+# misses visit 3 (dropout).
+v <- x[, seq_len(9L)]
+v$id <- rep(c("s1", "s2", "s3"), each = 3L)
+v$visit <- factor(rep(c("v1", "v2", "v3"), 3L), levels = c("v1", "v2", "v3"))
+v <- v[, -c(5L, 9L)]
+
+test_that("plotSwimmer breaks lanes at missed visits", {
+    ld <- layer_data(plotSwimmer(v, "visit", "id"), 1L)
+    # s1 one lane, s2 two lanes, s3 one lane
+    expect_length(unique(ld$group), 4L)
+})
+
+test_that("plotSwimmer shows missing samples", {
+    p <- plotSwimmer(v, "visit", "id", missing = "show")
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    gap <- layer_data(p, which(geoms == "GeomSegment"))
+    expect_identical(nrow(gap), 1L)
+    expect_equal(as.numeric(c(gap$x, gap$xend)), c(1, 3))
+    missed <- layer_data(p, which(geoms == "GeomPoint")[2L])
+    expect_identical(nrow(missed), 2L)
+    expect_setequal(as.numeric(missed$x), c(2, 3))
+
+    gaps <- unlist(tapply(x$time, x$subject, function(t) diff(sort(t))))
+    p <- plotSwimmer(x, "time", "subject", max.gap = 5, missing = "show")
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    expect_identical(
+        nrow(layer_data(p, which(geoms == "GeomSegment"))),
+        sum(gaps > 5)
+    )
+})
+
+test_that("plotSwimmer drops subjects with missing samples", {
+    expect_message(
+        p <- plotSwimmer(v, "visit", "id", missing = "drop"),
+        "Removed 2 subjects"
+    )
+    expect_identical(levels(p$data$id), "s1")
+    expect_error(
+        plotSwimmer(v[, v$id != "s1"], "visit", "id", missing = "drop"),
+        "All subjects"
+    )
+})
+
+test_that("plotSwimmer draws events on subject rows and across subjects", {
+    events <- data.frame(
+        subject = c(NA, NA, "217", "218"),
+        start = c(1, 2, 0, 3),
+        end = c(NA, 4, 1, NA),
+        label = c("a", "b", "c", "d")
+    )
+    # Events without a subject span all subjects.
+    p <- plotSwimmer(x, "time", "subject", events = events[1:2, -1L])
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    expect_identical(geoms[[1L]], "GeomRect")
+    expect_true(is.infinite(layer_data(p, 1L)$ymin))
+    expect_true("GeomVline" %in% geoms)
+    expect_identical(p$labels$fill, "event")
+
+    # Events of a subject are drawn on its row.
+    p <- plotSwimmer(x, "time", "subject", events = events[3:4, ])
+    rows <- levels(p$data$subject)
+    band <- layer_data(p, 1L)
+    expect_equal(band$ymin, match("217", rows) - 0.4)
+    marker <- layer_data(p, length(p$layers))
+    expect_equal(marker$y, match("218", rows) + 0.3)
+
+    # Events of absent subjects are not drawn.
+    p <- plotSwimmer(x, "time", "subject",
+        events = data.frame(subject = "none", start = 1))
+    expect_length(p$layers, 2L)
+})
+
+test_that("plotSwimmer draws visit events at their levels", {
+    p <- plotSwimmer(v, "visit", "id",
+        events = data.frame(start = "v2", end = "v3"))
+    band <- layer_data(p, 1L)
+    expect_equal(as.numeric(c(band$xmin, band$xmax)), c(2, 3))
+})

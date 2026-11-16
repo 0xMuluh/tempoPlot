@@ -35,8 +35,11 @@ importFrom(ggplot2,
   geom_path,
   geom_point,
   geom_pointrange,
+  geom_rect,
   geom_ribbon,
+  geom_segment,
   geom_smooth,
+  geom_vline,
   ggplot,
   labs,
   position_dodge,
@@ -51,6 +54,7 @@ importFrom(methods,
 )
 importFrom(stats,
   aggregate,
-  ave
+  ave,
+  setNames
 )
 importFrom(utils,modifyList)

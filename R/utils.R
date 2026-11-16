@@ -215,3 +215,112 @@
     }
     NULL
 }
+
+# Check events and return them as a data.frame, or NULL. Columns: start
+# (required), end and label (optional) and group (optional; without it,
+# each event applies to all subjects). start and end must have the type
+# of time.col: numeric, Date, or levels of the visit factor (returned as
+# that factor). end NA marks a single time point.
+.check_events <- function(events, x, time.col, group = NULL) {
+    if (is.null(events)) {
+        return(NULL)
+    }
+    if (!is.data.frame(events) || !"start" %in% names(events)) {
+        stop("'events' must be a data.frame with a column 'start'.",
+            call. = FALSE)
+    }
+    events <- as.data.frame(events)
+    time <- colData(x)[[time.col]]
+    for (col in intersect(c("start", "end"), names(events))) {
+        v <- events[[col]]
+        if (is.factor(time)) {
+            ok <- all(is.na(v) | as.character(v) %in% levels(time))
+            v <- factor(as.character(v), levels = levels(time))
+        } else if (inherits(time, "Date")) {
+            ok <- inherits(v, "Date")
+        } else {
+            ok <- is.numeric(v)
+        }
+        if (!ok) {
+            stop("'events$", col, "' must have the type of 'time.col'",
+                if (is.factor(time)) " and contain its levels", ".",
+                call. = FALSE)
+        }
+        events[[col]] <- v
+    }
+    if (anyNA(events$start)) {
+        stop("'events$start' must not contain NA values.", call. = FALSE)
+    }
+    if ("end" %in% names(events) && any(
+            .time_numeric(events$end) < .time_numeric(events$start),
+            na.rm = TRUE)) {
+        stop("'events$end' must not be before 'events$start'.",
+            call. = FALSE)
+    }
+    if ("label" %in% names(events)) {
+        events$label <- as.character(events$label)
+    }
+    events
+}
+
+# Layers for events checked by .check_events(): bands (rows with end) or
+# markers (rows without end). Events with a group column are drawn on the
+# row of their subject when y.levels gives the subject rows, bottom to
+# top; the others span the whole plot. label sets the fill, or the
+# linetype of markers that span the plot. Returns a
+# list of layers, empty without events of that kind.
+#' @importFrom ggplot2 aes .data geom_point geom_rect geom_vline
+.events_layer <- function(events, what = c("bands", "markers"),
+        group = NULL, y.levels = NULL) {
+    what <- match.arg(what)
+    if (is.null(events)) {
+        return(list())
+    }
+    band <- if ("end" %in% names(events)) !is.na(events$end) else FALSE
+    keep <- if (what == "bands") band else !band
+    ev <- events[rep_len(keep, nrow(events)), , drop = FALSE]
+    rows <- !is.null(y.levels) && !is.null(group) && group %in% names(ev)
+    if (rows) {
+        ev$.y <- match(as.character(ev[[group]]), y.levels)
+        ev <- ev[!is.na(ev$.y), , drop = FALSE]
+    }
+    if (nrow(ev) == 0L) {
+        return(list())
+    }
+    # Visits are drawn at their level codes.
+    pos <- function(v) if (is.factor(v)) as.integer(v) else v
+    ev$.start <- pos(ev$start)
+    fill <- if ("label" %in% names(ev)) "label" else NULL
+    if (what == "bands") {
+        ev$.end <- pos(ev$end)
+        ev$.ymin <- if (rows) ev$.y - 0.4 else -Inf
+        ev$.ymax <- if (rows) ev$.y + 0.4 else Inf
+        mapping <- aes(xmin = .data$.start, xmax = .data$.end,
+            ymin = .data$.ymin, ymax = .data$.ymax)
+        if (is.null(fill)) {
+            return(list(geom_rect(mapping, data = ev, inherit.aes = FALSE,
+                fill = "grey50", alpha = 0.3)))
+        }
+        mapping <- aes(xmin = .data$.start, xmax = .data$.end,
+            ymin = .data$.ymin, ymax = .data$.ymax, fill = .data$label)
+        return(list(geom_rect(mapping, data = ev, inherit.aes = FALSE,
+            alpha = 0.3)))
+    }
+    if (!rows) {
+        if (is.null(fill)) {
+            return(list(geom_vline(aes(xintercept = .data$.start),
+                data = ev, linetype = "dashed", colour = "grey30")))
+        }
+        return(list(geom_vline(
+            aes(xintercept = .data$.start, linetype = .data$label),
+            data = ev, colour = "grey30")))
+    }
+    ev$.y <- ev$.y + 0.3
+    if (is.null(fill)) {
+        return(list(geom_point(aes(x = .data$.start, y = .data$.y),
+            data = ev, inherit.aes = FALSE, shape = 25, size = 2.5,
+            fill = "grey30")))
+    }
+    list(geom_point(aes(x = .data$.start, y = .data$.y, fill = .data$label),
+        data = ev, inherit.aes = FALSE, shape = 25, size = 2.5))
+}
