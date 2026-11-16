@@ -93,3 +93,9 @@ setGeneric("plotAlluvial", signature = "x",
 #' @export
 setGeneric("plotSurvival", signature = "x",
     function(x, ...) standardGeneric("plotSurvival"))
+
+#' @rdname plotSubjectScatter
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotSubjectScatter", signature = "x",
+    function(x, ...) standardGeneric("plotSubjectScatter"))
