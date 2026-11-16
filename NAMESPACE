@@ -149,6 +149,7 @@ importFrom(stats,
   optimize,
   pbeta,
   residuals,
+  sd,
   setNames,
   spec.pgram,
   var

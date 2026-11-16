@@ -66,6 +66,7 @@ NULL
 
 #' @rdname plotFeatureScatter
 #' @importFrom SummarizedExperiment colData assay assayNames rowData
+#' @importFrom stats sd var
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),

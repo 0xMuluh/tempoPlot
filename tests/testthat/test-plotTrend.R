@@ -363,3 +363,33 @@ test_that("plotTrend draws limits and a reference curve behind the data", {
     expect_equal(layer_data(p, 1L)$ymin, 30)
     expect_equal(layer_data(p, 3L)$y, c(10, 20))
 })
+
+test_that("plotTrend draws rolling statistics", {
+    toy <- SummarizedExperiment::SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 6L)),
+        colData = S4Vectors::DataFrame(t = 1:6, v = c(1, 2, 3, 10, 20, 30)))
+    p <- plotTrend(toy, "v", "t", rolling = "mean", window = 3)
+    expect_equal(p$data$.y, c(2, 5, 11, 20))
+    p <- plotTrend(toy, "v", "t", rolling = "variance", window = 2)
+    expect_equal(p$data$.y[1], 0.5)
+    expect_match(p$labels$y, "Rolling variance")
+    expect_error(plotTrend(toy, "v", "t", window = 1), "'window'")
+})
+
+test_that("plotTrend wraps time into periods", {
+    toy <- SummarizedExperiment::SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 6L)),
+        colData = S4Vectors::DataFrame(t = c(0, 6, 12, 24, 30, 36),
+            v = 1:6))
+    p <- plotTrend(toy, "v", "t", period = 24)
+    expect_equal(p$data$t, c(0, 6, 12, 0, 6, 12))
+    expect_identical(nlevels(p$data$.line), 2L)
+    expect_error(plotTrend(toy, "v", "t", period = -1), "'period'")
+})
+
+test_that("plotTrend draws ridges", {
+    skip_if_not_installed("ggridges")
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        layout = "ridge")
+    expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomDensityRidges")
+})

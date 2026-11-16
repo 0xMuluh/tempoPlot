@@ -13,11 +13,14 @@ plotTrend(x, ...)
   time.col,
   group = NULL,
   assay.type = NULL,
-  layout = c("line", "box"),
+  layout = c("line", "box", "ridge"),
   show.individuals = TRUE,
   smooth = c("none", "mean", "loess"),
   fit = NULL,
   baseline = c("none", "difference", "fold", "log2fold"),
+  rolling = c("none", "mean", "variance", "acf1"),
+  window = 5,
+  period = NULL,
   reference = NULL,
   limits = NULL,
   align.to = NULL,
@@ -53,7 +56,9 @@ feature name. (Default: \code{NULL})}
 
 \item{layout}{\code{Character scalar}. Specifies the plot layout:
 \code{"line"} draws one line per subject; \code{"box"} draws boxes of
-\code{y} per time point. (Default: \code{"line"})}
+\code{y} per time point; \code{"ridge"} draws the density of \code{y}
+at each time point as stacked ridges (needs ggridges).
+(Default: \code{"line"})}
 
 \item{show.individuals}{\code{Logical scalar}. When \code{TRUE}, draws
 subject lines and points. When \code{FALSE}, hides subject lines and
@@ -75,6 +80,20 @@ each subject's first sample: unchanged (\code{"none"}), as the
 difference (\code{"difference"}), the ratio (\code{"fold"}) or its log2
 (\code{"log2fold"}). Ratios need positive first values.
 (Default: \code{"none"})}
+
+\item{rolling}{\code{Character scalar}. Replaces \code{y} by a rolling
+statistic over the last \code{window} samples of each subject:
+\code{"mean"}, \code{"variance"} or \code{"acf1"} (lag-1
+autocorrelation). Rising variance and autocorrelation are early
+warning signals of a transition. (Default: \code{"none"})}
+
+\item{window}{\code{Integer scalar}. Number of samples in the rolling
+window. (Default: \code{5})}
+
+\item{period}{\code{Numeric scalar}. Wraps time into cycles of this
+length, in \code{time.col} units (days for \code{Date} times), to
+show daily or seasonal patterns; each cycle is drawn as its own line.
+(Default: \code{NULL})}
 
 \item{reference}{A reference curve to draw behind the data, such as
 microbiota-for-age: a table with the columns \code{time.col} and
@@ -167,4 +186,17 @@ before <- minimalgut$Time_hr_num < 152
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
     align.to = "added", limits = range(minimalgut$Acetate[before]))
+
+# Acetate over the day, one line per day and bioreactor
+plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier", period = 24)
+
+# Rolling variance of acetate over 10 samples
+plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier",
+    rolling = "variance", window = 10)
+
+# Distribution of diversity at each visit
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    layout = "ridge")
 }
