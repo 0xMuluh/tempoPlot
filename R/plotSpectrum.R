@@ -34,8 +34,9 @@
 #' Frequencies are in cycles per \code{time.col} unit (per day for
 #' \code{Date} times), from one cycle over the series to half the median
 #' sampling rate. A linear trend is removed first. The Lomb-Scargle power
-#' is normalised by the variance of the series. For \code{"fft"}, samples are taken as evenly spaced at the
-#' median interval. Subjects with fewer than four samples are left out.
+#' is normalised by the variance of the series. For \code{"fft"}, samples
+#' are taken as evenly spaced at the median interval. Subjects with fewer
+#' than four samples are left out.
 #'
 #' @return
 #' A \code{ggplot} object.
