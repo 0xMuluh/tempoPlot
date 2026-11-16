@@ -9,6 +9,7 @@ export(plotLagProfile)
 export(plotPath)
 export(plotRecurrence)
 export(plotStats)
+export(plotSurvival)
 export(plotSwimmer)
 export(plotTiles)
 export(plotTransitionMatrix)
@@ -24,6 +25,7 @@ exportMethods(plotLagProfile)
 exportMethods(plotPath)
 exportMethods(plotRecurrence)
 exportMethods(plotStats)
+exportMethods(plotSurvival)
 exportMethods(plotSwimmer)
 exportMethods(plotTiles)
 exportMethods(plotTransitionMatrix)
@@ -64,6 +66,7 @@ importFrom(ggplot2,
   geom_ribbon,
   geom_segment,
   geom_smooth,
+  geom_step,
   geom_text,
   geom_tile,
   geom_violin,
@@ -82,7 +85,8 @@ importFrom(ggplot2,
   stat_summary,
   theme,
   unit,
-  vars
+  vars,
+  ylim
 )
 importFrom(ggrepel,geom_text_repel)
 importFrom(grDevices,
@@ -101,5 +105,9 @@ importFrom(stats,
   median,
   na.pass,
   setNames
+)
+importFrom(survival,
+  Surv,
+  survfit
 )
 importFrom(utils,modifyList)

@@ -87,3 +87,9 @@ setGeneric("plotTurnover", signature = "x",
 #' @export
 setGeneric("plotAlluvial", signature = "x",
     function(x, ...) standardGeneric("plotAlluvial"))
+
+#' @rdname plotSurvival
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotSurvival", signature = "x",
+    function(x, ...) standardGeneric("plotSurvival"))
