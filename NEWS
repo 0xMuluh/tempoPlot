@@ -1,5 +1,11 @@
-Changes in version 0.99.50 (2026-11-16)
+Changes in version 0.99.53 (2026-11-17)
 + Added plotAccumulation
+
+Changes in version 0.99.51 (2026-11-17)
++ plotLagHeatmap: target from another experiment of a MultiAssayExperiment
+
+Changes in version 0.99.50 (2026-11-16)
++ plotTrend: medians, quantile bands, violins and rolling slopes
 
 Changes in version 0.99.49 (2026-11-16)
 + Vignette: overview of all functions

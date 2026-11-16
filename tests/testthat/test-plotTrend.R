@@ -393,3 +393,42 @@ test_that("plotTrend draws ridges", {
         layout = "ridge")
     expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomDensityRidges")
 })
+
+test_that("plotTrend draws medians and quantile bands", {
+    toy <- SummarizedExperiment::SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 8L)),
+        colData = S4Vectors::DataFrame(
+            id = rep(c("a", "b", "c", "d"), each = 2), t = rep(1:2, 4),
+            v = c(1, 10, 2, 20, 3, 30, 100, 40)))
+    expect_error(plotTrend(toy, "v", "t", "id", band = c(0.8, 0.2)),
+        "'band'")
+    p <- plotTrend(toy, "v", "t", "id", smooth = "median",
+        band = c(0.25, 0.75))
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    ribbon <- layer_data(p, which(geoms == "GeomRibbon"))
+    expect_equal(ribbon$ymin, c(quantile(c(1, 2, 3, 100), 0.25),
+        quantile(c(10, 20, 30, 40), 0.25)), ignore_attr = TRUE)
+    expect_equal(ribbon$ymax, c(quantile(c(1, 2, 3, 100), 0.75),
+        quantile(c(10, 20, 30, 40), 0.75)), ignore_attr = TRUE)
+    med <- layer_data(p, length(p$layers))
+    expect_equal(med$y, c(2.5, 25))
+})
+
+test_that("plotTrend draws violins", {
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        layout = "violin")
+    expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomViolin")
+    expect_true(all(layer_data(p, 2L)$alpha == 0.3))
+})
+
+test_that("plotTrend draws the rolling slope", {
+    toy <- SummarizedExperiment::SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 6L)),
+        colData = S4Vectors::DataFrame(t = c(0, 1, 3, 4, 6, 7),
+            v = c(0, 2, 6, 8, 6, 4)))
+    p <- plotTrend(toy, "v", "t", rolling = "slope", window = 3)
+    # Slope 2 while v = 2t, then falling.
+    expect_equal(p$data$.y[1:2], c(2, 2))
+    expect_lt(p$data$.y[4], 0)
+    expect_match(p$labels$y, "Rolling slope")
+})

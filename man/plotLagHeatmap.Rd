@@ -3,6 +3,7 @@
 \name{plotLagHeatmap}
 \alias{plotLagHeatmap}
 \alias{plotLagHeatmap,SummarizedExperiment-method}
+\alias{plotLagHeatmap,MultiAssayExperiment-method}
 \title{Plot lagged correlations of features with a target}
 \usage{
 plotLagHeatmap(x, ...)
@@ -18,10 +19,26 @@ plotLagHeatmap(x, ...)
   max.lag = 3,
   ...
 )
+
+\S4method{plotLagHeatmap}{MultiAssayExperiment}(
+  x,
+  target,
+  time.col,
+  group = NULL,
+  experiment,
+  target.experiment,
+  assay.type = "counts",
+  features = NULL,
+  top = 20,
+  max.lag = 3,
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-object.}
+or \code{\link[MultiAssayExperiment]{MultiAssayExperiment}} object.
+For a \code{MultiAssayExperiment}, \code{time.col} and \code{group}
+are columns of its \code{colData}.}
 
 \item{...}{additional arguments passed to
 \code{\link[ggplot2:geom_tile]{geom_tile}}.}
@@ -50,6 +67,12 @@ features. (Default: \code{"counts"})}
 
 \item{max.lag}{\code{Integer scalar}. Largest lag in samples, in both
 directions. (Default: \code{3})}
+
+\item{experiment, target.experiment}{\code{Character scalar}. For a
+\code{MultiAssayExperiment}, the experiments holding the features and
+the \code{target}; samples are matched by their primary names. The
+target is looked up in \code{target.experiment} as for a
+\code{SummarizedExperiment}, in its first assay for a feature.}
 }
 \value{
 A \code{ggplot} object.
@@ -72,4 +95,14 @@ data("minimalgut", package = "miaTime")
 tse <- mia::transformAssay(minimalgut, method = "clr", pseudocount = 1)
 plotLagHeatmap(tse, target = "Acetate", time.col = "Time.hr",
     group = "StudyIdentifier", assay.type = "clr")
+
+# The same with acetate from a separate experiment
+cd <- SummarizedExperiment::colData(minimalgut)
+scfa <- SummarizedExperiment::SummarizedExperiment(
+    t(as.matrix(cd[, c("Acetate", "Butyrate", "Propionate")])))
+mae <- MultiAssayExperiment::MultiAssayExperiment(
+    experiments = list(species = tse, SCFA = scfa), colData = cd)
+plotLagHeatmap(mae, target = "Acetate", time.col = "Time.hr",
+    group = "StudyIdentifier", experiment = "species",
+    target.experiment = "SCFA", assay.type = "clr")
 }
