@@ -1,3 +1,6 @@
+Changes in version 0.99.15 (2026-11-16)
++ Added plotGaps
+
 Changes in version 0.99.14 (2026-11-16)
 + plotSwimmer: events and missing samples
 
