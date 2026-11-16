@@ -3,6 +3,7 @@
 \name{plotSwimmer}
 \alias{plotSwimmer}
 \alias{plotSwimmer,SummarizedExperiment-method}
+\alias{plotSwimmer,MultiAssayExperiment-method}
 \title{Plot sampling timelines of subjects}
 \usage{
 plotSwimmer(x, ...)
@@ -18,10 +19,15 @@ plotSwimmer(x, ...)
   events = NULL,
   ...
 )
+
+\S4method{plotSwimmer}{MultiAssayExperiment}(x, time.col, group, order.by = c("first", "n"), ...)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-object.}
+or \code{\link[MultiAssayExperiment]{MultiAssayExperiment}} object.
+For a \code{MultiAssayExperiment}, \code{time.col} and \code{group}
+are columns of its \code{colData}, and each subject row has one band
+per experiment that marks the samples it contains.}
 
 \item{...}{additional arguments passed to
 \code{\link[ggplot2:geom_point]{geom_point}}.}
@@ -99,4 +105,18 @@ events <- data.frame(
     label = c("batch", "Blautia added", "double dilution rate"))
 plotSwimmer(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
     events = events)
+
+# Which samples have species counts, short-chain fatty acids and
+# optical density
+cd <- SummarizedExperiment::colData(minimalgut)
+od <- !is.na(cd$OpticalDensity)
+mae <- MultiAssayExperiment::MultiAssayExperiment(
+    experiments = list(
+        species = minimalgut,
+        SCFA = SummarizedExperiment::SummarizedExperiment(
+            t(as.matrix(cd[, c("Acetate", "Butyrate", "Propionate")]))),
+        density = SummarizedExperiment::SummarizedExperiment(
+            t(as.matrix(cd[od, "OpticalDensity", drop = FALSE])))),
+    colData = cd)
+plotSwimmer(mae, time.col = "Time.hr", group = "StudyIdentifier")
 }
