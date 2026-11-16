@@ -20,7 +20,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.26</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.20</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot longitudinal trends</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/trend-reference/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/trend-reference/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a></small>
     <div class="hidden name"><code>plotTrend.Rd</code></div>
     </div>
 
@@ -73,9 +73,6 @@ subject's first sample.</p>
 <span>  smooth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"loess"</span><span class="op">)</span>,</span>
 <span>  fit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  baseline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"difference"</span>, <span class="st">"fold"</span>, <span class="st">"log2fold"</span><span class="op">)</span>,</span>
-<span>  reference <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  align.to <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -157,27 +154,6 @@ difference (<code>"difference"</code>), the ratio (<code>"fold"</code>) or its l
 (Default: <code>"none"</code>)</p></dd>
 
 
-<dt id="arg-reference">reference<a class="anchor" aria-label="anchor" href="#arg-reference"></a></dt>
-<dd><p>A reference curve to draw behind the data, such as
-microbiota-for-age: a table with the columns <code>time.col</code> and
-<code>estimate</code>, optionally <code>lower</code> and <code>upper</code> for a band.
-(Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-limits">limits<a class="anchor" aria-label="anchor" href="#arg-limits"></a></dt>
-<dd><p><code>Numeric vector</code> of length 2. Draws a band between
-these values of <code>y</code>, such as a normal range.
-(Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-align-to">align.to<a class="anchor" aria-label="anchor" href="#arg-align-to"></a></dt>
-<dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> with the time of an event for each subject, such as
-the start of a treatment, in the units of <code>time.col</code>. Time is then
-drawn relative to the event. Not available for visits.
-(Default: <code>NULL</code>)</p></dd>
-
-
 <dt id="arg-group-by">group.by<a class="anchor" aria-label="anchor" href="#arg-group-by"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> to colour subjects and smooth curves.
@@ -202,9 +178,7 @@ units. <code>NULL</code> never breaks trajectories. (Default: <code>NULL</code>)
     <div id="details">
     <h2>Details</h2>
     <p>Numeric and <code>Date</code> times are drawn on a continuous axis. Visits are
-drawn in level order, including levels without samples. With
-<code>align.to</code>, the times of <code>fit</code> and <code>reference</code> tables are
-relative to the event as well; for <code>Date</code> times they are in days.</p>
+drawn in level order, including levels without samples.</p>
     </div>
 
     <div id="ref-examples">
@@ -255,15 +229,6 @@ relative to the event as well; for <code>Date</code> times they are in days.</p>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTrend-5.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Hours since Blautia hydrogenotrophica was added at 152 h, against the</span></span></span>
-<span class="r-in"><span><span class="co"># range of acetate before it was added</span></span></span>
-<span class="r-in"><span><span class="va">minimalgut</span><span class="op">$</span><span class="va">added</span> <span class="op">&lt;-</span> <span class="fl">152</span></span></span>
-<span class="r-in"><span><span class="va">before</span> <span class="op">&lt;-</span> <span class="va">minimalgut</span><span class="op">$</span><span class="va">Time_hr_num</span> <span class="op">&lt;</span> <span class="fl">152</span></span></span>
-<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
-<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
-<span class="r-in"><span>    align.to <span class="op">=</span> <span class="st">"added"</span>, limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">minimalgut</span><span class="op">$</span><span class="va">Acetate</span><span class="op">[</span><span class="va">before</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-6.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
