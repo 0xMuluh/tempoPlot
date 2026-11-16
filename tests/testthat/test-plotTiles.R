@@ -77,3 +77,35 @@ test_that("plotTiles orders by clustering and handles visits and Dates", {
     p <- plotTiles(one, "t")
     expect_identical(nrow(p$data), 6L)
 })
+
+test_that("plotTiles draws effects from a results table", {
+    res <- data.frame(
+        feature = rep(c("a", "b", "c"), each = 2),
+        visit = rep(c("v1", "v2"), 3),
+        lfc = c(1, -2, 0.1, 0.2, 3, 4),
+        q = c(0.01, 0.2, 0.5, 0.5, 0.04, 0.001))
+    p <- plotTiles(res, "visit", effect = "lfc", p.col = "q")
+    df <- p$data
+    expect_identical(nrow(df), 6L)
+    expect_equal(df$.value[df$.feature == "a"], c(1, -2))
+    # Visits are evenly spaced.
+    expect_true(all(df$.width == 1))
+    dots <- p$layers[[2L]]$data
+    expect_setequal(paste(dots$.feature, dots$.time),
+        c("a 1", "c 1", "c 2"))
+    expect_identical(p$labels$fill, "lfc")
+    # The largest mean absolute effects: c, then a.
+    p <- plotTiles(res, "visit", effect = "lfc", top = 2)
+    expect_setequal(as.character(p$data$.feature), c("a", "c"))
+    expect_length(p$layers, 1L)
+})
+
+test_that("plotTiles checks results tables", {
+    res <- data.frame(feature = c("a", "a"), t = c(1, 1), lfc = 1:2)
+    expect_error(plotTiles(res, "t", effect = "none"), "'effect'")
+    expect_error(plotTiles(res, "t", effect = "lfc"), "one row per")
+    res$t <- c(1, 2)
+    expect_error(plotTiles(res, "t", effect = "lfc", threshold = 2),
+        "'threshold'")
+    expect_s3_class(plotTiles(res, "t", effect = "lfc"), "ggplot")
+})
