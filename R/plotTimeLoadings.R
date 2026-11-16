@@ -84,16 +84,21 @@ setMethod("plotTimeLoadings", signature = c(x = "SummarizedExperiment"),
     }
 )
 
+# Component names, with the share of variance of TEMPTED components.
+.component_labels <- function(obj, mat) {
+    labels <- colnames(mat) %||% paste0("Component ", seq_len(ncol(mat)))
+    if (is.list(obj) && length(obj$r_square) == ncol(mat)) {
+        labels <- sprintf("%s (%.0f%%)", labels, 100 * obj$r_square)
+    }
+    labels
+}
+
 # Time loadings, times and component labels of a decomposition.
 .time_loadings <- function(obj) {
     if (is.list(obj) && all(c("Phi_hat", "time_Phi") %in% names(obj))) {
         mat <- as.matrix(obj$Phi_hat)
-        labels <- colnames(mat) %||% paste0("PC", seq_len(ncol(mat)))
-        if (length(obj$r_square) == ncol(mat)) {
-            labels <- sprintf("%s (%.0f%%)", labels, 100 * obj$r_square)
-        }
         return(list(loadings = mat, time = as.numeric(obj$time_Phi),
-            labels = labels, discrete = FALSE))
+            labels = .component_labels(obj, mat), discrete = FALSE))
     }
     if (is.list(obj) && !is.data.frame(obj) && "Fac" %in% names(obj) &&
             length(obj$Fac) >= 3L) {
