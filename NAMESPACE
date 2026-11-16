@@ -2,6 +2,7 @@
 
 export(plotComposition)
 export(plotGaps)
+export(plotIndividuality)
 export(plotLagProfile)
 export(plotPath)
 export(plotStats)
@@ -11,6 +12,7 @@ export(plotTrend)
 export(plotVolcano)
 exportMethods(plotComposition)
 exportMethods(plotGaps)
+exportMethods(plotIndividuality)
 exportMethods(plotLagProfile)
 exportMethods(plotPath)
 exportMethods(plotStats)
@@ -51,6 +53,7 @@ importFrom(ggplot2,
   geom_smooth,
   geom_text,
   geom_tile,
+  geom_violin,
   geom_vline,
   ggplot,
   labs,
