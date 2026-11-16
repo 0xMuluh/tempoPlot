@@ -32,8 +32,15 @@
 #'   share of samples in each state at each time, one panel per
 #'   \code{group.by} group. (Default: \code{NULL})
 #'
-#' @param layout \code{Character scalar}. Draws stacked bars (\code{"bar"})
-#'   or stacked areas (\code{"area"}). (Default: \code{"bar"})
+#' @param as.relative \code{Logical scalar}. Turns the assay into
+#'   proportions of each sample (\code{TRUE}) or stacks its values as they
+#'   are (\code{FALSE}), for absolute abundances such as relative
+#'   abundances times a qPCR or flow cytometry load. (Default: \code{TRUE})
+#'
+#' @param layout \code{Character scalar}. Draws stacked bars (\code{"bar"}),
+#'   stacked areas (\code{"area"}) or areas stacked around zero
+#'   (\code{"stream"}), which shows changes of the total with
+#'   \code{as.relative = FALSE}. (Default: \code{"bar"})
 #'
 #' @param level \code{Character scalar}. Plots each subject
 #'   (\code{"subject"}) or the mean composition of each \code{group.by}
@@ -44,8 +51,9 @@
 #'   (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
-#'   \code{\link[ggplot2:geom_bar]{geom_col}} or
-#'   \code{\link[ggplot2:geom_ribbon]{geom_area}}.
+#'   \code{\link[ggplot2:geom_bar]{geom_col}},
+#'   \code{\link[ggplot2:geom_ribbon]{geom_area}} or
+#'   \code{\link[ggplot2:geom_ribbon]{geom_ribbon}}.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -72,6 +80,17 @@
 #' plotComposition(tse, time.col = "visit", group = "subject",
 #'     rank = "Phylum", level = "group", group.by = "sex")
 #'
+#' # Biomass of each species, relative abundance times optical density,
+#' # as a stream
+#' tse <- minimalgut[, !is.na(minimalgut$OpticalDensity)]
+#' tse <- mia::transformAssay(tse, method = "relabundance")
+#' SummarizedExperiment::assay(tse, "biomass") <-
+#'     t(t(SummarizedExperiment::assay(tse, "relabundance")) *
+#'     tse$OpticalDensity)
+#' plotComposition(tse, time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", assay.type = "biomass", top = 8,
+#'     as.relative = FALSE, layout = "stream")
+#'
 #' # Share of samples by dominant genus at each visit
 #' tse <- mia::addDominant(tse, name = "dominant", n = 4)
 #' plotComposition(tse, time.col = "visit", group = "subject",
@@ -85,7 +104,8 @@ NULL
 #' @export
 setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = NULL, rank = NULL,
-            top = 5, y = NULL, layout = c("bar", "area"),
+            top = 5, y = NULL, as.relative = TRUE,
+            layout = c("bar", "area", "stream"),
             level = c("subject", "group"), group.by = NULL, ...) {
         layout <- match.arg(layout)
         level <- match.arg(level)
@@ -97,6 +117,9 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         if (!(is.numeric(top) && length(top) == 1L && top >= 1)) {
             stop("'top' must be a single number of at least 1.",
                 call. = FALSE)
+        }
+        if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
+            stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
         }
         if (level == "group" && is.null(group.by)) {
             stop("'level' = \"group\" needs 'group.by'.", call. = FALSE)
@@ -114,6 +137,9 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         prop <- prop.table(mat, 2L)
         keep <- order(rowMeans(prop), decreasing = TRUE)[seq_len(
             min(top, nrow(prop)))]
+        if (!as.relative) {
+            prop <- mat
+        }
         if (length(keep) < nrow(prop)) {
             prop <- rbind(prop[keep, , drop = FALSE],
                 Other = colSums(prop[-keep, , drop = FALSE]))
@@ -133,7 +159,9 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         }
 
         .plot_composition(df, time.col, panel, layout,
-            rank %||% "feature", ...)
+            rank %||% "feature", ylab = if (as.relative)
+                "Relative abundance" else assay.type %||% "Abundance",
+            ...)
     }
 )
 
@@ -169,14 +197,30 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     tab
 }
 
-#' @importFrom ggplot2 ggplot aes .data geom_col geom_area facet_wrap vars
-#'   labs scale_x_discrete
+#' @importFrom ggplot2 ggplot aes .data geom_col geom_area geom_ribbon
+#'   facet_wrap vars labs scale_x_discrete
+#' @importFrom stats ave
 .plot_composition <- function(df, time.col, panel, layout, fill,
         ylab = "Relative abundance", ...) {
-    geom <- switch(layout, bar = geom_col, area = geom_area)
-    p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
-            fill = .data$.feature, group = .data$.feature)) +
-        geom(...)
+    if (layout == "stream") {
+        # Stack the features at each time, then centre the stack on zero.
+        df <- df[order(df[[time.col]], df$.feature), , drop = FALSE]
+        keys <- if (is.null(panel)) list(df[[time.col]]) else
+            list(df[[time.col]], df[[panel]])
+        top <- ave(df$.value, keys, FUN = cumsum)
+        total <- ave(df$.value, keys, FUN = sum)
+        df$.ymax <- top - total / 2
+        df$.ymin <- df$.ymax - df$.value
+        p <- ggplot(df, aes(x = .data[[time.col]], ymin = .data$.ymin,
+                ymax = .data$.ymax, fill = .data$.feature,
+                group = .data$.feature)) +
+            geom_ribbon(...)
+    } else {
+        geom <- switch(layout, bar = geom_col, area = geom_area)
+        p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
+                fill = .data$.feature, group = .data$.feature)) +
+            geom(...)
+    }
     p <- p + labs(x = time.col, y = ylab, fill = fill)
     if (!is.null(panel)) {
         p <- p + facet_wrap(vars(.data[[panel]]))

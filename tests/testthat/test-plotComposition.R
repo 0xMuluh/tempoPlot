@@ -92,3 +92,26 @@ test_that("plotComposition draws shares of states", {
         p$data$.feature == "B"], 1)
     expect_error(plotComposition(toy, "t", "id", y = "t"), "factor")
 })
+
+test_that("plotComposition stacks absolute values and streams", {
+    p <- plotComposition(mg, "Time_hr_num", "StudyIdentifier", top = 3,
+        as.relative = FALSE)
+    d <- p$data
+    s1 <- d[d$Time_hr_num == d$Time_hr_num[1] &
+        d$StudyIdentifier == d$StudyIdentifier[1], ]
+    expect_equal(sum(s1$.value),
+        sum(assay(mg, "counts")[, colnames(mg)[mg$Time_hr_num ==
+            s1$Time_hr_num[1] & mg$StudyIdentifier ==
+            s1$StudyIdentifier[1]]]))
+    expect_identical(p$labels$y, "Abundance")
+    p <- plotComposition(mg, "Time_hr_num", "StudyIdentifier", top = 3,
+        as.relative = FALSE, layout = "stream")
+    d <- p$data
+    expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomRibbon")
+    key <- list(d$Time_hr_num, d$StudyIdentifier)
+    lo <- tapply(d$.ymin, key, min)
+    hi <- tapply(d$.ymax, key, max)
+    expect_equal(lo[!is.na(lo)], -hi[!is.na(hi)])
+    expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
+        as.relative = "yes"), "'as.relative'")
+})
