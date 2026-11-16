@@ -20,7 +20,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.51</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.52</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ subject's first sample."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot longitudinal trends</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/trend-events/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/trend-events/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a></small>
     <div class="hidden name"><code>plotTrend.Rd</code></div>
     </div>
 
@@ -79,6 +79,7 @@ subject's first sample.</p>
 <span>  period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reference <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  events <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  align.to <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -208,6 +209,17 @@ these values of <code>y</code>, such as a normal range.
 (Default: <code>NULL</code>)</p></dd>
 
 
+<dt id="arg-events">events<a class="anchor" aria-label="anchor" href="#arg-events"></a></dt>
+<dd><p><code>data.frame</code>. Events or intervals to mark, one per
+row, with columns <code>start</code> and optionally <code>end</code> and
+<code>label</code>, in the units of <code>time.col</code> (visit levels for
+visits): interventions such as antibiotic courses, or the time
+intervals where groups differ, as estimated by MetaLonDA or
+SplinectomeR. Rows with an <code>end</code> are drawn as grey bands with
+their label at the top, the others as vertical lines. Events apply to
+all subjects. (Default: <code>NULL</code>)</p></dd>
+
+
 <dt id="arg-align-to">align.to<a class="anchor" aria-label="anchor" href="#arg-align-to"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> with the time of an event for each subject, such as
@@ -320,11 +332,19 @@ relative to the event as well; for <code>Date</code> times they are in days.</p>
 <span class="r-in"><span>    show.individuals <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTrend-9.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Acetate with the batch phase and the addition of Blautia marked</span></span></span>
+<span class="r-in"><span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">152</span><span class="op">)</span>, end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span>, <span class="cn">NA</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"Blautia added"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
+<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
+<span class="r-in"><span>    events <span class="op">=</span> <span class="va">events</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotTrend-10.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Distribution of diversity at each visit</span></span></span>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"diversity"</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
 <span class="r-in"><span>    layout <span class="op">=</span> <span class="st">"ridge"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Picking joint bandwidth of 0.0643</span>
-<span class="r-plt img"><img src="plotTrend-10.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTrend-11.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
