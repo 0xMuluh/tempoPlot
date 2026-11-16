@@ -159,3 +159,9 @@ setGeneric("plotLagHeatmap", signature = "x",
 #' @export
 setGeneric("plotDOC", signature = "x",
     function(x, ...) standardGeneric("plotDOC"))
+
+#' @rdname plotProcrustes
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotProcrustes", signature = "x",
+    function(x, ...) standardGeneric("plotProcrustes"))

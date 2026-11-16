@@ -14,6 +14,7 @@ export(plotLagHeatmap)
 export(plotLagProfile)
 export(plotLandscape)
 export(plotPath)
+export(plotProcrustes)
 export(plotRanks)
 export(plotRecurrence)
 export(plotSpectrum)
@@ -41,6 +42,7 @@ exportMethods(plotLagHeatmap)
 exportMethods(plotLagProfile)
 exportMethods(plotLandscape)
 exportMethods(plotPath)
+exportMethods(plotProcrustes)
 exportMethods(plotRanks)
 exportMethods(plotRecurrence)
 exportMethods(plotSpectrum)
@@ -54,6 +56,11 @@ exportMethods(plotTransitionMatrix)
 exportMethods(plotTrend)
 exportMethods(plotTurnover)
 exportMethods(plotVolcano)
+importClassesFrom(MultiAssayExperiment,MultiAssayExperiment)
+importFrom(MultiAssayExperiment,
+  experiments,
+  sampleMap
+)
 importFrom(S4Vectors,metadata)
 importFrom(SingleCellExperiment,
   reducedDim,
