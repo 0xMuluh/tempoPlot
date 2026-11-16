@@ -10,11 +10,17 @@
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/plotComposition.html</loc></url>
 <url><loc>/reference/plotGaps.html</loc></url>
+<url><loc>/reference/plotHorizon.html</loc></url>
+<url><loc>/reference/plotIndividuality.html</loc></url>
 <url><loc>/reference/plotLagProfile.html</loc></url>
 <url><loc>/reference/plotPath.html</loc></url>
+<url><loc>/reference/plotRecurrence.html</loc></url>
 <url><loc>/reference/plotStats.html</loc></url>
 <url><loc>/reference/plotSwimmer.html</loc></url>
+<url><loc>/reference/plotTiles.html</loc></url>
+<url><loc>/reference/plotTransitionMatrix.html</loc></url>
 <url><loc>/reference/plotTrend.html</loc></url>
+<url><loc>/reference/plotVolcano.html</loc></url>
 <url><loc>/reference/tempoPlot-package.html</loc></url>
 </urlset>
 
