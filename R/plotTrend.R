@@ -48,6 +48,21 @@
 #'   (\code{"log2fold"}). Ratios need positive first values.
 #'   (Default: \code{"none"})
 #'
+#' @param reference A reference curve to draw behind the data, such as
+#'   microbiota-for-age: a table with the columns \code{time.col} and
+#'   \code{estimate}, optionally \code{lower} and \code{upper} for a band.
+#'   (Default: \code{NULL})
+#'
+#' @param limits \code{Numeric vector} of length 2. Draws a band between
+#'   these values of \code{y}, such as a normal range.
+#'   (Default: \code{NULL})
+#'
+#' @param align.to \code{Character scalar}. Specifies the column from
+#'   \code{colData(x)} with the time of an event for each subject, such as
+#'   the start of a treatment, in the units of \code{time.col}. Time is then
+#'   drawn relative to the event. Not available for visits.
+#'   (Default: \code{NULL})
+#'
 #' @param group.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} to colour subjects and smooth curves.
 #'   (Default: \code{NULL})
@@ -66,7 +81,9 @@
 #'
 #' @details
 #' Numeric and \code{Date} times are drawn on a continuous axis. Visits are
-#' drawn in level order, including levels without samples.
+#' drawn in level order, including levels without samples. With
+#' \code{align.to}, the times of \code{fit} and \code{reference} tables are
+#' relative to the event as well; for \code{Date} times they are in days.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -115,6 +132,14 @@
 #' # Acetate in three replicate bioreactors sampled every few hours
 #' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 #'     group = "StudyIdentifier", group.by = "StudyIdentifier")
+#'
+#' # Hours since Blautia hydrogenotrophica was added at 152 h, against the
+#' # range of acetate before it was added
+#' minimalgut$added <- 152
+#' before <- minimalgut$Time_hr_num < 152
+#' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", group.by = "StudyIdentifier",
+#'     align.to = "added", limits = range(minimalgut$Acetate[before]))
 NULL
 
 #' @rdname plotTrend
@@ -127,6 +152,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             layout = c("line", "box"), show.individuals = TRUE,
             smooth = c("none", "mean", "loess"), fit = NULL,
             baseline = c("none", "difference", "fold", "log2fold"),
+            reference = NULL, limits = NULL, align.to = NULL,
             group.by = NULL, facet.by = NULL, max.gap = NULL, ...) {
         layout <- match.arg(layout)
         smooth <- match.arg(smooth)
@@ -136,9 +162,30 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         }
         .check_longitudinal(x, time.col, group)
         # Errors on character and other unsupported time types.
-        .time_type(x, time.col)
+        type <- .time_type(x, time.col)
         .check_column(x, group.by)
         .check_column(x, facet.by)
+        .check_column(x, align.to)
+        if (!is.null(align.to)) {
+            event <- colData(x)[[align.to]]
+            if (type == "visit" || !(is.numeric(event) && type == "numeric" ||
+                    inherits(event, "Date") && type == "date")) {
+                stop("'align.to' must be a column with the type of ",
+                    "'time.col', which must be numeric or Date.",
+                    call. = FALSE)
+            }
+        }
+        if (!is.null(reference)) {
+            reference <- as.data.frame(reference)
+            if (!all(c(time.col, "estimate") %in% names(reference))) {
+                stop("'reference' must be a table with the columns '",
+                    time.col, "' and estimate.", call. = FALSE)
+            }
+        }
+        if (!is.null(limits) && !(is.numeric(limits) &&
+                length(limits) == 2L && !anyNA(limits))) {
+            stop("'limits' must be two numbers.", call. = FALSE)
+        }
         if (is.character(fit)) {
             .check_column(x, fit)
             if (!is.numeric(colData(x)[[fit]])) {
@@ -156,10 +203,20 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             stop("'fit' cannot be combined with 'baseline'.", call. = FALSE)
         }
 
-        cols <- unique(c(time.col, group, group.by, facet.by,
+        cols <- unique(c(time.col, group, group.by, facet.by, align.to,
             if (is.character(fit)) fit))
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
+        if (!is.null(align.to)) {
+            ids <- if (is.null(group)) rep(1L, nrow(df)) else df[[group]]
+            event <- as.numeric(df[[align.to]])
+            if (any(tapply(event, ids, function(e)
+                    length(unique(e)) > 1L))) {
+                stop("'align.to' must be constant within each subject.",
+                    call. = FALSE)
+            }
+            df[[time.col]] <- as.numeric(df[[time.col]]) - event
+        }
         df$.y <- unname(.resolve_y(x, y, assay.type))
         if (is.character(fit)) {
             df$.fit <- df[[fit]]
@@ -179,22 +236,42 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         }
         df$.line <- interaction(ids, df$.segment, drop = TRUE)
 
+        xlab <- if (is.null(align.to)) time.col else
+            paste(time.col, "since", align.to)
         ylab <- switch(baseline, none = y,
             difference = paste("Change in", y),
             fold = paste("Fold change in", y),
             log2fold = paste("log2 fold change in", y))
         .plot_trend(df, time.col, ylab, layout, show.individuals, smooth,
-            fit, group.by, facet.by, ...)
+            fit, group.by, facet.by, reference, limits, xlab, ...)
     }
 )
 
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_boxplot
 #'   geom_smooth stat_summary facet_wrap vars labs scale_x_discrete
+#'   annotate geom_ribbon
 .plot_trend <- function(df, time.col, ylab, layout, show.individuals, smooth,
-        fit = NULL, group.by = NULL, facet.by = NULL, ...) {
+        fit = NULL, group.by = NULL, facet.by = NULL, reference = NULL,
+        limits = NULL, xlab = time.col, ...) {
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
         colour = if (!is.null(group.by)) .data[[group.by]]))
+    # Reference band and curve go behind the data.
+    if (!is.null(limits)) {
+        p <- p + annotate("rect", xmin = -Inf, xmax = Inf,
+            ymin = min(limits), ymax = max(limits), fill = "grey50",
+            alpha = 0.15)
+    }
+    if (!is.null(reference)) {
+        if (all(c("lower", "upper") %in% names(reference))) {
+            p <- p + geom_ribbon(aes(x = .data[[time.col]],
+                ymin = .data$lower, ymax = .data$upper), data = reference,
+                inherit.aes = FALSE, fill = "grey50", alpha = 0.2)
+        }
+        p <- p + geom_line(aes(x = .data[[time.col]], y = .data$estimate),
+            data = reference, inherit.aes = FALSE, colour = "grey30",
+            linewidth = 1)
+    }
     dots <- list(...)
     if (layout == "box") {
         # Individual points replace the outlier points.
@@ -231,7 +308,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     if (is.factor(df[[time.col]])) {
         p <- p + scale_x_discrete(drop = FALSE)
     }
-    p + labs(x = time.col, y = ylab, colour = group.by)
+    p + labs(x = xlab, y = ylab, colour = group.by)
 }
 
 # Line and interval of a results table, one per group.by group if the

@@ -317,3 +317,49 @@ test_that("plotTrend draws a table of model results with intervals", {
     expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
         fit = grid[, c("StudyIdentifier", "estimate")]), "estimate")
 })
+
+test_that("plotTrend checks reference, limits and align.to", {
+    data("minimalgut", package = "miaTime")
+    m <- minimalgut
+    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
+        "StudyIdentifier", reference = data.frame(a = 1)), "'reference'")
+    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
+        "StudyIdentifier", limits = 1), "'limits'")
+    m$event <- "a"
+    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
+        "StudyIdentifier", align.to = "event"), "'align.to'")
+    m$event <- seq_len(ncol(m))
+    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
+        "StudyIdentifier", align.to = "event"), "constant")
+})
+
+test_that("plotTrend aligns time to an event per subject", {
+    data("minimalgut", package = "miaTime")
+    m <- minimalgut
+    m$event <- c(`Bioreactor A` = 100, `Bioreactor B` = 152,
+        `Bioreactor C` = 0)[m$StudyIdentifier]
+    p <- plotTrend(m, "Acetate", "Time_hr_num", "StudyIdentifier",
+        align.to = "event")
+    a <- p$data$StudyIdentifier == "Bioreactor A"
+    expect_equal(sort(p$data$Time_hr_num[a]),
+        sort(m$Time_hr_num[m$StudyIdentifier == "Bioreactor A"] - 100))
+    expect_identical(p$labels$x, "Time_hr_num since event")
+    m$date <- as.Date("2020-01-01") + round(m$Time_hr_num / 24)
+    m$start <- as.Date("2020-01-05")
+    p <- plotTrend(m[, !duplicated(paste(m$StudyIdentifier, m$date))],
+        "Acetate", "date", "StudyIdentifier", align.to = "start")
+    expect_true(min(p$data$date) == -4)
+})
+
+test_that("plotTrend draws limits and a reference curve behind the data", {
+    data("minimalgut", package = "miaTime")
+    ref <- data.frame(Time_hr_num = c(0, 460), estimate = c(10, 20),
+        lower = c(5, 15), upper = c(15, 25))
+    p <- plotTrend(minimalgut, "Acetate", "Time_hr_num", "StudyIdentifier",
+        reference = ref, limits = c(30, 60))
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    expect_identical(unname(geoms[1:4]),
+        c("GeomRect", "GeomRibbon", "GeomLine", "GeomLine"))
+    expect_equal(layer_data(p, 1L)$ymin, 30)
+    expect_equal(layer_data(p, 3L)$y, c(10, 20))
+})

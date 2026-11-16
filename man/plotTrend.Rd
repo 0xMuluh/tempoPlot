@@ -18,6 +18,9 @@ plotTrend(x, ...)
   smooth = c("none", "mean", "loess"),
   fit = NULL,
   baseline = c("none", "difference", "fold", "log2fold"),
+  reference = NULL,
+  limits = NULL,
+  align.to = NULL,
   group.by = NULL,
   facet.by = NULL,
   max.gap = NULL,
@@ -73,6 +76,21 @@ difference (\code{"difference"}), the ratio (\code{"fold"}) or its log2
 (\code{"log2fold"}). Ratios need positive first values.
 (Default: \code{"none"})}
 
+\item{reference}{A reference curve to draw behind the data, such as
+microbiota-for-age: a table with the columns \code{time.col} and
+\code{estimate}, optionally \code{lower} and \code{upper} for a band.
+(Default: \code{NULL})}
+
+\item{limits}{\code{Numeric vector} of length 2. Draws a band between
+these values of \code{y}, such as a normal range.
+(Default: \code{NULL})}
+
+\item{align.to}{\code{Character scalar}. Specifies the column from
+\code{colData(x)} with the time of an event for each subject, such as
+the start of a treatment, in the units of \code{time.col}. Time is then
+drawn relative to the event. Not available for visits.
+(Default: \code{NULL})}
+
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} to colour subjects and smooth curves.
 (Default: \code{NULL})}
@@ -95,7 +113,9 @@ subject's first sample.
 }
 \details{
 Numeric and \code{Date} times are drawn on a continuous axis. Visits are
-drawn in level order, including levels without samples.
+drawn in level order, including levels without samples. With
+\code{align.to}, the times of \code{fit} and \code{reference} tables are
+relative to the event as well; for \code{Date} times they are in days.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -139,4 +159,12 @@ plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 # Acetate in three replicate bioreactors sampled every few hours
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier")
+
+# Hours since Blautia hydrogenotrophica was added at 152 h, against the
+# range of acetate before it was added
+minimalgut$added <- 152
+before <- minimalgut$Time_hr_num < 152
+plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier",
+    align.to = "added", limits = range(minimalgut$Acetate[before]))
 }
