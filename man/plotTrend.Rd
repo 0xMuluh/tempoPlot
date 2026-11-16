@@ -13,12 +13,13 @@ plotTrend(x, ...)
   time.col,
   group = NULL,
   assay.type = NULL,
-  layout = c("line", "box", "ridge"),
+  layout = c("line", "box", "violin", "ridge"),
   show.individuals = TRUE,
-  smooth = c("none", "mean", "loess"),
+  smooth = c("none", "mean", "median", "loess"),
+  band = NULL,
   fit = NULL,
   baseline = c("none", "difference", "fold", "log2fold"),
-  rolling = c("none", "mean", "variance", "acf1"),
+  rolling = c("none", "mean", "variance", "acf1", "slope"),
   window = 5,
   period = NULL,
   reference = NULL,
@@ -35,7 +36,9 @@ plotTrend(x, ...)
 object.}
 
 \item{...}{additional arguments passed to the main layer
-(\code{\link[ggplot2:geom_line]{geom_line}} for \code{layout = "line"}
+(\code{\link[ggplot2:geom_line]{geom_line}} for \code{layout = "line"},
+\code{\link[ggplot2:geom_violin]{geom_violin}} for
+\code{layout = "violin"}
 or \code{\link[ggplot2:geom_boxplot]{geom_boxplot}} for
 \code{layout = "box"}).}
 
@@ -55,9 +58,10 @@ Specifies the assay to retrieve \code{y} from when \code{y} is a
 feature name. (Default: \code{NULL})}
 
 \item{layout}{\code{Character scalar}. Specifies the plot layout:
-\code{"line"} draws one line per subject; \code{"box"} draws boxes of
-\code{y} per time point; \code{"ridge"} draws the density of \code{y}
-at each time point as stacked ridges (needs ggridges).
+\code{"line"} draws one line per subject; \code{"box"} and
+\code{"violin"} draw boxes or violins of \code{y} per time point;
+\code{"ridge"} draws the density of \code{y} at each time point as
+stacked ridges (needs ggridges).
 (Default: \code{"line"})}
 
 \item{show.individuals}{\code{Logical scalar}. When \code{TRUE}, draws
@@ -65,8 +69,13 @@ subject lines and points. When \code{FALSE}, hides subject lines and
 points, leaving only boxes or the smooth curve. (Default: \code{TRUE})}
 
 \item{smooth}{\code{Character scalar}. Specifies a group summary on top:
-\code{"none"}, \code{"mean"} (mean at each time point), or
-\code{"loess"} (loess curve). (Default: \code{"none"})}
+\code{"none"}, \code{"mean"} or \code{"median"} (at each time point),
+or \code{"loess"} (loess curve). (Default: \code{"none"})}
+
+\item{band}{\code{Numeric vector} of length 2. Draws the range between
+these quantiles of \code{y} at each time point, such as
+\code{c(0.25, 0.75)} for the interquartile range, per
+\code{group.by} group. (Default: \code{NULL})}
 
 \item{fit}{Model results to draw over the data: the name of a numeric
 \code{colData(x)} column of fitted values per sample, drawn as a dashed
@@ -83,9 +92,11 @@ difference (\code{"difference"}), the ratio (\code{"fold"}) or its log2
 
 \item{rolling}{\code{Character scalar}. Replaces \code{y} by a rolling
 statistic over the last \code{window} samples of each subject:
-\code{"mean"}, \code{"variance"} or \code{"acf1"} (lag-1
-autocorrelation). Rising variance and autocorrelation are early
-warning signals of a transition. (Default: \code{"none"})}
+\code{"mean"}, \code{"variance"}, \code{"acf1"} (lag-1
+autocorrelation) or \code{"slope"} (change of \code{y} per
+\code{time.col} unit, from a least-squares line; per visit step for
+visits). Rising variance and autocorrelation are early warning signals
+of a transition. (Default: \code{"none"})}
 
 \item{window}{\code{Integer scalar}. Number of samples in the rolling
 window. (Default: \code{5})}
@@ -195,6 +206,11 @@ plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
     rolling = "variance", window = 10)
+
+# Median diversity with the interquartile range, by sex
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    group.by = "sex", smooth = "median", band = c(0.25, 0.75),
+    show.individuals = FALSE)
 
 # Distribution of diversity at each visit
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
