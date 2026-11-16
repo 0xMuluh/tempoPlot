@@ -3,6 +3,7 @@
 \name{plotTiles}
 \alias{plotTiles}
 \alias{plotTiles,SummarizedExperiment-method}
+\alias{plotTiles,data.frame-method}
 \title{Plot features over time as tiles}
 \usage{
 plotTiles(x, ...)
@@ -20,10 +21,24 @@ plotTiles(x, ...)
   group.by = NULL,
   ...
 )
+
+\S4method{plotTiles}{data.frame}(
+  x,
+  time.col,
+  effect,
+  p.col = NULL,
+  threshold = 0.05,
+  features = NULL,
+  top = 20,
+  order.by = c("mean", "cluster"),
+  feature.col = "feature",
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-object.}
+object, or a \code{data.frame} of results with one row per feature
+and time point, such as differential abundance at each visit.}
 
 \item{...}{additional arguments passed to
 \code{\link[ggplot2:geom_tile]{geom_tile}}.}
@@ -49,7 +64,8 @@ form one series. (Default: \code{NULL})}
 \item{value}{\code{Character scalar}. Plots the assay values
 (\code{"raw"}), their change from the first sample of each subject
 (\code{"change"}), or presence, a value above zero
-(\code{"occupancy"}). (Default: \code{"raw"})}
+(\code{"occupancy"}). Effects from a results table are drawn by the
+\code{data.frame} method. (Default: \code{"raw"})}
 
 \item{order.by}{\code{Character scalar}. Orders features by their mean
 plotted value, largest at the top (\code{"mean"}), or by hierarchical
@@ -63,6 +79,19 @@ of subjects with the feature. (Default: \code{"subject"})}
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that groups subjects when \code{level = "group"}. If
 \code{NULL}, all subjects form one group. (Default: \code{NULL})}
+
+\item{effect}{\code{Character scalar}. For a \code{data.frame}, the
+column of effects, such as log fold changes at each time point.}
+
+\item{p.col}{\code{Character scalar}. For a \code{data.frame}, the column
+of p-values or adjusted p-values; cells below \code{threshold} are
+marked with a dot. (Default: \code{NULL})}
+
+\item{threshold}{\code{Numeric scalar}. Significance level for
+\code{p.col}. (Default: \code{0.05})}
+
+\item{feature.col}{\code{Character scalar}. For a \code{data.frame}, the
+column of feature names. (Default: \code{"feature"})}
 }
 \value{
 A \code{ggplot} object.
@@ -88,4 +117,23 @@ plotTiles(tse, time.col = "Time.hr", group = "StudyIdentifier",
 plotTiles(tse, time.col = "Time.hr", group = "StudyIdentifier",
     assay.type = "relabundance", value = "change",
     order.by = "cluster", level = "group")
+
+# Clr difference between men and women at each visit, with Wilcoxon
+# q-values below 0.05 marked
+data("hitchip1006", package = "miaTime")
+tse <- hitchip1006[, !is.na(hitchip1006$sex)]
+tse$visit <- ave(tse$time, tse$subject, FUN = rank)
+tse <- mia::transformAssay(tse, method = "clr", pseudocount = 1)
+mat <- SummarizedExperiment::assay(tse, "clr")
+res <- do.call(rbind, lapply(1:3, function(v) {
+    m <- mat[, tse$visit == v]
+    male <- tse$sex[tse$visit == v] == "male"
+    data.frame(feature = rownames(m), visit = v,
+        difference = rowMeans(m[, male]) - rowMeans(m[, !male]),
+        p = apply(m, 1, function(f) wilcox.test(f[male],
+            f[!male])$p.value))
+}))
+res$q <- p.adjust(res$p, method = "fdr")
+plotTiles(res, time.col = "visit", effect = "difference", p.col = "q",
+    top = 15)
 }

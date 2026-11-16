@@ -4,7 +4,8 @@
 #' panel per subject or per group of subjects.
 #'
 #' @param x a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-#'   object.
+#'   object, or a \code{data.frame} of results with one row per feature
+#'   and time point, such as differential abundance at each visit.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
@@ -27,7 +28,21 @@
 #' @param value \code{Character scalar}. Plots the assay values
 #'   (\code{"raw"}), their change from the first sample of each subject
 #'   (\code{"change"}), or presence, a value above zero
-#'   (\code{"occupancy"}). (Default: \code{"raw"})
+#'   (\code{"occupancy"}). Effects from a results table are drawn by the
+#'   \code{data.frame} method. (Default: \code{"raw"})
+#'
+#' @param effect \code{Character scalar}. For a \code{data.frame}, the
+#'   column of effects, such as log fold changes at each time point.
+#'
+#' @param p.col \code{Character scalar}. For a \code{data.frame}, the column
+#'   of p-values or adjusted p-values; cells below \code{threshold} are
+#'   marked with a dot. (Default: \code{NULL})
+#'
+#' @param threshold \code{Numeric scalar}. Significance level for
+#'   \code{p.col}. (Default: \code{0.05})
+#'
+#' @param feature.col \code{Character scalar}. For a \code{data.frame}, the
+#'   column of feature names. (Default: \code{"feature"})
 #'
 #' @param order.by \code{Character scalar}. Orders features by their mean
 #'   plotted value, largest at the top (\code{"mean"}), or by hierarchical
@@ -67,6 +82,25 @@
 #' plotTiles(tse, time.col = "Time.hr", group = "StudyIdentifier",
 #'     assay.type = "relabundance", value = "change",
 #'     order.by = "cluster", level = "group")
+#'
+#' # Clr difference between men and women at each visit, with Wilcoxon
+#' # q-values below 0.05 marked
+#' data("hitchip1006", package = "miaTime")
+#' tse <- hitchip1006[, !is.na(hitchip1006$sex)]
+#' tse$visit <- ave(tse$time, tse$subject, FUN = rank)
+#' tse <- mia::transformAssay(tse, method = "clr", pseudocount = 1)
+#' mat <- SummarizedExperiment::assay(tse, "clr")
+#' res <- do.call(rbind, lapply(1:3, function(v) {
+#'     m <- mat[, tse$visit == v]
+#'     male <- tse$sex[tse$visit == v] == "male"
+#'     data.frame(feature = rownames(m), visit = v,
+#'         difference = rowMeans(m[, male]) - rowMeans(m[, !male]),
+#'         p = apply(m, 1, function(f) wilcox.test(f[male],
+#'             f[!male])$p.value))
+#' }))
+#' res$q <- p.adjust(res$p, method = "fdr")
+#' plotTiles(res, time.col = "visit", effect = "difference", p.col = "q",
+#'     top = 15)
 NULL
 
 #' @rdname plotTiles
@@ -96,6 +130,66 @@ setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
         panel.col <- if (level == "subject") group else group.by
         .plot_tiles(df, time.col, assay.type, value, level, panel.col,
             levels, ...)
+    }
+)
+
+#' @rdname plotTiles
+#' @importFrom methods setMethod
+#' @export
+setMethod("plotTiles", signature = c(x = "data.frame"),
+    function(x, time.col, effect, p.col = NULL, threshold = 0.05,
+            features = NULL, top = 20, order.by = c("mean", "cluster"),
+            feature.col = "feature", ...) {
+        order.by <- match.arg(order.by)
+        for (arg in c("time.col", "effect", "p.col", "feature.col")) {
+            v <- get(arg)
+            if (arg == "p.col" && is.null(v)) next
+            if (!.is_one_name(v) || !v %in% names(x)) {
+                stop("'", arg, "' must be one column name of 'x'.",
+                    call. = FALSE)
+            }
+        }
+        if (!is.numeric(x[[effect]])) {
+            stop("'effect' must be a numeric column.", call. = FALSE)
+        }
+        if (!(is.numeric(threshold) && length(threshold) == 1L &&
+                threshold > 0 && threshold <= 1)) {
+            stop("'threshold' must be a single number in (0, 1].",
+                call. = FALSE)
+        }
+        time <- x[[time.col]]
+        visit <- !is.numeric(time)
+        if (visit) {
+            time <- if (is.factor(time)) droplevels(time) else factor(time)
+        }
+        # Features with the largest mean absolute effect.
+        size <- tapply(abs(x[[effect]]), x[[feature.col]], mean,
+            na.rm = TRUE)
+        mat <- matrix(size, dimnames = list(names(size), NULL))
+        features <- .select_features(mat, features, top)
+        df <- data.frame(.feature = as.character(x[[feature.col]]),
+            .panel = "", .time = .time_numeric(time),
+            .value = x[[effect]])
+        if (!is.null(p.col)) {
+            df$.significant <- !is.na(x[[p.col]]) & x[[p.col]] < threshold
+        }
+        df <- df[df$.feature %in% features, , drop = FALSE]
+        if (anyDuplicated(df[c(".feature", ".time")])) {
+            stop("'x' must have one row per feature and time point.",
+                call. = FALSE)
+        }
+        df$.feature <- factor(df$.feature,
+            levels = .order_features(df, order.by))
+        df <- .add_tile_edges(df, visit = visit)
+        p <- .plot_tiles(df, time.col, effect, "effect", "subject", NULL,
+            if (visit) levels(time), ...)
+        if (!is.null(p.col)) {
+            p <- p + geom_point(aes(x = .data$.mid, y = .data$.feature),
+                data = df[df$.significant, , drop = FALSE], size = 1,
+                inherit.aes = FALSE) +
+                labs(caption = paste("Dots:", p.col, "<", threshold))
+        }
+        p
     }
 )
 
@@ -131,16 +225,16 @@ setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
     df
 }
 
-#' @importFrom ggplot2 ggplot aes .data geom_tile labs facet_wrap vars
-#'   scale_fill_gradient scale_fill_gradient2 scale_x_continuous
+#' @importFrom ggplot2 ggplot aes .data geom_tile geom_point labs facet_wrap
+#'   vars scale_fill_gradient scale_fill_gradient2 scale_x_continuous
 .plot_tiles <- function(df, time.col, assay.type, value, level, panel.col,
         levels, ...) {
     p <- ggplot(df, aes(x = .data$.mid, y = .data$.feature)) +
         geom_tile(aes(width = .data$.width, fill = .data$.value), ...)
     lab <- switch(value, raw = assay.type,
-        change = paste(assay.type, "change"),
+        change = paste(assay.type, "change"), effect = assay.type,
         occupancy = if (level == "group") "occupancy" else "present")
-    p <- p + if (value == "change") {
+    p <- p + if (value %in% c("change", "effect")) {
         scale_fill_gradient2(low = "#b2182b", mid = "grey95",
             high = "#2166ac", na.value = "white")
     } else {
