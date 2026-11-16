@@ -25,7 +25,9 @@
 #'
 #' @param layout \code{Character scalar}. Specifies the plot layout:
 #'   \code{"line"} draws one line per subject; \code{"box"} draws boxes of
-#'   \code{y} per time point. (Default: \code{"line"})
+#'   \code{y} per time point; \code{"ridge"} draws the density of \code{y}
+#'   at each time point as stacked ridges (needs ggridges).
+#'   (Default: \code{"line"})
 #'
 #' @param show.individuals \code{Logical scalar}. When \code{TRUE}, draws
 #'   subject lines and points. When \code{FALSE}, hides subject lines and
@@ -47,6 +49,20 @@
 #'   difference (\code{"difference"}), the ratio (\code{"fold"}) or its log2
 #'   (\code{"log2fold"}). Ratios need positive first values.
 #'   (Default: \code{"none"})
+#'
+#' @param rolling \code{Character scalar}. Replaces \code{y} by a rolling
+#'   statistic over the last \code{window} samples of each subject:
+#'   \code{"mean"}, \code{"variance"} or \code{"acf1"} (lag-1
+#'   autocorrelation). Rising variance and autocorrelation are early
+#'   warning signals of a transition. (Default: \code{"none"})
+#'
+#' @param window \code{Integer scalar}. Number of samples in the rolling
+#'   window. (Default: \code{5})
+#'
+#' @param period \code{Numeric scalar}. Wraps time into cycles of this
+#'   length, in \code{time.col} units (days for \code{Date} times), to
+#'   show daily or seasonal patterns; each cycle is drawn as its own line.
+#'   (Default: \code{NULL})
 #'
 #' @param reference A reference curve to draw behind the data, such as
 #'   microbiota-for-age: a table with the columns \code{time.col} and
@@ -140,6 +156,19 @@
 #' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 #'     group = "StudyIdentifier", group.by = "StudyIdentifier",
 #'     align.to = "added", limits = range(minimalgut$Acetate[before]))
+#'
+#' # Acetate over the day, one line per day and bioreactor
+#' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", group.by = "StudyIdentifier", period = 24)
+#'
+#' # Rolling variance of acetate over 10 samples
+#' plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", group.by = "StudyIdentifier",
+#'     rolling = "variance", window = 10)
+#'
+#' # Distribution of diversity at each visit
+#' plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+#'     layout = "ridge")
 NULL
 
 #' @rdname plotTrend
@@ -149,20 +178,39 @@ NULL
 #' @export
 setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     function(x, y, time.col, group = NULL, assay.type = NULL,
-            layout = c("line", "box"), show.individuals = TRUE,
+            layout = c("line", "box", "ridge"), show.individuals = TRUE,
             smooth = c("none", "mean", "loess"), fit = NULL,
             baseline = c("none", "difference", "fold", "log2fold"),
-            reference = NULL, limits = NULL, align.to = NULL,
+            rolling = c("none", "mean", "variance", "acf1"), window = 5,
+            period = NULL, reference = NULL, limits = NULL, align.to = NULL,
             group.by = NULL, facet.by = NULL, max.gap = NULL, ...) {
         layout <- match.arg(layout)
         smooth <- match.arg(smooth)
         baseline <- match.arg(baseline)
+        rolling <- match.arg(rolling)
+        if (!(is.numeric(window) && length(window) == 1L && window >= 2)) {
+            stop("'window' must be a single number of at least 2.",
+                call. = FALSE)
+        }
+        if (!is.null(period) && !(is.numeric(period) &&
+                length(period) == 1L && period > 0)) {
+            stop("'period' must be NULL or a single positive number.",
+                call. = FALSE)
+        }
+        if (layout == "ridge" &&
+                !requireNamespace("ggridges", quietly = TRUE)) {
+            stop("layout = \"ridge\" requires the ggridges package.",
+                call. = FALSE)
+        }
         if (!(isTRUE(show.individuals) || isFALSE(show.individuals))) {
             stop("'show.individuals' must be TRUE or FALSE.", call. = FALSE)
         }
         .check_longitudinal(x, time.col, group)
         # Errors on character and other unsupported time types.
         type <- .time_type(x, time.col)
+        if (!is.null(period) && type == "visit") {
+            stop("'period' needs numeric or Date times.", call. = FALSE)
+        }
         .check_column(x, group.by)
         .check_column(x, facet.by)
         .check_column(x, align.to)
@@ -234,14 +282,38 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             df$.y <- switch(baseline, difference = df$.y - first,
                 fold = df$.y / first, log2fold = log2(df$.y / first))
         }
-        df$.line <- interaction(ids, df$.segment, drop = TRUE)
+        if (rolling != "none") {
+            df$.y <- ave(df$.y, ids, FUN = function(v)
+                .rolling(v, rolling, as.integer(window)))
+            # The first window - 1 samples of each subject have no value.
+            keep <- !is.na(df$.y)
+            df <- df[keep, , drop = FALSE]
+            ids <- ids[keep]
+        }
+        cycle <- 0L
+        if (!is.null(period)) {
+            t <- as.numeric(df[[time.col]])
+            cycle <- floor(t / period)
+            df[[time.col]] <- t %% period
+        }
+        df$.line <- interaction(ids, df$.segment, cycle, drop = TRUE)
 
         xlab <- if (is.null(align.to)) time.col else
             paste(time.col, "since", align.to)
+        if (!is.null(period)) {
+            xlab <- paste(xlab, "modulo", period)
+        }
         ylab <- switch(baseline, none = y,
             difference = paste("Change in", y),
             fold = paste("Fold change in", y),
             log2fold = paste("log2 fold change in", y))
+        if (rolling != "none") {
+            ylab <- paste0("Rolling ", rolling, " of ", ylab, " (", window,
+                " samples)")
+        }
+        if (layout == "ridge") {
+            return(.plot_ridges(df, time.col, ylab, group.by, ...))
+        }
         .plot_trend(df, time.col, ylab, layout, show.individuals, smooth,
             fit, group.by, facet.by, reference, limits, xlab, ...)
     }
@@ -329,4 +401,29 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             list(labs(fill = fit_by)))
     }
     layers
+}
+
+# Statistic over the last window values; NA until the window is full.
+#' @importFrom stats var cor
+.rolling <- function(v, stat, window) {
+    n <- length(v)
+    out <- rep(NA_real_, n)
+    for (i in seq_len(n)[seq_len(n) >= window]) {
+        w <- v[(i - window + 1L):i]
+        out[i] <- switch(stat, mean = mean(w, na.rm = TRUE),
+            variance = var(w, na.rm = TRUE),
+            acf1 = suppressWarnings(cor(w[-1L], w[-window],
+                use = "complete.obs")))
+    }
+    out
+}
+
+# Density ridges of y at each time point.
+#' @importFrom ggplot2 ggplot aes .data labs
+.plot_ridges <- function(df, time.col, ylab, group.by, ...) {
+    df$.time <- factor(df[[time.col]])
+    ggplot(df, aes(x = .data$.y, y = .data$.time,
+            fill = if (!is.null(group.by)) .data[[group.by]])) +
+        ggridges::geom_density_ridges(alpha = 0.6, ...) +
+        labs(x = ylab, y = time.col, fill = group.by)
 }
