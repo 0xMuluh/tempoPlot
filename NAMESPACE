@@ -6,6 +6,7 @@ export(plotLagProfile)
 export(plotPath)
 export(plotStats)
 export(plotSwimmer)
+export(plotTransitionMatrix)
 export(plotTrend)
 exportMethods(plotComposition)
 exportMethods(plotGaps)
@@ -13,6 +14,7 @@ exportMethods(plotLagProfile)
 exportMethods(plotPath)
 exportMethods(plotStats)
 exportMethods(plotSwimmer)
+exportMethods(plotTransitionMatrix)
 exportMethods(plotTrend)
 importFrom(S4Vectors,metadata)
 importFrom(SingleCellExperiment,
@@ -28,6 +30,7 @@ importFrom(ggplot2,
   .data,
   aes,
   arrow,
+  element_text,
   facet_wrap,
   geom_area,
   geom_boxplot,
@@ -43,12 +46,17 @@ importFrom(ggplot2,
   geom_ribbon,
   geom_segment,
   geom_smooth,
+  geom_text,
+  geom_tile,
   geom_vline,
   ggplot,
   labs,
   position_dodge,
+  scale_fill_gradient,
   scale_x_discrete,
+  scale_y_discrete,
   stat_summary,
+  theme,
   unit,
   vars
 )

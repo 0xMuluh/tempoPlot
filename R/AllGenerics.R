@@ -39,3 +39,9 @@ setGeneric("plotLagProfile", signature = "x",
 #' @export
 setGeneric("plotGaps", signature = "x",
     function(x, ...) standardGeneric("plotGaps"))
+
+#' @rdname plotTransitionMatrix
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotTransitionMatrix", signature = "x",
+    function(x, ...) standardGeneric("plotTransitionMatrix"))
