@@ -21,10 +21,12 @@
 <url><loc>/reference/plotLagHeatmap.html</loc></url>
 <url><loc>/reference/plotLagProfile.html</loc></url>
 <url><loc>/reference/plotLandscape.html</loc></url>
+<url><loc>/reference/plotNetwork.html</loc></url>
 <url><loc>/reference/plotPath.html</loc></url>
 <url><loc>/reference/plotProcrustes.html</loc></url>
 <url><loc>/reference/plotRanks.html</loc></url>
 <url><loc>/reference/plotRecurrence.html</loc></url>
+<url><loc>/reference/plotReport.html</loc></url>
 <url><loc>/reference/plotSpectrum.html</loc></url>
 <url><loc>/reference/plotStats.html</loc></url>
 <url><loc>/reference/plotSubjectScatter.html</loc></url>
@@ -32,6 +34,7 @@
 <url><loc>/reference/plotSwimmer.html</loc></url>
 <url><loc>/reference/plotTBI.html</loc></url>
 <url><loc>/reference/plotTiles.html</loc></url>
+<url><loc>/reference/plotTimeLoadings.html</loc></url>
 <url><loc>/reference/plotTransitionMatrix.html</loc></url>
 <url><loc>/reference/plotTrend.html</loc></url>
 <url><loc>/reference/plotTurnover.html</loc></url>
