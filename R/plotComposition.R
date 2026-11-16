@@ -82,12 +82,12 @@
 #'
 #' # Biomass of each species, relative abundance times optical density,
 #' # as a stream
-#' tse <- minimalgut[, !is.na(minimalgut$OpticalDensity)]
-#' tse <- mia::transformAssay(tse, method = "relabundance")
-#' SummarizedExperiment::assay(tse, "biomass") <-
-#'     t(t(SummarizedExperiment::assay(tse, "relabundance")) *
-#'     tse$OpticalDensity)
-#' plotComposition(tse, time.col = "Time_hr_num",
+#' mg <- minimalgut[, !is.na(minimalgut$OpticalDensity)]
+#' mg <- mia::transformAssay(mg, method = "relabundance")
+#' SummarizedExperiment::assay(mg, "biomass") <-
+#'     t(t(SummarizedExperiment::assay(mg, "relabundance")) *
+#'     mg$OpticalDensity)
+#' plotComposition(mg, time.col = "Time_hr_num",
 #'     group = "StudyIdentifier", assay.type = "biomass", top = 8,
 #'     as.relative = FALSE, layout = "stream")
 #'
