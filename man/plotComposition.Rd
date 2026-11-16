@@ -15,7 +15,8 @@ plotComposition(x, ...)
   rank = NULL,
   top = 5,
   y = NULL,
-  layout = c("bar", "area"),
+  as.relative = TRUE,
+  layout = c("bar", "area", "stream"),
   level = c("subject", "group"),
   group.by = NULL,
   ...
@@ -26,8 +27,9 @@ plotComposition(x, ...)
 object.}
 
 \item{...}{additional arguments passed to
-\code{\link[ggplot2:geom_bar]{geom_col}} or
-\code{\link[ggplot2:geom_ribbon]{geom_area}}.}
+\code{\link[ggplot2:geom_bar]{geom_col}},
+\code{\link[ggplot2:geom_ribbon]{geom_area}} or
+\code{\link[ggplot2:geom_ribbon]{geom_ribbon}}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that contains sampling times: numeric, \code{Date} or
@@ -54,8 +56,15 @@ mean proportion, to show; the rest are summed into "Other".
 share of samples in each state at each time, one panel per
 \code{group.by} group. (Default: \code{NULL})}
 
-\item{layout}{\code{Character scalar}. Draws stacked bars (\code{"bar"})
-or stacked areas (\code{"area"}). (Default: \code{"bar"})}
+\item{as.relative}{\code{Logical scalar}. Turns the assay into
+proportions of each sample (\code{TRUE}) or stacks its values as they
+are (\code{FALSE}), for absolute abundances such as relative
+abundances times a qPCR or flow cytometry load. (Default: \code{TRUE})}
+
+\item{layout}{\code{Character scalar}. Draws stacked bars (\code{"bar"}),
+stacked areas (\code{"area"}) or areas stacked around zero
+(\code{"stream"}), which shows changes of the total with
+\code{as.relative = FALSE}. (Default: \code{"bar"})}
 
 \item{level}{\code{Character scalar}. Plots each subject
 (\code{"subject"}) or the mean composition of each \code{group.by}
@@ -92,6 +101,17 @@ plotComposition(tse, time.col = "visit", group = "subject",
 # Mean phylum composition by sex at each visit
 plotComposition(tse, time.col = "visit", group = "subject",
     rank = "Phylum", level = "group", group.by = "sex")
+
+# Biomass of each species, relative abundance times optical density,
+# as a stream
+mg <- minimalgut[, !is.na(minimalgut$OpticalDensity)]
+mg <- mia::transformAssay(mg, method = "relabundance")
+SummarizedExperiment::assay(mg, "biomass") <-
+    t(t(SummarizedExperiment::assay(mg, "relabundance")) *
+    mg$OpticalDensity)
+plotComposition(mg, time.col = "Time_hr_num",
+    group = "StudyIdentifier", assay.type = "biomass", top = 8,
+    as.relative = FALSE, layout = "stream")
 
 # Share of samples by dominant genus at each visit
 tse <- mia::addDominant(tse, name = "dominant", n = 4)
