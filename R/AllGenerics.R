@@ -57,3 +57,9 @@ setGeneric("plotVolcano", signature = "x",
 #' @export
 setGeneric("plotIndividuality", signature = "x",
     function(x, ...) standardGeneric("plotIndividuality"))
+
+#' @rdname plotRecurrence
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotRecurrence", signature = "x",
+    function(x, ...) standardGeneric("plotRecurrence"))
