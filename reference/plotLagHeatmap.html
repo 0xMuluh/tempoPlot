@@ -19,7 +19,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.49</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.50</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot lagged correlations of features with a target</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/lag-heatmap-mae/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/lag-heatmap-mae/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a></small>
     <div class="hidden name"><code>plotLagHeatmap.Rd</code></div>
     </div>
 
@@ -70,6 +70,21 @@ correlations as features by lag tiles.</p>
 <span>  top <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  max.lag <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
+<span><span class="fu">plotLagHeatmap</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">target</span>,</span>
+<span>  <span class="va">time.col</span>,</span>
+<span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">experiment</span>,</span>
+<span>  <span class="va">target.experiment</span>,</span>
+<span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  top <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  max.lag <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -79,7 +94,9 @@ correlations as features by lag tiles.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>a <code><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">SummarizedExperiment</a></code>
-object.</p></dd>
+or <code><a href="https://github.com/waldronlab/MultiAssayExperiment/reference/MultiAssayExperiment.html" class="external-link">MultiAssayExperiment</a></code> object.
+For a <code>MultiAssayExperiment</code>, <code>time.col</code> and <code>group</code>
+are columns of its <code>colData</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -125,6 +142,14 @@ features. (Default: <code>"counts"</code>)</p></dd>
 <dd><p><code>Integer scalar</code>. Largest lag in samples, in both
 directions. (Default: <code>3</code>)</p></dd>
 
+
+<dt id="arg-experiment-target-experiment">experiment, target.experiment<a class="anchor" aria-label="anchor" href="#arg-experiment-target-experiment"></a></dt>
+<dd><p><code>Character scalar</code>. For a
+<code>MultiAssayExperiment</code>, the experiments holding the features and
+the <code>target</code>; samples are matched by their primary names. The
+target is looked up in <code>target.experiment</code> as for a
+<code>SummarizedExperiment</code>, in its first assay for a feature.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -147,6 +172,17 @@ samples, so they are comparable across subjects only for even sampling.</p>
 <span class="r-in"><span><span class="fu">plotLagHeatmap</span><span class="op">(</span><span class="va">tse</span>, target <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, assay.type <span class="op">=</span> <span class="st">"clr"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotLagHeatmap-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The same with acetate from a separate experiment</span></span></span>
+<span class="r-in"><span><span class="va">cd</span> <span class="op">&lt;-</span> <span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">minimalgut</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">scfa</span> <span class="op">&lt;-</span> <span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">SummarizedExperiment</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">cd</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Acetate"</span>, <span class="st">"Butyrate"</span>, <span class="st">"Propionate"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">mae</span> <span class="op">&lt;-</span> <span class="fu">MultiAssayExperiment</span><span class="fu">::</span><span class="fu"><a href="https://github.com/waldronlab/MultiAssayExperiment/reference/MultiAssayExperiment.html" class="external-link">MultiAssayExperiment</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    experiments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>species <span class="op">=</span> <span class="va">tse</span>, SCFA <span class="op">=</span> <span class="va">scfa</span><span class="op">)</span>, colData <span class="op">=</span> <span class="va">cd</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotLagHeatmap</span><span class="op">(</span><span class="va">mae</span>, target <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>,</span></span>
+<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, experiment <span class="op">=</span> <span class="st">"species"</span>,</span></span>
+<span class="r-in"><span>    target.experiment <span class="op">=</span> <span class="st">"SCFA"</span>, assay.type <span class="op">=</span> <span class="st">"clr"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotLagHeatmap-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
