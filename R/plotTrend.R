@@ -24,9 +24,10 @@
 #'   feature name. (Default: \code{NULL})
 #'
 #' @param layout \code{Character scalar}. Specifies the plot layout:
-#'   \code{"line"} draws one line per subject; \code{"box"} draws boxes of
-#'   \code{y} per time point; \code{"ridge"} draws the density of \code{y}
-#'   at each time point as stacked ridges (needs ggridges).
+#'   \code{"line"} draws one line per subject; \code{"box"} and
+#'   \code{"violin"} draw boxes or violins of \code{y} per time point;
+#'   \code{"ridge"} draws the density of \code{y} at each time point as
+#'   stacked ridges (needs ggridges).
 #'   (Default: \code{"line"})
 #'
 #' @param show.individuals \code{Logical scalar}. When \code{TRUE}, draws
@@ -34,8 +35,13 @@
 #'   points, leaving only boxes or the smooth curve. (Default: \code{TRUE})
 #'
 #' @param smooth \code{Character scalar}. Specifies a group summary on top:
-#'   \code{"none"}, \code{"mean"} (mean at each time point), or
-#'   \code{"loess"} (loess curve). (Default: \code{"none"})
+#'   \code{"none"}, \code{"mean"} or \code{"median"} (at each time point),
+#'   or \code{"loess"} (loess curve). (Default: \code{"none"})
+#'
+#' @param band \code{Numeric vector} of length 2. Draws the range between
+#'   these quantiles of \code{y} at each time point, such as
+#'   \code{c(0.25, 0.75)} for the interquartile range, per
+#'   \code{group.by} group. (Default: \code{NULL})
 #'
 #' @param fit Model results to draw over the data: the name of a numeric
 #'   \code{colData(x)} column of fitted values per sample, drawn as a dashed
@@ -52,9 +58,11 @@
 #'
 #' @param rolling \code{Character scalar}. Replaces \code{y} by a rolling
 #'   statistic over the last \code{window} samples of each subject:
-#'   \code{"mean"}, \code{"variance"} or \code{"acf1"} (lag-1
-#'   autocorrelation). Rising variance and autocorrelation are early
-#'   warning signals of a transition. (Default: \code{"none"})
+#'   \code{"mean"}, \code{"variance"}, \code{"acf1"} (lag-1
+#'   autocorrelation) or \code{"slope"} (change of \code{y} per
+#'   \code{time.col} unit, from a least-squares line; per visit step for
+#'   visits). Rising variance and autocorrelation are early warning signals
+#'   of a transition. (Default: \code{"none"})
 #'
 #' @param window \code{Integer scalar}. Number of samples in the rolling
 #'   window. (Default: \code{5})
@@ -91,7 +99,9 @@
 #'   units. \code{NULL} never breaks trajectories. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to the main layer
-#'   (\code{\link[ggplot2:geom_line]{geom_line}} for \code{layout = "line"}
+#'   (\code{\link[ggplot2:geom_line]{geom_line}} for \code{layout = "line"},
+#'   \code{\link[ggplot2:geom_violin]{geom_violin}} for
+#'   \code{layout = "violin"}
 #'   or \code{\link[ggplot2:geom_boxplot]{geom_boxplot}} for
 #'   \code{layout = "box"}).
 #'
@@ -166,6 +176,11 @@
 #'     group = "StudyIdentifier", group.by = "StudyIdentifier",
 #'     rolling = "variance", window = 10)
 #'
+#' # Median diversity with the interquartile range, by sex
+#' plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+#'     group.by = "sex", smooth = "median", band = c(0.25, 0.75),
+#'     show.individuals = FALSE)
+#'
 #' # Distribution of diversity at each visit
 #' plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
 #'     layout = "ridge")
@@ -178,10 +193,13 @@ NULL
 #' @export
 setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     function(x, y, time.col, group = NULL, assay.type = NULL,
-            layout = c("line", "box", "ridge"), show.individuals = TRUE,
-            smooth = c("none", "mean", "loess"), fit = NULL,
+            layout = c("line", "box", "violin", "ridge"),
+            show.individuals = TRUE,
+            smooth = c("none", "mean", "median", "loess"), band = NULL,
+            fit = NULL,
             baseline = c("none", "difference", "fold", "log2fold"),
-            rolling = c("none", "mean", "variance", "acf1"), window = 5,
+            rolling = c("none", "mean", "variance", "acf1", "slope"),
+            window = 5,
             period = NULL, reference = NULL, limits = NULL, align.to = NULL,
             group.by = NULL, facet.by = NULL, max.gap = NULL, ...) {
         layout <- match.arg(layout)
@@ -195,6 +213,11 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         if (!is.null(period) && !(is.numeric(period) &&
                 length(period) == 1L && period > 0)) {
             stop("'period' must be NULL or a single positive number.",
+                call. = FALSE)
+        }
+        if (!is.null(band) && !(is.numeric(band) && length(band) == 2L &&
+                all(band >= 0 & band <= 1) && band[1L] < band[2L])) {
+            stop("'band' must be NULL or two increasing probabilities.",
                 call. = FALSE)
         }
         if (layout == "ridge" &&
@@ -283,8 +306,12 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
                 fold = df$.y / first, log2fold = log2(df$.y / first))
         }
         if (rolling != "none") {
-            df$.y <- ave(df$.y, ids, FUN = function(v)
-                .rolling(v, rolling, as.integer(window)))
+            tnum <- .time_numeric(df[[time.col]])
+            y <- df$.y
+            df$.y <- ave(as.numeric(seq_along(y)), ids, FUN = function(i) {
+                i <- as.integer(i)
+                .rolling(y[i], rolling, as.integer(window), tnum[i])
+            })
             # The first window - 1 samples of each subject have no value.
             keep <- !is.na(df$.y)
             df <- df[keep, , drop = FALSE]
@@ -315,15 +342,19 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             return(.plot_ridges(df, time.col, ylab, group.by, ...))
         }
         .plot_trend(df, time.col, ylab, layout, show.individuals, smooth,
+            band,
             fit, group.by, facet.by, reference, limits, xlab, ...)
     }
 )
 
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_boxplot
-#'   geom_smooth stat_summary facet_wrap vars labs scale_x_discrete
+#'   geom_violin geom_smooth stat_summary facet_wrap vars labs
+#'   scale_x_discrete
+#' @importFrom stats median quantile
 #'   annotate geom_ribbon
 .plot_trend <- function(df, time.col, ylab, layout, show.individuals, smooth,
+        band = NULL,
         fit = NULL, group.by = NULL, facet.by = NULL, reference = NULL,
         limits = NULL, xlab = time.col, ...) {
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
@@ -351,9 +382,13 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             colour = NULL)), modifyList(list(outliers = !show.individuals),
             dots)))
     }
+    if (layout == "violin") {
+        p <- p + do.call(geom_violin, c(list(aes(group = .data[[time.col]],
+            colour = NULL)), dots))
+    }
     # Individuals fade when boxes, a smooth or a fit summarise them.
-    fade <- if (layout == "line" && smooth == "none" && is.null(fit)) list()
-        else list(alpha = 0.3)
+    fade <- if (layout == "line" && smooth == "none" && is.null(fit) &&
+            is.null(band)) list() else list(alpha = 0.3)
     if (show.individuals) {
         line_args <- if (layout == "line") modifyList(fade, dots) else fade
         p <- p + do.call(geom_line, c(list(aes(group = .data$.line)),
@@ -361,8 +396,18 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     }
     summary_group <- aes(group = if (is.null(group.by)) 1L else
         .data[[group.by]])
-    if (smooth == "mean") {
-        p <- p + stat_summary(summary_group, fun = mean, geom = "line",
+    if (!is.null(band)) {
+        p <- p + stat_summary(aes(group = if (is.null(group.by)) 1L else
+                .data[[group.by]], fill = if (!is.null(group.by))
+                .data[[group.by]]),
+            fun.min = function(v) quantile(v, band[1L], names = FALSE),
+            fun.max = function(v) quantile(v, band[2L], names = FALSE),
+            fun = median, geom = "ribbon", alpha = 0.2, colour = NA) +
+            labs(fill = group.by)
+    }
+    if (smooth %in% c("mean", "median")) {
+        p <- p + stat_summary(summary_group,
+            fun = if (smooth == "mean") mean else median, geom = "line",
             linewidth = 1)
     } else if (smooth == "loess") {
         p <- p + geom_smooth(summary_group, method = "loess",
@@ -404,16 +449,20 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 }
 
 # Statistic over the last window values; NA until the window is full.
-#' @importFrom stats var cor
-.rolling <- function(v, stat, window) {
+# t gives the times, used by "slope".
+#' @importFrom stats var cor cov
+.rolling <- function(v, stat, window, t = seq_along(v)) {
     n <- length(v)
     out <- rep(NA_real_, n)
     for (i in seq_len(n)[seq_len(n) >= window]) {
-        w <- v[(i - window + 1L):i]
+        j <- (i - window + 1L):i
+        w <- v[j]
         out[i] <- switch(stat, mean = mean(w, na.rm = TRUE),
             variance = var(w, na.rm = TRUE),
             acf1 = suppressWarnings(cor(w[-1L], w[-window],
-                use = "complete.obs")))
+                use = "complete.obs")),
+            slope = cov(t[j], w, use = "complete.obs") /
+                var(t[j], na.rm = TRUE))
     }
     out
 }

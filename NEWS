@@ -1,3 +1,6 @@
+Changes in version 0.99.50 (2026-11-16)
++ plotTrend: medians, quantile bands, violins and rolling slopes
+
 Changes in version 0.99.49 (2026-11-16)
 + Vignette: overview of all functions
 
