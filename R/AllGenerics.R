@@ -123,3 +123,9 @@ setGeneric("plotDirection", signature = "x",
 #' @export
 setGeneric("plotLandscape", signature = "x",
     function(x, ...) standardGeneric("plotLandscape"))
+
+#' @rdname plotTBI
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotTBI", signature = "x",
+    function(x, ...) standardGeneric("plotTBI"))

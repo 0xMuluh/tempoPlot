@@ -16,6 +16,7 @@ export(plotStats)
 export(plotSubjectScatter)
 export(plotSurvival)
 export(plotSwimmer)
+export(plotTBI)
 export(plotTiles)
 export(plotTransitionMatrix)
 export(plotTrend)
@@ -37,6 +38,7 @@ exportMethods(plotStats)
 exportMethods(plotSubjectScatter)
 exportMethods(plotSurvival)
 exportMethods(plotSwimmer)
+exportMethods(plotTBI)
 exportMethods(plotTiles)
 exportMethods(plotTransitionMatrix)
 exportMethods(plotTrend)
@@ -58,6 +60,7 @@ importFrom(ggplot2,
   aes,
   annotate,
   arrow,
+  coord_equal,
   coord_polar,
   element_blank,
   element_text,
