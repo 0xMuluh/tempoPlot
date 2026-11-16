@@ -2,6 +2,7 @@
 
 export(plotComposition)
 export(plotGaps)
+export(plotHorizon)
 export(plotIndividuality)
 export(plotLagProfile)
 export(plotPath)
@@ -14,6 +15,7 @@ export(plotTrend)
 export(plotVolcano)
 exportMethods(plotComposition)
 exportMethods(plotGaps)
+exportMethods(plotHorizon)
 exportMethods(plotIndividuality)
 exportMethods(plotLagProfile)
 exportMethods(plotPath)
@@ -39,7 +41,9 @@ importFrom(ggplot2,
   .data,
   aes,
   arrow,
+  element_blank,
   element_text,
+  facet_grid,
   facet_wrap,
   geom_area,
   geom_boxplot,
@@ -77,6 +81,7 @@ importFrom(ggplot2,
   vars
 )
 importFrom(ggrepel,geom_text_repel)
+importFrom(grDevices,colorRampPalette)
 importFrom(methods,
   setGeneric,
   setMethod
@@ -86,6 +91,7 @@ importFrom(stats,
   ave,
   dist,
   hclust,
+  median,
   na.pass,
   setNames
 )
