@@ -19,7 +19,7 @@ test_that("plotComposition checks its arguments", {
     expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
         level = "group"), "group.by")
     expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
-        layout = "stream"))
+        layout = "muller"))
 })
 
 test_that("plotComposition stacks proportions that sum to one", {
@@ -73,4 +73,22 @@ test_that("plotComposition draws areas and keeps unused visits", {
     h$visit <- factor(h$visit, levels = c(levels(h$visit), "6"))
     p <- plotComposition(h, "visit", "subject", rank = "Phylum")
     expect_true("6" %in% layer_scales(p)$x$get_limits())
+})
+
+test_that("plotComposition draws shares of states", {
+    toy <- SummarizedExperiment::SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 6L)),
+        colData = S4Vectors::DataFrame(
+            id = c("s1", "s2", "s3", "s1", "s2", "s3"),
+            t = c(1, 1, 1, 2, 2, 2), state = c("A", "A", "B", "B", NA, "B"),
+            arm = c("x", "x", "y", "x", "x", "y")))
+    df <- plotComposition(toy, "t", "id", y = "state")$data
+    expect_equal(df$.value[df$t == 1 & df$.feature == "A"], 2 / 3)
+    # The NA state at time 2 is left out of the shares.
+    expect_equal(df$.value[df$t == 2 & df$.feature == "B"], 1)
+    expect_true(is.numeric(df$t))
+    p <- plotComposition(toy, "t", "id", y = "state", group.by = "arm")
+    expect_equal(p$data$.value[p$data$t == 1 & p$data$arm == "y" &
+        p$data$.feature == "B"], 1)
+    expect_error(plotComposition(toy, "t", "id", y = "t"), "factor")
 })
