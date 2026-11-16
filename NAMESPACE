@@ -8,6 +8,7 @@ export(plotStats)
 export(plotSwimmer)
 export(plotTransitionMatrix)
 export(plotTrend)
+export(plotVolcano)
 exportMethods(plotComposition)
 exportMethods(plotGaps)
 exportMethods(plotLagProfile)
@@ -16,6 +17,7 @@ exportMethods(plotStats)
 exportMethods(plotSwimmer)
 exportMethods(plotTransitionMatrix)
 exportMethods(plotTrend)
+exportMethods(plotVolcano)
 importFrom(S4Vectors,metadata)
 importFrom(SingleCellExperiment,
   reducedDim,
@@ -37,6 +39,7 @@ importFrom(ggplot2,
   geom_col,
   geom_density,
   geom_histogram,
+  geom_hline,
   geom_line,
   geom_linerange,
   geom_path,
@@ -52,6 +55,7 @@ importFrom(ggplot2,
   ggplot,
   labs,
   position_dodge,
+  scale_colour_manual,
   scale_fill_gradient,
   scale_x_discrete,
   scale_y_discrete,
@@ -60,6 +64,7 @@ importFrom(ggplot2,
   unit,
   vars
 )
+importFrom(ggrepel,geom_text_repel)
 importFrom(methods,
   setGeneric,
   setMethod
