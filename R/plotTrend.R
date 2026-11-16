@@ -350,9 +350,8 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_boxplot
 #'   geom_violin geom_smooth stat_summary facet_wrap vars labs
-#'   scale_x_discrete
+#'   scale_x_discrete annotate geom_ribbon
 #' @importFrom stats median quantile
-#'   annotate geom_ribbon
 .plot_trend <- function(df, time.col, ylab, layout, show.individuals, smooth,
         band = NULL,
         fit = NULL, group.by = NULL, facet.by = NULL, reference = NULL,
