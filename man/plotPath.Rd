@@ -19,6 +19,11 @@ plotPath(x, ...)
   origin = c("none", "baseline"),
   arrows = TRUE,
   colour.by = NULL,
+  group.by = NULL,
+  centroids = FALSE,
+  field = NULL,
+  lag = NULL,
+  animate = FALSE,
   max.gap = NULL,
   ...
 )
@@ -61,6 +66,28 @@ pointing forward in time. (Default: \code{TRUE})}
 \item{colour.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that colours the paths. (Default: \code{NULL})}
 
+\item{group.by}{\code{Character scalar}. Specifies the column from
+\code{colData(x)} that groups subjects for \code{centroids}.
+(Default: \code{NULL})}
+
+\item{centroids}{\code{Logical scalar}. Draws the mean path of each
+\code{group.by} group, or of all subjects: the mean position at each
+time. Best with times shared by the subjects, such as visits.
+(Default: \code{FALSE})}
+
+\item{field}{\code{Integer scalar}. Draws the mean movement to the next
+sample from each cell of a \code{field} by \code{field} grid as an
+arrow. If \code{NULL}, draws no field. (Default: \code{NULL})}
+
+\item{lag}{\code{Integer scalar}. Instead of paths, draws the value of
+\code{x.var}, or the first component of \code{dimred}, against its
+value \code{lag} samples later in the same subject, with the identity
+line. (Default: \code{NULL})}
+
+\item{animate}{\code{Logical scalar}. Reveals the paths over time with
+\code{\link[gganimate:transition_reveal]{gganimate::transition_reveal()}};
+requires gganimate. (Default: \code{FALSE})}
+
 \item{max.gap}{\code{Numeric scalar}. Breaks a path where consecutive
 samples of a subject are further apart than this, in \code{time.col}
 units. \code{NULL} never breaks paths. (Default: \code{NULL})}
@@ -74,7 +101,9 @@ two-dimensional space: two components of an ordination, or two variables
 such as features or colData columns.
 }
 \details{
-Give either \code{dimred} or both \code{x.var} and \code{y.var}.
+Give either \code{dimred} or both \code{x.var} and \code{y.var}; with
+\code{lag}, \code{x.var} alone is enough. Points near the identity line
+of a lag plot change little over \code{lag} samples.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -100,4 +129,17 @@ plotPath(tse, time.col = "time", group = "subject",
     x.var = "Bacteroides vulgatus et rel.",
     y.var = "Prevotella melaninogenica et rel.",
     assay.type = "relabundance", colour.by = "subject")
+
+# Mean movement over a 6 x 6 grid of the PCoA
+plotPath(tse, time.col = "time", group = "subject", dimred = "PCoA",
+    field = 6, arrows = FALSE)
+
+# Mean path per visit and sex
+tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
+plotPath(tse, time.col = "visit", group = "subject", dimred = "PCoA",
+    group.by = "sex", centroids = TRUE)
+
+# Diversity against diversity at the next sample
+plotPath(tse, time.col = "time", group = "subject", x.var = "diversity",
+    lag = 1)
 }

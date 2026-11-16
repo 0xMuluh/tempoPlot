@@ -79,3 +79,57 @@ test_that("plotPath colours by a column and breaks paths at gaps", {
     expect_length(unique(layer_data(p, 1L)$group),
         n_subjects + sum(gaps > 0.3))
 })
+
+test_that("plotPath checks centroids, field, lag and animate", {
+    expect_error(plotPath(x, "time", "subject", dimred = "PCA",
+        centroids = 1), "'centroids'")
+    expect_error(plotPath(x, "time", "subject", dimred = "PCA",
+        field = 0), "'field'")
+    expect_error(plotPath(x, "time", "subject", dimred = "PCA",
+        lag = 1, centroids = TRUE), "cannot be combined")
+})
+
+test_that("plotPath draws mean paths per group and time", {
+    x$visit <- factor(ave(x$time, x$subject, FUN = rank))
+    p <- plotPath(x, "visit", "subject", dimred = "PCA",
+        group.by = "sex", centroids = TRUE)
+    cen <- p$layers[[3L]]$data
+    pc <- SingleCellExperiment::reducedDim(x, "PCA")
+    f1 <- x$sex == "female" & x$visit == "1"
+    expect_equal(cen$.x[cen$.by == "female" & cen$.t == 1],
+        mean(pc[f1, 1]))
+    expect_true(all(layer_data(p, 1L)$alpha == 0.3))
+    p <- plotPath(x, "visit", "subject", dimred = "PCA",
+        centroids = TRUE)
+    expect_setequal(p$layers[[3L]]$data$.t, seq_len(nlevels(x$visit)))
+})
+
+test_that("plotPath draws a movement field", {
+    p <- plotPath(x, "time", "subject", dimred = "PCA", field = 1)
+    move <- p$layers[[3L]]$data
+    # One cell: the mean of all steps within subjects.
+    pc <- SingleCellExperiment::reducedDim(x, "PCA")[, 1]
+    ord <- order(x$subject, x$time)
+    s <- x$subject[ord]
+    d <- diff(pc[ord])[s[-1L] == s[-length(s)]]
+    expect_identical(nrow(move), 1L)
+    expect_equal(move$.dx, mean(d))
+})
+
+test_that("plotPath draws lag plots", {
+    p <- plotPath(x, "time", "subject", x.var = "diversity", lag = 1)
+    ord <- order(x$subject, x$time)
+    s <- x$subject[ord]
+    v <- x$diversity[ord]
+    keep <- s[-1L] == s[-length(s)]
+    expect_equal(sort(p$data$.later), sort(v[-1L][keep]))
+    expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomAbline")
+    expect_error(plotPath(x, "time", "subject", x.var = "diversity",
+        lag = 50), "more than 'lag'")
+})
+
+test_that("plotPath animates over time", {
+    skip_if_not_installed("gganimate")
+    p <- plotPath(x, "time", "subject", dimred = "PCA", animate = TRUE)
+    expect_s3_class(p, "gganim")
+})
