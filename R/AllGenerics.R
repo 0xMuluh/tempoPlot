@@ -63,3 +63,9 @@ setGeneric("plotIndividuality", signature = "x",
 #' @export
 setGeneric("plotRecurrence", signature = "x",
     function(x, ...) standardGeneric("plotRecurrence"))
+
+#' @rdname plotTiles
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotTiles", signature = "x",
+    function(x, ...) standardGeneric("plotTiles"))
