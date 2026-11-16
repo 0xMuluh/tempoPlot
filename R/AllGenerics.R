@@ -51,3 +51,9 @@ setGeneric("plotTransitionMatrix", signature = "x",
 #' @export
 setGeneric("plotVolcano", signature = "x",
     function(x, ...) standardGeneric("plotVolcano"))
+
+#' @rdname plotIndividuality
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotIndividuality", signature = "x",
+    function(x, ...) standardGeneric("plotIndividuality"))

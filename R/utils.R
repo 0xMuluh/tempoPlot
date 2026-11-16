@@ -324,3 +324,27 @@
     list(geom_point(aes(x = .data$.start, y = .data$.y, fill = .data$label),
         data = ev, inherit.aes = FALSE, shape = 25, size = 2.5))
 }
+
+# Sample-by-sample dissimilarity matrix stored by mia::addDissimilarity()
+# in metadata(x)[[dissimilarity]], as a full matrix in colnames(x) order.
+#' @importFrom S4Vectors metadata
+.get_dissimilarity <- function(x, dissimilarity) {
+    if (!.is_one_name(dissimilarity) ||
+            !dissimilarity %in% names(metadata(x))) {
+        stop("'dissimilarity' must name a matrix in metadata(x), as stored ",
+            "by mia::addDissimilarity().", call. = FALSE)
+    }
+    d <- as.matrix(metadata(x)[[dissimilarity]])
+    if (!is.numeric(d) || nrow(d) != ncol(x) || ncol(d) != ncol(x)) {
+        stop("metadata(x)$", dissimilarity, " must be a sample by sample ",
+            "dissimilarity.", call. = FALSE)
+    }
+    if (!is.null(rownames(d)) && !is.null(colnames(x))) {
+        if (!setequal(rownames(d), colnames(x))) {
+            stop("metadata(x)$", dissimilarity, " must be named by ",
+                "colnames(x).", call. = FALSE)
+        }
+        d <- d[colnames(x), colnames(x)]
+    }
+    d
+}
