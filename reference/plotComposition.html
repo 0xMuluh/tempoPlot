@@ -19,7 +19,7 @@ subjects."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.27</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.28</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ subjects."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/m
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot composition over time</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/path-extensions/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/path-extensions/R/plotComposition.R" class="external-link"><code>R/plotComposition.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/composition-extensions/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/composition-extensions/R/plotComposition.R" class="external-link"><code>R/plotComposition.R</code></a></small>
     <div class="hidden name"><code>plotComposition.Rd</code></div>
     </div>
 
@@ -67,6 +67,7 @@ subjects.</p>
 <span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rank <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  top <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  y <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bar"</span>, <span class="st">"area"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"subject"</span>, <span class="st">"group"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -119,6 +120,13 @@ mean proportion, to show; the rest are summed into "Other".
 (Default: <code>5</code>)</p></dd>
 
 
+<dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
+<dd><p><code>Character scalar</code>. Specifies a categorical column from
+<code>colData(x)</code>, such as a state, to plot instead of the assay: the
+share of samples in each state at each time, one panel per
+<code>group.by</code> group. (Default: <code>NULL</code>)</p></dd>
+
+
 <dt id="arg-layout">layout<a class="anchor" aria-label="anchor" href="#arg-layout"></a></dt>
 <dd><p><code>Character scalar</code>. Draws stacked bars (<code>"bar"</code>)
 or stacked areas (<code>"area"</code>). (Default: <code>"bar"</code>)</p></dd>
@@ -164,6 +172,12 @@ group at each time (<code>"group"</code>). (Default: <code>"subject"</code>)</p>
 <span class="r-in"><span><span class="fu">plotComposition</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
 <span class="r-in"><span>    rank <span class="op">=</span> <span class="st">"Phylum"</span>, level <span class="op">=</span> <span class="st">"group"</span>, group.by <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotComposition-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Share of samples by dominant genus at each visit</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/getDominant.html" class="external-link">addDominant</a></span><span class="op">(</span><span class="va">tse</span>, name <span class="op">=</span> <span class="st">"dominant"</span>, n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotComposition</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
+<span class="r-in"><span>    y <span class="op">=</span> <span class="st">"dominant"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotComposition-4.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
