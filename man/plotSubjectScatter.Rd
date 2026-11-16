@@ -9,11 +9,13 @@ plotSubjectScatter(x, ...)
 
 \S4method{plotSubjectScatter}{SummarizedExperiment}(
   x,
-  x.stat,
-  y.stat,
+  x.stat = NULL,
+  y.stat = NULL,
   group,
   colour.by = NULL,
   quadrants = FALSE,
+  source = NULL,
+  ncomponents = c(1, 2),
   ...
 )
 }
@@ -25,7 +27,8 @@ object.}
 \code{\link[ggplot2:geom_point]{geom_point}}.}
 
 \item{x.stat, y.stat}{\code{Character scalar}. Specify the numeric columns
-from \code{colData(x)} drawn on the x and y axes.}
+from \code{colData(x)} drawn on the x and y axes. Not used with
+\code{source}. (Default: \code{NULL})}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}
@@ -38,6 +41,17 @@ from \code{colData(x)} drawn on the x and y axes.}
 length 2. Draws reference lines that split the plot into quadrants: at
 the medians of the two statistics (\code{TRUE}) or at the given x and y
 values. (Default: \code{FALSE})}
+
+\item{source}{\code{Character scalar}. Specifies a decomposition in
+\code{metadata(x)} whose subject loadings are drawn instead of
+\code{x.stat} and \code{y.stat}: a result of
+\code{tempted::tempted_all()} (\code{A_hat}), a PARAFAC model whose
+first mode is subjects (\code{Fac}, with subjects as row names), or a
+matrix of subjects by components with subjects as row names.
+(Default: \code{NULL})}
+
+\item{ncomponents}{\code{Integer vector} of length 2. The components of
+\code{source} on the x and y axes. (Default: \code{c(1, 2)})}
 }
 \value{
 A \code{ggplot} object.
@@ -45,11 +59,13 @@ A \code{ggplot} object.
 \description{
 \code{plotSubjectScatter()} draws one point per subject from two
 statistics that are constant within each subject, such as mean diversity
-and its variability, resistance and resilience, or subject loadings of a
-decomposition stored in \code{colData(x)}.
+and its variability or resistance and resilience, or from two components
+of the subject loadings of a tensor decomposition such as TEMPTED.
 }
 \details{
-Subjects with a missing statistic are dropped.
+Subjects with a missing statistic are dropped. Subject loadings are
+matched to \code{group} by subject name; \code{colour.by} must be
+constant within subjects.
 }
 \examples{
 # Mean diversity against its standard deviation over each subject's
@@ -61,4 +77,17 @@ tse$mean <- ave(tse$diversity, tse$subject, FUN = mean)
 tse$sd <- ave(tse$diversity, tse$subject, FUN = sd)
 plotSubjectScatter(tse, x.stat = "mean", y.stat = "sd",
     group = "subject", colour.by = "sex", quadrants = TRUE)
+
+# TEMPTED subject loadings of the bioreactors
+if (requireNamespace("tempted", quietly = TRUE)) {
+    data("minimalgut", package = "miaTime")
+    tse <- minimalgut
+    counts <- t(SummarizedExperiment::assay(tse, "counts"))
+    S4Vectors::metadata(tse)$tempted <- tempted::tempted_all(counts,
+        timepoint = tse$Time_hr_num,
+        subjectID = as.character(tse$StudyIdentifier), r = 2,
+        threshold = 1, pseudo = 0.5, do_ratio = FALSE)
+    plotSubjectScatter(tse, group = "StudyIdentifier",
+        colour.by = "StudyIdentifier", source = "tempted")
+}
 }
