@@ -9,3 +9,5 @@ docs
 dev
 inst/doc
 vignettes/*.R
+Rplots.pdf
+tests/testthat/_problems/
