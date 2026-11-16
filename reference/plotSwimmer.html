@@ -18,7 +18,7 @@ and one point per sample. A lane joins the samples of each subject."><!-- mathja
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.13</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.14</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@ and one point per sample. A lane joins the samples of each subject."><!-- mathja
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot sampling timelines of subjects</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSwimmer.R" class="external-link"><code>R/plotSwimmer.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/swimmer-events/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/swimmer-events/R/plotSwimmer.R" class="external-link"><code>R/plotSwimmer.R</code></a></small>
     <div class="hidden name"><code>plotSwimmer.Rd</code></div>
     </div>
 
@@ -65,6 +65,8 @@ and one point per sample. A lane joins the samples of each subject.</p>
 <span>  colour.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  order.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"first"</span>, <span class="st">"n"</span><span class="op">)</span>,</span>
 <span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  missing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"break"</span>, <span class="st">"show"</span>, <span class="st">"drop"</span><span class="op">)</span>,</span>
+<span>  events <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -109,7 +111,29 @@ at the top. (Default: <code>"first"</code>)</p></dd>
 <dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
 <dd><p><code>Numeric scalar</code>. Breaks a lane where consecutive
 samples of a subject are further apart than this, in <code>time.col</code>
-units. <code>NULL</code> never breaks lanes. (Default: <code>NULL</code>)</p></dd>
+units. For visits, <code>NULL</code> breaks lanes at visits without a
+sample; otherwise <code>NULL</code> never breaks lanes. (Default: <code>NULL</code>)</p></dd>
+
+
+<dt id="arg-missing">missing<a class="anchor" aria-label="anchor" href="#arg-missing"></a></dt>
+<dd><p><code>Character scalar</code>. How to draw missing samples:
+break the lane (<code>"break"</code>), join the samples around them with a
+dashed line and mark missed visits with open circles (<code>"show"</code>),
+or remove subjects with any missing sample (<code>"drop"</code>).
+(Default: <code>"break"</code>)</p></dd>
+
+
+<dt id="arg-events">events<a class="anchor" aria-label="anchor" href="#arg-events"></a></dt>
+<dd><p><code>data.frame</code>. Events to draw, one per row, with
+columns <code>start</code>, and optionally <code>end</code>, <code>label</code> and the
+<code>group</code> column. <code>start</code> and <code>end</code> have the type of
+<code>time.col</code>; for visits, they are visit levels. Events with an
+<code>end</code> are drawn as bands, the others as markers. Events with a
+subject in the <code>group</code> column are drawn on the row of that
+subject; the others span all subjects. <code>label</code> sets the fill of
+bands and markers on a row and the line type of markers that span all
+subjects.
+(Default: <code>NULL</code>)</p></dd>
 
 </dl></div>
     <div id="value">
@@ -120,6 +144,11 @@ units. <code>NULL</code> never breaks lanes. (Default: <code>NULL</code>)</p></d
     <h2>Details</h2>
     <p>Numeric and <code>Date</code> times are drawn on a continuous axis. Visits are
 drawn in level order, including levels without samples.</p>
+<p>For visits, a sample is missing when a subject has no sample at a visit
+after its first one, including visits after its last sample (dropout).
+For numeric and <code>Date</code> times, a gap longer than <code>max.gap</code> is
+missing; <code>missing = "show"</code> and <code>"drop"</code> then require
+<code>max.gap</code>.</p>
     </div>
 
     <div id="ref-examples">
@@ -130,6 +159,21 @@ drawn in level order, including levels without samples.</p>
 <span class="r-in"><span><span class="fu">plotSwimmer</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"time"</span>, group <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
 <span class="r-in"><span>    colour.by <span class="op">=</span> <span class="st">"bmi_group"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotSwimmer-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Mark gaps longer than a year</span></span></span>
+<span class="r-in"><span><span class="fu">plotSwimmer</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"time"</span>, group <span class="op">=</span> <span class="st">"subject"</span>, max.gap <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>    missing <span class="op">=</span> <span class="st">"show"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotSwimmer-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Perturbations of three bioreactors run on the same schedule</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">152</span>, <span class="fl">432</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span>, <span class="cn">NA</span>, <span class="fl">436</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"Blautia added"</span>, <span class="st">"double dilution rate"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotSwimmer</span><span class="op">(</span><span class="va">minimalgut</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
+<span class="r-in"><span>    events <span class="op">=</span> <span class="va">events</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotSwimmer-3.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
