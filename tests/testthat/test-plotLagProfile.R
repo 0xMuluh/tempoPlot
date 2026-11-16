@@ -46,3 +46,22 @@ test_that("plotLagProfile colours levels and leaves out ratios", {
     at2 <- ld[abs(ld$x - 2) < 0.5, ]
     expect_length(unique(at2$x), nrow(at2))
 })
+
+test_that("plotLagProfile draws ratios between split.by levels", {
+    vg <- data.frame(lag = rep(c(2, 6), each = 3),
+        sex = rep(c("female", "male", "male / female"), 2),
+        type = rep(c("dissimilarity", "dissimilarity", "ratio"), 2),
+        estimate = c(0.2, 0.3, 1.5, 0.4, 0.2, 0.5),
+        lower = c(0.1, 0.2, 1.1, 0.3, 0.1, 0.3),
+        upper = c(0.3, 0.4, 2.0, 0.5, 0.3, 0.9))
+    toy <- SummarizedExperiment(assays = list(counts = matrix(1, 1L, 1L)))
+    S4Vectors::metadata(toy)$v <- vg
+    p <- plotLagProfile(toy, "v", type = "ratio")
+    expect_equal(p$data$estimate, c(1.5, 0.5))
+    expect_identical(p$labels$y, "Ratio of D(L) (male / female)")
+    expect_s3_class(p$scales$get_scales("y")$trans, "transform")
+    p <- plotLagProfile(toy, "v", colour.by = "sex")
+    expect_identical(nrow(p$data), 4L)
+    S4Vectors::metadata(toy)$w <- vg[vg$type == "dissimilarity", -3L]
+    expect_error(plotLagProfile(toy, "w", type = "ratio"), "split.by")
+})

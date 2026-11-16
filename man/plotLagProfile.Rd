@@ -7,7 +7,13 @@
 \usage{
 plotLagProfile(x, ...)
 
-\S4method{plotLagProfile}{SummarizedExperiment}(x, name = "variogram", colour.by = NULL, ...)
+\S4method{plotLagProfile}{SummarizedExperiment}(
+  x,
+  name = "variogram",
+  colour.by = NULL,
+  type = c("dissimilarity", "ratio"),
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -22,6 +28,11 @@ object.}
 \item{colour.by}{\code{Character scalar}. Specifies the column of the
 variogram that colours the estimates, such as the \code{split.by}
 variable of \code{addVariogram()}. (Default: \code{NULL})}
+
+\item{type}{\code{Character scalar}. Draws the dissimilarity at each lag
+(\code{"dissimilarity"}) or, for a variogram computed with
+\code{split.by}, the ratio between its levels (\code{"ratio"}), on a
+log scale with a line at 1. (Default: \code{"dissimilarity"})}
 }
 \value{
 A \code{ggplot} object.
@@ -33,8 +44,8 @@ interval, as stored by \code{miaTime::addVariogram()}.
 }
 \details{
 Lags the design does not support (missing estimates) are dropped. With
-\code{split.by}, only the estimates of each level are drawn, not the
-ratios between levels, slightly shifted apart at each lag.
+\code{split.by}, the estimates of the levels are slightly shifted apart
+at each lag.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -52,4 +63,7 @@ tse <- miaTime::addVariogram(tse, time.col = "time", group = "subject",
     assay.type = "hellinger", method = "euclidean", squared = TRUE,
     time.lag = c(2, 6, 8), split.by = "sex", name = "variogram_sex")
 plotLagProfile(tse, name = "variogram_sex", colour.by = "sex")
+
+# Their ratio
+plotLagProfile(tse, name = "variogram_sex", type = "ratio")
 }

@@ -14,13 +14,18 @@
 #'   variogram that colours the estimates, such as the \code{split.by}
 #'   variable of \code{addVariogram()}. (Default: \code{NULL})
 #'
+#' @param type \code{Character scalar}. Draws the dissimilarity at each lag
+#'   (\code{"dissimilarity"}) or, for a variogram computed with
+#'   \code{split.by}, the ratio between its levels (\code{"ratio"}), on a
+#'   log scale with a line at 1. (Default: \code{"dissimilarity"})
+#'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_linerange]{geom_pointrange}}.
 #'
 #' @details
 #' Lags the design does not support (missing estimates) are dropped. With
-#' \code{split.by}, only the estimates of each level are drawn, not the
-#' ratios between levels, slightly shifted apart at each lag.
+#' \code{split.by}, the estimates of the levels are slightly shifted apart
+#' at each lag.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -43,6 +48,9 @@
 #'     assay.type = "hellinger", method = "euclidean", squared = TRUE,
 #'     time.lag = c(2, 6, 8), split.by = "sex", name = "variogram_sex")
 #' plotLagProfile(tse, name = "variogram_sex", colour.by = "sex")
+#'
+#' # Their ratio
+#' plotLagProfile(tse, name = "variogram_sex", type = "ratio")
 NULL
 
 #' @rdname plotLagProfile
@@ -50,7 +58,9 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
-    function(x, name = "variogram", colour.by = NULL, ...) {
+    function(x, name = "variogram", colour.by = NULL,
+            type = c("dissimilarity", "ratio"), ...) {
+        type <- match.arg(type)
         if (!.is_one_name(name) || is.null(metadata(x)[[name]])) {
             stop("'name' must be an entry of metadata(x); compute it with ",
                 "miaTime::addVariogram().", call. = FALSE)
@@ -66,24 +76,48 @@ setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
                 name, ".", call. = FALSE)
         }
         if ("type" %in% names(df)) {
-            df <- df[df$type == "dissimilarity", , drop = FALSE]
+            df <- df[df$type == type, , drop = FALSE]
+        } else if (type == "ratio") {
+            df <- df[0L, , drop = FALSE]
         }
         df <- df[!is.na(df$estimate), , drop = FALSE]
+        if (nrow(df) == 0L) {
+            stop("metadata(x)$", name, " has no ", type, " estimates",
+                if (type == "ratio") "; compute it with 'split.by'", ".",
+                call. = FALSE)
+        }
 
-        .plot_lag_profile(df, colour.by, ...)
+        # The split.by column sits between lag and type; its ratio rows
+        # name the levels, such as "male / female".
+        ylab <- "D(L)"
+        if (type == "ratio") {
+            split <- setdiff(names(df)[seq_len(match("type", names(df)))],
+                c("lag", "type"))
+            ylab <- paste("Ratio of D(L)", if (length(split) == 1L)
+                paste0("(", unique(df[[split]])[1L], ")"))
+        }
+        .plot_lag_profile(df, colour.by, type, ylab, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_pointrange labs
-#'   position_dodge
-.plot_lag_profile <- function(df, colour.by, ...) {
+#'   position_dodge geom_hline scale_y_log10
+.plot_lag_profile <- function(df, colour.by, type = "dissimilarity",
+        ylab = "D(L)", ...) {
     # Groups at the same lag are shifted apart so their intervals show.
     dodge <- position_dodge(width = 0.02 * diff(range(df$lag)))
-    ggplot(df, aes(x = .data$lag, y = .data$estimate,
+    p <- ggplot(df, aes(x = .data$lag, y = .data$estimate,
             colour = if (!is.null(colour.by)) .data[[colour.by]],
             group = if (!is.null(colour.by)) .data[[colour.by]] else 1L)) +
         geom_line(position = dodge) +
         geom_pointrange(aes(ymin = .data$lower, ymax = .data$upper),
             position = dodge, ...) +
-        labs(x = "lag", y = "D(L)", colour = colour.by)
+        labs(x = "lag", y = ylab, colour = colour.by)
+    if (type == "ratio") {
+        # A ratio of 1 means the same dissimilarity in both levels.
+        p <- p + geom_hline(yintercept = 1, linetype = "dashed",
+                colour = "grey40") +
+            scale_y_log10()
+    }
+    p
 }
