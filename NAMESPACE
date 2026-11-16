@@ -13,6 +13,7 @@ export(plotLandscape)
 export(plotPath)
 export(plotRanks)
 export(plotRecurrence)
+export(plotSpectrum)
 export(plotStats)
 export(plotSubjectScatter)
 export(plotSurvival)
@@ -36,6 +37,7 @@ exportMethods(plotLandscape)
 exportMethods(plotPath)
 exportMethods(plotRanks)
 exportMethods(plotRecurrence)
+exportMethods(plotSpectrum)
 exportMethods(plotStats)
 exportMethods(plotSubjectScatter)
 exportMethods(plotSurvival)
@@ -124,9 +126,13 @@ importFrom(stats,
   density,
   dist,
   hclust,
+  lm,
   median,
   na.pass,
-  setNames
+  residuals,
+  setNames,
+  spec.pgram,
+  var
 )
 importFrom(survival,
   Surv,
