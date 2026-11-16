@@ -4,6 +4,7 @@ export(plotAlluvial)
 export(plotCalendar)
 export(plotComposition)
 export(plotDirection)
+export(plotFeatureScatter)
 export(plotFingerprint)
 export(plotGaps)
 export(plotHorizon)
@@ -28,6 +29,7 @@ exportMethods(plotAlluvial)
 exportMethods(plotCalendar)
 exportMethods(plotComposition)
 exportMethods(plotDirection)
+exportMethods(plotFeatureScatter)
 exportMethods(plotFingerprint)
 exportMethods(plotGaps)
 exportMethods(plotHorizon)
@@ -102,8 +104,10 @@ importFrom(ggplot2,
   scale_x_continuous,
   scale_x_date,
   scale_x_discrete,
+  scale_x_log10,
   scale_y_continuous,
   scale_y_discrete,
+  scale_y_log10,
   scale_y_reverse,
   stat_summary,
   theme,
@@ -123,12 +127,15 @@ importFrom(methods,
 importFrom(stats,
   aggregate,
   ave,
+  coef,
   density,
   dist,
   hclust,
   lm,
   median,
   na.pass,
+  optimize,
+  pbeta,
   residuals,
   setNames,
   spec.pgram,
