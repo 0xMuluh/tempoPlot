@@ -348,3 +348,15 @@
     }
     d
 }
+
+# Lower and upper edges of the tile of each sorted time: halfway to the
+# neighbouring times, mirrored at the ends. A single time spans +-0.5.
+.tile_edges <- function(t) {
+    n <- length(t)
+    if (n == 1L) {
+        return(list(lower = t - 0.5, upper = t + 0.5))
+    }
+    mid <- (t[-1L] + t[-n]) / 2
+    list(lower = c(t[1L] - (mid[1L] - t[1L]), mid),
+        upper = c(mid, t[n] + (t[n] - mid[n - 1L])))
+}
