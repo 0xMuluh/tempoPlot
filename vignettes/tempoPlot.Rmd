@@ -42,7 +42,7 @@ them computed with `r BiocStyle::Biocpkg("miaTime")` and
 |---|---|
 | When were samples taken? | `plotSwimmer()`, `plotGaps()`, `plotCalendar()` |
 | How does a value change over time? | `plotTrend()`, `plotPath()` |
-| How does the composition change? | `plotComposition()`, `plotTiles()`, `plotHorizon()`, `plotRanks()`, `plotAlluvial()`, `plotTransitionMatrix()` |
+| How does the composition change? | `plotComposition()`, `plotTiles()`, `plotHorizon()`, `plotRanks()`, `plotAccumulation()`, `plotAlluvial()`, `plotTransitionMatrix()` |
 | How fast and how much do communities change? | `plotTurnover()`, `plotTBI()`, `plotRecurrence()`, `plotIndividuality()`, `plotFingerprint()`, `plotLagProfile()` |
 | Are there states, rhythms or leads? | `plotLandscape()`, `plotSpectrum()`, `plotLagHeatmap()`, `plotSurvival()` |
 | Which features or subjects stand out? | `plotVolcano()`, `plotFeatureScatter()`, `plotStats()`, `plotSubjectScatter()`, `plotTimeLoadings()` |

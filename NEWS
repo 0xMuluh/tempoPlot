@@ -1,3 +1,6 @@
+Changes in version 0.99.53 (2026-11-17)
++ Added plotAccumulation
+
 Changes in version 0.99.52 (2026-11-17)
 + plotTrend: events and intervals
 

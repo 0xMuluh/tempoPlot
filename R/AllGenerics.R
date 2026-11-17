@@ -183,3 +183,9 @@ setGeneric("plotReport", signature = "x",
 #' @export
 setGeneric("plotTimeLoadings", signature = "x",
     function(x, ...) standardGeneric("plotTimeLoadings"))
+
+#' @rdname plotAccumulation
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotAccumulation", signature = "x",
+    function(x, ...) standardGeneric("plotAccumulation"))
