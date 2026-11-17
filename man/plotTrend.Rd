@@ -24,6 +24,7 @@ plotTrend(x, ...)
   period = NULL,
   reference = NULL,
   limits = NULL,
+  events = NULL,
   align.to = NULL,
   group.by = NULL,
   facet.by = NULL,
@@ -114,6 +115,15 @@ microbiota-for-age: a table with the columns \code{time.col} and
 \item{limits}{\code{Numeric vector} of length 2. Draws a band between
 these values of \code{y}, such as a normal range.
 (Default: \code{NULL})}
+
+\item{events}{\code{data.frame}. Events or intervals to mark, one per
+row, with columns \code{start} and optionally \code{end} and
+\code{label}, in the units of \code{time.col} (visit levels for
+visits): interventions such as antibiotic courses, or the time
+intervals where groups differ, as estimated by MetaLonDA or
+SplinectomeR. Rows with an \code{end} are drawn as grey bands with
+their label at the top, the others as vertical lines. Events apply to
+all subjects. (Default: \code{NULL})}
 
 \item{align.to}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} with the time of an event for each subject, such as
@@ -211,6 +221,13 @@ plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", smooth = "median", band = c(0.25, 0.75),
     show.individuals = FALSE)
+
+# Acetate with the batch phase and the addition of Blautia marked
+events <- data.frame(start = c(0, 152), end = c(24, NA),
+    label = c("batch", "Blautia added"))
+plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier",
+    events = events)
 
 # Distribution of diversity at each visit
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",

@@ -432,3 +432,25 @@ test_that("plotTrend draws the rolling slope", {
     expect_lt(p$data$.y[4], 0)
     expect_match(p$labels$y, "Rolling slope")
 })
+
+test_that("plotTrend marks events and intervals", {
+    events <- data.frame(start = c(0, 152), end = c(24, NA),
+        label = c("batch", "added"))
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", events = events)
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    expect_identical(unname(geoms[1:2]), c("GeomRect", "GeomText"))
+    band <- layer_data(p, 1L)
+    expect_equal(c(band$xmin, band$xmax), c(0, 24))
+    expect_identical(layer_data(p, 2L)$label, "batch")
+    expect_equal(layer_data(p, which(geoms == "GeomVline"))$xintercept,
+        152)
+    expect_identical(p$labels$linetype, "event")
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        events = data.frame(start = "a")), "type of 'time.col'")
+    # Visits are drawn at their level codes.
+    x$visit <- factor(ave(x$Time_hr_num, x$StudyIdentifier, FUN = rank))
+    p <- plotTrend(x, "Acetate", "visit", "StudyIdentifier",
+        events = data.frame(start = "2", end = "4"))
+    expect_equal(c(layer_data(p, 1L)$xmin, layer_data(p, 1L)$xmax), c(2, 4))
+})

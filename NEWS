@@ -1,3 +1,6 @@
+Changes in version 0.99.52 (2026-11-17)
++ plotTrend: events and intervals
+
 Changes in version 0.99.51 (2026-11-17)
 + plotLagHeatmap: target from another experiment of a MultiAssayExperiment
 
