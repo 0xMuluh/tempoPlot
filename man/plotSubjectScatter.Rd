@@ -15,7 +15,7 @@ plotSubjectScatter(x, ...)
   colour.by = NULL,
   quadrants = FALSE,
   source = NULL,
-  ncomponents = c(1, 2),
+  ncomponents = 2,
   ...
 )
 }
@@ -50,8 +50,9 @@ first mode is subjects (\code{Fac}, with subjects as row names), or a
 matrix of subjects by components with subjects as row names.
 (Default: \code{NULL})}
 
-\item{ncomponents}{\code{Integer vector} of length 2. The components of
-\code{source} on the x and y axes. (Default: \code{c(1, 2)})}
+\item{ncomponents}{\code{Numeric scalar} or \code{vector}. The two
+components of \code{source} on the x and y axes: \code{2} for the
+first two, or two components by index or name. (Default: \code{2})}
 }
 \value{
 A \code{ggplot} object.

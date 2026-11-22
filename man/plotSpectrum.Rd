@@ -7,15 +7,7 @@
 \usage{
 plotSpectrum(x, ...)
 
-\S4method{plotSpectrum}{SummarizedExperiment}(
-  x,
-  y,
-  time.col,
-  group = NULL,
-  assay.type = NULL,
-  method = c("lomb", "fft"),
-  ...
-)
+\S4method{plotSpectrum}{SummarizedExperiment}(x, y, time.col, group = NULL, assay.type = NULL, ...)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -38,27 +30,22 @@ form one series. (Default: \code{NULL})}
 \item{assay.type}{\code{Character scalar}. Specifies the assay to
 retrieve \code{y} from when \code{y} is a feature name.
 (Default: \code{NULL})}
-
-\item{method}{\code{Character scalar}. Computes a Lomb-Scargle
-periodogram, which allows uneven sampling (\code{"lomb"}), or a
-periodogram by the fast Fourier transform, which assumes even
-sampling (\code{"fft"}). (Default: \code{"lomb"})}
 }
 \value{
 A \code{ggplot} object.
 }
 \description{
-\code{plotSpectrum()} draws the power of a variable at each frequency,
+\code{plotSpectrum()} draws the Lomb-Scargle periodogram of a variable,
 one curve per subject. Peaks show periodic changes, such as daily
 rhythms.
 }
 \details{
 Frequencies are in cycles per \code{time.col} unit (per day for
 \code{Date} times), from one cycle over the series to half the median
-sampling rate. A linear trend is removed first. The Lomb-Scargle power
-is normalised by the variance of the series. For \code{"fft"}, samples
-are taken as evenly spaced at the median interval. Subjects with fewer
-than four samples are left out.
+sampling rate. A linear trend is removed first. The power is normalised
+by the variance of the series. The periodogram allows uneven sampling;
+for even sampling it equals the classical periodogram. Subjects with
+fewer than four samples are left out.
 }
 \examples{
 # Acetate in three bioreactors fasted once a day: peaks near 1/24 per

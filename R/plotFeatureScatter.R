@@ -29,13 +29,14 @@
 #'   \code{\link[ggplot2:geom_point]{geom_point}}.
 #'
 #' @details
-#' With \code{fit = "power"}, both axes are log10 and the legend gives the
-#' slope. With \code{fit = "neutral"}, the mean is of relative abundances
+#' With \code{fit = "power"}, both axes are log10 and the subtitle gives
+#' the slope. With \code{group.by}, each group has its own curve in its
+#' colour. With \code{fit = "neutral"}, the mean is of relative abundances
 #' and the curve is \eqn{1 - F(1/N; Nmp, Nm(1-p))}, with \eqn{F} the beta
 #' distribution function, \eqn{N} the mean sample total, \eqn{p} the mean
 #' relative abundance and the migration rate \eqn{m} fitted by least
-#' squares. With a fit, features with a zero statistic on a log axis are
-#' not drawn and are left out of the fit.
+#' squares; the subtitle gives \eqn{m}. With a fit, features with a zero
+#' statistic on a log axis are not drawn and are left out of the fit.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -95,6 +96,10 @@ setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
                 "y.stat = \"occupancy\".", call. = FALSE)
         }
         mat <- as.matrix(assay(x, assay.type))
+        if (fit == "neutral" && any(mat != round(mat), na.rm = TRUE)) {
+            stop("fit = \"neutral\" needs an 'assay.type' of counts.",
+                call. = FALSE)
+        }
         by <- if (is.null(group.by)) rep("", ncol(x)) else
             as.character(colData(x)[[group.by]])
         res <- lapply(split(seq_len(ncol(x)), by), function(i) {
@@ -162,13 +167,13 @@ setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
     p <- df$.x[ok]
     occ <- df$.y[ok]
     model <- function(m, p) 1 - pbeta(1 / n, n * m * p, n * m * (1 - p))
-    loss <- function(lm) sum((occ - model(10^lm, p))^2)
-    lm <- optimize(loss, c(-8, 4))$minimum
-    if (lm < -7.9 || lm > 3.9) {
+    loss <- function(log.m) sum((occ - model(10^log.m, p))^2)
+    log.m <- optimize(loss, c(-8, 4))$minimum
+    if (log.m < -7.9 || log.m > 3.9) {
         warning("The neutral model fit reached the bound of the migration ",
             "rate; the curve does not describe the data.", call. = FALSE)
     }
-    m <- 10^lm
+    m <- 10^log.m
     x <- 10^seq(log10(min(p)), log10(max(p)), length.out = 100L)
     data.frame(.x = x, .y = model(m, x), .label = sprintf("m = %.2g", m))
 }
@@ -181,12 +186,12 @@ setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
             colour = if (!is.null(group.by)) .data$.by)) +
         geom_point(...)
     if (!is.null(curves)) {
-        curves$.curve <- if (is.null(group.by)) curves$.label else
-            paste0(curves$.by, ": ", curves$.label)
+        fits <- unique(curves[c(".by", ".label")])
         p <- p + geom_line(aes(x = .data$.x, y = .data$.y,
-                group = .data$.by, linetype = .data$.curve),
-            data = curves, inherit.aes = FALSE, colour = "grey20") +
-            labs(linetype = "fit")
+                group = .data$.by, colour = if (!is.null(group.by))
+                    .data$.by), data = curves, inherit.aes = FALSE) +
+            labs(subtitle = paste(if (is.null(group.by)) fits$.label else
+                paste0(fits$.by, ": ", fits$.label), collapse = "; "))
     }
     if (fit == "power") {
         p <- p + scale_y_log10()

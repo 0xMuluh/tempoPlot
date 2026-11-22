@@ -45,10 +45,13 @@
 #'
 #' @details
 #' At lag \eqn{k}, each feature at a sample is paired with the target
-#' \eqn{k} samples later in the same subject, and the Spearman correlation
-#' is computed over all pairs. Positive lags show features that change
-#' before the target, negative lags features that follow it. Lags count
-#' samples, so they are comparable across subjects only for even sampling.
+#' \eqn{k} samples later in the same subject. Feature and target are
+#' centred on their mean over the pairs of each subject, so that
+#' differences between subjects do not drive the correlation, and the
+#' Spearman correlation is computed over all pairs. Positive lags show
+#' features that change before the target, negative lags features that
+#' follow it. Lags count samples, so they are comparable across subjects
+#' only for even sampling.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -74,16 +77,21 @@
 NULL
 
 #' @rdname plotLagHeatmap
-#' @importFrom SummarizedExperiment colData assay
+#' @importFrom SummarizedExperiment colData assay assayNames
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
     function(x, target, time.col, group = NULL, assay.type = "counts",
             features = NULL, top = 20, max.lag = 3, ...) {
-        df <- .feature_table(x, time.col, group, assay.type, features, top)
-        y <- unname(.resolve_y(x, target, NULL, "target"))
-        mat <- as.matrix(assay(x, assay.type))[unique(df$.feature), ,
-            drop = FALSE]
+        .check_longitudinal(x, time.col, group)
+        .time_type(x, time.col)
+        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
+            stop("'assay.type' must be one of assayNames(x).",
+                call. = FALSE)
+        }
+        mat <- as.matrix(assay(x, assay.type))
+        mat <- mat[.select_features(mat, features, top), , drop = FALSE]
+        y <- unname(.resolve_y(x, target, assay.type, "target"))
         time <- .time_numeric(colData(x)[[time.col]])
         subject <- if (is.null(group)) rep("", ncol(x)) else
             as.character(colData(x)[[group]])
@@ -95,7 +103,9 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
 #' @rdname plotLagHeatmap
 #' @importClassesFrom MultiAssayExperiment MultiAssayExperiment
 #' @importFrom MultiAssayExperiment experiments sampleMap
-#' @importFrom SummarizedExperiment colData assay assayNames
+#' @importFrom SummarizedExperiment SummarizedExperiment colData colData<-
+#'   assay assayNames
+#' @importFrom stats setNames
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLagHeatmap", signature = c(x = "MultiAssayExperiment"),
@@ -109,23 +119,12 @@ setMethod("plotLagHeatmap", signature = c(x = "MultiAssayExperiment"),
                     call. = FALSE)
             }
         }
-        cd <- colData(x)
-        for (arg in c("time.col", "group")) {
-            v <- get(arg)
-            if (arg == "group" && is.null(v)) next
-            if (!.is_one_name(v) || !v %in% names(cd)) {
-                stop("'", arg, "' must be one column name of colData(x).",
-                    call. = FALSE)
-            }
-        }
         e1 <- x[[experiment]]
         e2 <- x[[target.experiment]]
         if (!.is_one_name(assay.type) || !assay.type %in% assayNames(e1)) {
             stop("'assay.type' must be one of the assays of 'experiment'.",
                 call. = FALSE)
         }
-        mat <- as.matrix(assay(e1, assay.type))
-        mat <- mat[.select_features(mat, features, top), , drop = FALSE]
         y <- .resolve_y(e2, target, NULL, "target")
 
         # Match the samples of both experiments by their primary names.
@@ -146,30 +145,24 @@ setMethod("plotLagHeatmap", signature = c(x = "MultiAssayExperiment"),
             stop("The experiments share fewer than three samples.",
                 call. = FALSE)
         }
-        mat <- mat[, match(common, p1), drop = FALSE]
-        y <- unname(y[match(common, p2)])
-        time <- cd[common, time.col]
-        if (!(is.numeric(time) || inherits(time, "Date") ||
-                is.factor(time))) {
-            stop("'time.col' must be numeric, Date or factor.",
-                call. = FALSE)
-        }
-        subject <- if (is.null(group)) rep("", length(common)) else
-            as.character(cd[common, group])
-        if (anyDuplicated(data.frame(subject, time))) {
-            stop("'time.col' must not repeat within a subject.",
-                call. = FALSE)
-        }
-        res <- .lag_correlations(mat, y, .time_numeric(time), subject,
-            max.lag)
-        .plot_lag_heatmap(res, target, ...)
+        # One SummarizedExperiment of the shared samples, with the target
+        # as a colData column.
+        mat <- as.matrix(assay(e1, assay.type))[, match(common, p1),
+            drop = FALSE]
+        colnames(mat) <- common
+        se <- SummarizedExperiment(setNames(list(mat), assay.type),
+            colData = colData(x)[common, , drop = FALSE])
+        colData(se)[[target]] <- unname(y[match(common, p2)])
+        plotLagHeatmap(se, target, time.col, group, assay.type, features,
+            top, max.lag, ...)
     }
 )
 
 # Spearman correlation of each feature (rows of mat) with y at lags of
-# -max.lag to max.lag samples within each subject. Positive lags pair a
-# feature with y later in the subject.
-#' @importFrom stats cor
+# -max.lag to max.lag samples within each subject, after centring both
+# within subjects. Positive lags pair a feature with y later in the
+# subject.
+#' @importFrom stats cor ave
 .lag_correlations <- function(mat, y, time, subject, max.lag) {
     if (!(is.numeric(max.lag) && length(max.lag) == 1L && max.lag >= 0)) {
         stop("'max.lag' must be a single non-negative number.",
@@ -188,8 +181,12 @@ setMethod("plotLagHeatmap", signature = c(x = "MultiAssayExperiment"),
         a <- ord[a[same]]
         b <- ord[b[same]]
         if (length(a) < 3L) return(NULL)
+        # Centre within subjects over the pairs of this lag.
+        centre <- function(v) v - ave(v, subject[a],
+            FUN = function(u) mean(u, na.rm = TRUE))
+        yb <- centre(y[b])
         r <- apply(mat[, a, drop = FALSE], 1L, function(f)
-            suppressWarnings(cor(f, y[b], method = "spearman",
+            suppressWarnings(cor(centre(f), yb, method = "spearman",
                 use = "pairwise.complete.obs")))
         data.frame(.feature = rownames(mat), .lag = k, .r = r)
     }))

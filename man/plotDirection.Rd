@@ -12,9 +12,10 @@ plotDirection(x, ...)
   time.col,
   group,
   dimred,
-  ncomponents = c(1, 2),
+  ncomponents = 2,
   bins = 16,
-  group.by = NULL,
+  facet.by = NULL,
+  max.gap = NULL,
   ...
 )
 }
@@ -35,15 +36,20 @@ a factor of visits.}
 \item{dimred}{\code{Character scalar}. Specifies the
 \code{reducedDim(x)} to use.}
 
-\item{ncomponents}{\code{Numeric} or \code{Character vector}. The two
-components of \code{dimred}, by index or name. (Default: \code{c(1, 2)})}
+\item{ncomponents}{\code{Numeric scalar} or \code{vector}. The two
+components of \code{dimred}: \code{2} for the first two, or two
+components by index or name. (Default: \code{2})}
 
 \item{bins}{\code{Integer scalar}. Number of direction sectors.
 (Default: \code{16})}
 
-\item{group.by}{\code{Character scalar}. Specifies the column from
+\item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the moves into panels. Each move takes
 the value of its earlier sample. (Default: \code{NULL})}
+
+\item{max.gap}{\code{Numeric scalar}. Consecutive samples of a subject
+further apart than this, in \code{time.col} units, are not a move.
+\code{NULL} counts all. (Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.
@@ -56,7 +62,8 @@ reduced dimension.
 \details{
 Angles are measured counterclockwise from the first component (east),
 so 90 degrees points along the second component. Moves of zero length
-have no direction and are left out.
+have no direction and are left out. The radius is on a square-root
+scale, so that the area of a sector follows its number of moves.
 }
 \examples{
 # Directions in a PCoA of three bioreactors
@@ -65,5 +72,5 @@ tse <- mia::transformAssay(minimalgut, method = "relabundance")
 tse <- mia::addMDS(tse, assay.type = "relabundance", method = "bray",
     name = "PCoA")
 plotDirection(tse, time.col = "Time.hr", group = "StudyIdentifier",
-    dimred = "PCoA", group.by = "StudyIdentifier")
+    dimred = "PCoA", facet.by = "StudyIdentifier")
 }

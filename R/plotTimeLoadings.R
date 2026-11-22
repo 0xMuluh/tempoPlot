@@ -15,18 +15,21 @@
 #'   mode is time, or a matrix of time points by components with the times
 #'   as row names or in a column \code{time}.
 #'
-#' @param ncomponents \code{Integer scalar}. Number of components to draw,
-#'   from the first. If \code{NULL}, draws all. (Default: \code{NULL})
+#' @param ncomponents \code{Numeric scalar} or \code{vector}. The
+#'   components to draw: the first \code{ncomponents}, or the components
+#'   given by index or name. If \code{NULL}, draws all.
+#'   (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_line]{geom_line}}.
 #'
 #' @details
 #' For TEMPTED, the loadings are functions evaluated on a time grid, and
-#' the legend gives the share of variance of each component
-#' (\code{r_square}). For PARAFAC, the time mode has one loading per time
-#' point; set its row names to the times, otherwise points are numbered in
-#' their order. The sign of a component is arbitrary: a component and its
+#' the legend gives the \eqn{R^2} of each component (\code{r_square}), of
+#' the data left after the previous components; they do not add up to the
+#' total \eqn{R^2} (\code{accum_r_square}). For PARAFAC, the time mode has
+#' one loading per time point; set its row names to the times, otherwise
+#' points are numbered in their order. The sign of a component is arbitrary: a component and its
 #' negative describe the same pattern. Feature and subject loadings are
 #' drawn by \code{\link[miaViz:plotLoadings]{miaViz::plotLoadings()}} and
 #' \code{\link{plotSubjectScatter}}.
@@ -65,30 +68,23 @@ setMethod("plotTimeLoadings", signature = c(x = "SummarizedExperiment"),
                 call. = FALSE)
         }
         res <- .time_loadings(metadata(x)[[source]])
-        k <- ncol(res$loadings)
-        if (!is.null(ncomponents)) {
-            if (!(is.numeric(ncomponents) && length(ncomponents) == 1L &&
-                    ncomponents >= 1 && ncomponents <= k)) {
-                stop("'ncomponents' must be between 1 and ", k, ".",
-                    call. = FALSE)
-            }
-            k <- as.integer(ncomponents)
-        }
-        labels <- res$labels[seq_len(k)]
+        j <- if (is.null(ncomponents)) seq_len(ncol(res$loadings)) else
+            .components(ncomponents, res$loadings)
+        labels <- res$labels[j]
         df <- data.frame(
-            .time = rep(res$time, times = k),
+            .time = rep(res$time, times = length(j)),
             .component = factor(rep(labels, each = length(res$time)),
                 levels = labels),
-            .value = as.vector(res$loadings[, seq_len(k), drop = FALSE]))
+            .value = as.vector(res$loadings[, j, drop = FALSE]))
         .plot_time_loadings(df, res$discrete, ...)
     }
 )
 
-# Component names, with the share of variance of TEMPTED components.
+# Component names, with the R2 of TEMPTED components.
 .component_labels <- function(obj, mat) {
     labels <- colnames(mat) %||% paste0("Component ", seq_len(ncol(mat)))
     if (is.list(obj) && length(obj$r_square) == ncol(mat)) {
-        labels <- sprintf("%s (%.0f%%)", labels, 100 * obj$r_square)
+        labels <- sprintf("%s (R\u00b2 %.2f)", labels, obj$r_square)
     }
     labels
 }

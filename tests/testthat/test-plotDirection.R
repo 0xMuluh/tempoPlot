@@ -24,11 +24,32 @@ test_that("plotDirection measures angles counterclockwise from east", {
         "CoordPolar")
 })
 
-test_that("plotDirection drops zero moves and splits by group.by", {
+test_that("plotDirection drops zero moves and splits by facet.by", {
     reducedDim(toy, "PC")[5, ] <- 0
     df <- plotDirection(toy, "t", "id", "PC")$data
     expect_identical(nrow(df), 2L)
     toy$arm <- c("a", "b", "b", "b", "b")
-    p <- plotDirection(toy, "t", "id", "PC", group.by = "arm")
+    p <- plotDirection(toy, "t", "id", "PC", facet.by = "arm")
     expect_setequal(p$data$arm, c("a", "b"))
+    expect_s3_class(p$facet, "FacetWrap")
+})
+
+test_that("plotDirection orders samples and skips gaps", {
+    shuffled <- toy[, c(3, 5, 1, 4, 2)]
+    df <- plotDirection(shuffled, "t", "id", "PC")$data
+    expect_equal(sort(df$.angle), c(0, 90, 180))
+    # s1 moves north from t = 1 to t = 5, beyond max.gap.
+    toy$t[3] <- 5
+    df <- plotDirection(toy, "t", "id", "PC", max.gap = 2)$data
+    expect_equal(sort(df$.angle), c(0, 180))
+})
+
+test_that("plotDirection selects components and passes on ...", {
+    reducedDim(toy, "PC") <- cbind(reducedDim(toy, "PC"), PC3 = 0)
+    df <- plotDirection(toy, "t", "id", "PC", ncomponents = c(2, 1))$data
+    expect_equal(sort(df$.angle), c(0, 90, 270))
+    expect_error(plotDirection(toy, "t", "id", "PC", ncomponents = 3),
+        "'ncomponents'")
+    p <- plotDirection(toy, "t", "id", "PC", fill = "grey40")
+    expect_true(all(layer_data(p)$fill == "grey40"))
 })

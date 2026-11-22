@@ -447,31 +447,6 @@
     }
 }
 
-# Components of reducedDim(x, dimred) as a matrix with columns named
-# "<dimred>:<component>". A single number n in ncomponents gives the
-# first n components; a vector gives those components (index or name).
-# n is the number of components needed; NULL accepts two or more.
-#' @importFrom SingleCellExperiment reducedDim
-.get_dimred <- function(x, dimred, ncomponents, n = NULL, arg = "dimred") {
-    if (is.numeric(ncomponents) && length(ncomponents) == 1L &&
-            isTRUE(ncomponents >= 1)) {
-        ncomponents <- seq_len(ncomponents)
-    }
-    labels <- paste0(dimred, ":", ncomponents)
-    hits <- lapply(labels, .match_dimred_component, x = x)
-    k <- length(hits)
-    if (!.is_one_name(dimred) || k < 2L || k != (n %||% k) ||
-            any(vapply(hits, is.null, logical(1)))) {
-        stop("'", arg, "' must be in reducedDimNames(x) and 'ncomponents' ",
-            "must give ", n %||% "at least 2", " of its components.",
-            call. = FALSE)
-    }
-    rd <- reducedDim(x, dimred)
-    out <- do.call(cbind, lapply(hits, function(h) as.numeric(rd[, h$j])))
-    colnames(out) <- labels
-    out
-}
-
 # Primary names (rows of colData(x)) of the samples of one experiment of
 # the MultiAssayExperiment x, in the column order of that experiment.
 #' @importFrom MultiAssayExperiment experiments sampleMap
@@ -495,4 +470,51 @@
         stop("'detection' must be a single number.", call. = FALSE)
     }
     mat > detection
+}
+
+# The ncomponents columns of a reducedDim, checked (n of them, if given)
+# and named "<dimred>:<index>".
+#' @importFrom SingleCellExperiment reducedDim reducedDimNames
+.get_reduced_dim <- function(x, dimred, ncomponents, arg = "dimred",
+        n = NULL) {
+    if (!inherits(x, "SingleCellExperiment") || !.is_one_name(dimred) ||
+            !dimred %in% reducedDimNames(x)) {
+        stop("'", arg, "' must be one of reducedDimNames().",
+            call. = FALSE)
+    }
+    rd <- as.matrix(reducedDim(x, dimred))
+    j <- .components(ncomponents, rd, n)
+    rd <- rd[, j, drop = FALSE]
+    colnames(rd) <- paste0(dimred, ":", j)
+    rd
+}
+
+# Indices of the components chosen by ncomponents, as in
+# scater::plotReducedDim(): a number n gives the first n, a vector gives
+# those components, by index or column name of m. With n, exactly n
+# components must be chosen.
+.components <- function(ncomponents, m, n = NULL) {
+    if (is.numeric(ncomponents) && length(ncomponents) == 1L &&
+            isTRUE(ncomponents >= 1)) {
+        ncomponents <- seq_len(ncomponents)
+    }
+    j <- if (is.character(ncomponents)) match(ncomponents, colnames(m)) else
+        if (is.numeric(ncomponents)) match(ncomponents, seq_len(ncol(m)))
+    if (length(j) == 0L || anyNA(j) || (!is.null(n) && length(j) != n)) {
+        stop("'ncomponents' must select ", if (!is.null(n)) paste0(n, " "),
+            "components out of ", ncol(m), ".", call. = FALSE)
+    }
+    j
+}
+
+# Sample indices at each of the two values of time.col in time.point.
+#' @importFrom SummarizedExperiment colData
+.time_point_index <- function(x, time.col, time.point) {
+    time <- as.character(colData(x)[[time.col]])
+    tp <- as.character(time.point)
+    if (length(tp) != 2L || !all(tp %in% time) || tp[1L] == tp[2L]) {
+        stop("'time.point' must be two different values of 'time.col'.",
+            call. = FALSE)
+    }
+    lapply(tp, function(v) which(time == v))
 }

@@ -26,27 +26,26 @@ test_that(".require_column accepts one colData column and names the arg", {
     expect_error(.require_column(sce, c("id", "id"), "group"), "'group'")
 })
 
-test_that(".get_dimred takes a count or a vector of components", {
-    rd <- .get_dimred(sce, "PCoA", 2)
+test_that(".get_reduced_dim takes a count or a vector of components", {
+    rd <- .get_reduced_dim(sce, "PCoA", 2)
     expect_identical(colnames(rd), c("PCoA:1", "PCoA:2"))
     expect_equal(unname(rd), cbind(1:3, 4:6))
-    rd <- .get_dimred(sce, "PCoA", c(3, 1), n = 2L)
+    rd <- .get_reduced_dim(sce, "PCoA", c(3, 1), n = 2L)
     expect_equal(unname(rd), cbind(7:9, 1:3))
-    rd <- .get_dimred(sce, "PCoA", c("PC2", "PC3"))
+    rd <- .get_reduced_dim(sce, "PCoA", c("PC2", "PC3"))
     expect_equal(unname(rd), cbind(4:6, 7:9))
-    expect_identical(dim(.get_dimred(sce, "PCoA", 3)), c(3L, 3L))
+    expect_identical(dim(.get_reduced_dim(sce, "PCoA", 3)), c(3L, 3L))
 })
 
-test_that(".get_dimred errors on wrong dimred or components", {
-    msg <- "'dimred' must be in reducedDimNames\\(x\\)"
-    expect_error(.get_dimred(sce, "none", c(1, 2)), msg)
-    expect_error(.get_dimred(sce, NULL, c(1, 2)), msg)
-    expect_error(.get_dimred(as(sce, "SummarizedExperiment"), "PCoA",
+test_that(".get_reduced_dim errors on wrong dimred or components", {
+    msg <- "'dimred' must be one of reducedDimNames"
+    expect_error(.get_reduced_dim(sce, "none", c(1, 2)), msg)
+    expect_error(.get_reduced_dim(sce, NULL, c(1, 2)), msg)
+    expect_error(.get_reduced_dim(as(sce, "SummarizedExperiment"), "PCoA",
         c(1, 2)), msg)
-    expect_error(.get_dimred(sce, "PCoA", 1), "at least 2")
-    expect_error(.get_dimred(sce, "PCoA", c(1, 4)), "'ncomponents'")
-    expect_error(.get_dimred(sce, "PCoA", 3, n = 2L), "must give 2 of")
-    expect_error(.get_dimred(sce, "none", c(1, 2), arg = "dimred2"),
+    expect_error(.get_reduced_dim(sce, "PCoA", c(1, 4)), "'ncomponents'")
+    expect_error(.get_reduced_dim(sce, "PCoA", 3, n = 2L), "select 2")
+    expect_error(.get_reduced_dim(sce, "none", c(1, 2), arg = "dimred2"),
         "'dimred2'")
 })
 

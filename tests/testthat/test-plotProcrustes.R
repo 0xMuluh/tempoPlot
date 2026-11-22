@@ -16,6 +16,17 @@ test_that("plotProcrustes checks its arguments", {
     expect_error(plotProcrustes(toy, "none"), "'dimred'")
     expect_error(plotProcrustes(toy, "A", "C", ncomponents = 3),
         "'ncomponents'")
+    expect_error(plotProcrustes(toy, "A", "C", ncomponents = 1),
+        "at least two")
+})
+
+test_that("plotProcrustes selects components as scater does", {
+    reducedDim(toy, "Cr") <- reducedDim(toy, "C")[, c(1, 3, 2)]
+    # Both rotate components 1 and 2 of C onto its components 1 and 3.
+    p1 <- plotProcrustes(toy, "C", "Cr", ncomponents = c(1, 3))
+    p2 <- plotProcrustes(toy, "Cr", "C", ncomponents = 2)
+    expect_equal(p1$data, p2$data)
+    expect_identical(p1$coordinates$ratio, 1)
 })
 
 test_that("plotProcrustes undoes rotation, scaling and shift", {

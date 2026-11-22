@@ -30,6 +30,8 @@ test_that("plotRecurrence draws all pairs of each subject", {
     # Pair (t = 0, t = 3) is samples c3 and c1: |11 - 10| = 1.
     expect_equal(s1$dissimilarity[s1$xmin == -0.5 & s1$ymin == 2], 1)
     expect_true(all(s1$dissimilarity[s1$xmin == s1$ymin] == 0))
+    expect_identical(plotRecurrence(toy, "d", "t", "id")$theme$aspect.ratio,
+        1)
 })
 
 test_that("plotRecurrence selects subjects and marks recurrences", {

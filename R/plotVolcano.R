@@ -5,7 +5,7 @@
 #'
 #' @param x a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
 #'   object, with the results in \code{rowData(x)}, or a \code{data.frame}
-#'   of results with one row per feature and feature names as row names.
+#'   of results with one row per feature.
 #'
 #' @param effect \code{Character scalar}. Specifies the column holding the
 #'   effects, such as log fold changes or slopes.
@@ -18,6 +18,11 @@
 #'
 #' @param label.top \code{Integer scalar}. Labels this many significant
 #'   features with the smallest p-values. (Default: \code{10})
+#'
+#' @param feature.col \code{Character scalar}. Specifies the column of
+#'   feature names that label the points, of \code{rowData(x)} or of the
+#'   \code{data.frame}. If \code{NULL}, uses the row names.
+#'   (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_point]{geom_point}}.
@@ -39,11 +44,12 @@
 #' mat <- SummarizedExperiment::assay(tse, "clr")
 #' male <- tse$sex == "male"
 #' res <- data.frame(
+#'     genus = rownames(tse),
 #'     difference = rowMeans(mat[, male]) - rowMeans(mat[, !male]),
-#'     p = apply(mat, 1, function(v) wilcox.test(v[male], v[!male])$p.value),
-#'     row.names = rownames(tse))
+#'     p = apply(mat, 1, function(v) wilcox.test(v[male], v[!male])$p.value))
 #' res$q <- p.adjust(res$p, method = "fdr")
-#' plotVolcano(res, effect = "difference", p.col = "q", label.top = 5)
+#' plotVolcano(res, effect = "difference", p.col = "q", label.top = 5,
+#'     feature.col = "genus")
 NULL
 
 #' @rdname plotVolcano
@@ -51,14 +57,16 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotVolcano", signature = c(x = "SummarizedExperiment"),
-    function(x, effect, p.col, threshold = 0.05, label.top = 10, ...) {
+    function(x, effect, p.col, threshold = 0.05, label.top = 10,
+            feature.col = NULL, ...) {
         .check_column(x, effect, where = "rowData")
         .check_column(x, p.col, where = "rowData")
-        cols <- unique(c(effect, p.col))
+        .check_column(x, feature.col, where = "rowData")
+        cols <- unique(c(effect, p.col, feature.col))
         df <- as.data.frame(rowData(x)[, cols, drop = FALSE],
             optional = TRUE)
-        rownames(df) <- rownames(x)
-        plotVolcano(df, effect, p.col, threshold, label.top, ...)
+        plotVolcano(df, effect, p.col, threshold, label.top, feature.col,
+            ...)
     }
 )
 
@@ -66,14 +74,16 @@ setMethod("plotVolcano", signature = c(x = "SummarizedExperiment"),
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotVolcano", signature = c(x = "data.frame"),
-    function(x, effect, p.col, threshold = 0.05, label.top = 10, ...) {
-        for (arg in c("effect", "p.col")) {
+    function(x, effect, p.col, threshold = 0.05, label.top = 10,
+            feature.col = NULL, ...) {
+        for (arg in c("effect", "p.col", "feature.col")) {
             col <- get(arg)
+            if (arg == "feature.col" && is.null(col)) next
             if (!.is_one_name(col) || !col %in% names(x)) {
                 stop("'", arg, "' must be one column name of 'x'.",
                     call. = FALSE)
             }
-            if (!is.numeric(x[[col]])) {
+            if (arg != "feature.col" && !is.numeric(x[[col]])) {
                 stop("'", arg, "' must be a numeric column.", call. = FALSE)
             }
         }
@@ -94,7 +104,8 @@ setMethod("plotVolcano", signature = c(x = "data.frame"),
         }
 
         df <- data.frame(
-            .feature = rownames(x),
+            .feature = if (is.null(feature.col)) rownames(x) else
+                as.character(x[[feature.col]]),
             effect = x[[effect]], p = p)
         df <- df[!is.na(df$effect) & !is.na(df$p), , drop = FALSE]
         if (nrow(df) == 0L) {

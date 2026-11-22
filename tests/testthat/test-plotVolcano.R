@@ -37,6 +37,15 @@ test_that("plotVolcano labels the top significant features", {
     expect_true(all(p$data$.label == ""))
 })
 
+test_that("plotVolcano labels from a feature column", {
+    long <- data.frame(feature = rownames(res), res, row.names = NULL)
+    p <- plotVolcano(long, "lfc", "q", label.top = 2,
+        feature.col = "feature")
+    expect_identical(p$data$.label, c("f1", "f2", "", ""))
+    expect_error(plotVolcano(long, "lfc", "q", feature.col = "none"),
+        "'feature.col'")
+})
+
 test_that("plotVolcano reads rowData", {
     se <- SummarizedExperiment(
         assays = list(counts = matrix(1, 6L, 2L)),
@@ -45,4 +54,7 @@ test_that("plotVolcano reads rowData", {
     p <- plotVolcano(se, "lfc", "q")
     expect_identical(p$data, plotVolcano(res, "lfc", "q")$data)
     expect_error(plotVolcano(se, "none", "q"), "'effect'")
+    rowData(se)$genus <- toupper(rownames(se))
+    p <- plotVolcano(se, "lfc", "q", label.top = 1, feature.col = "genus")
+    expect_identical(p$data$.label[1L], "F1")
 })

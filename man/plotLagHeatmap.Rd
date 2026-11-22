@@ -84,10 +84,13 @@ correlations as features by lag tiles.
 }
 \details{
 At lag \eqn{k}, each feature at a sample is paired with the target
-\eqn{k} samples later in the same subject, and the Spearman correlation
-is computed over all pairs. Positive lags show features that change
-before the target, negative lags features that follow it. Lags count
-samples, so they are comparable across subjects only for even sampling.
+\eqn{k} samples later in the same subject. Feature and target are
+centred on their mean over the pairs of each subject, so that
+differences between subjects do not drive the correlation, and the
+Spearman correlation is computed over all pairs. Positive lags show
+features that change before the target, negative lags features that
+follow it. Lags count samples, so they are comparable across subjects
+only for even sampling.
 }
 \examples{
 # Species that change before or after acetate in three bioreactors
