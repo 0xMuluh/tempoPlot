@@ -14,3 +14,4 @@ inst/extras
 ^LICENSE\.md$
 ^Rplots\.pdf$
 ^tests/testthat/_problems$
+^man-roxygen$

@@ -50,7 +50,8 @@
     invisible(.time_type(x, time.col))
 }
 
-# Classify the time column as "numeric", "date" or "visit".
+# Classify the time column as "numeric", "date", "datetime" (POSIXct) or
+# "visit".
 .time_type <- function(x, time.col) {
     time <- colData(x)[[time.col]]
     if (is.numeric(time)) {
@@ -59,11 +60,14 @@
     if (inherits(time, "Date")) {
         return("date")
     }
+    if (inherits(time, "POSIXct")) {
+        return("datetime")
+    }
     if (is.factor(time)) {
         return("visit")
     }
     stop(
-        "'time.col' must be numeric, Date or factor; ",
+        "'time.col' must be numeric, Date, POSIXct or factor; ",
         "convert character times to a factor.",
         call. = FALSE
     )
@@ -80,10 +84,25 @@
     df[ord, , drop = FALSE]
 }
 
-# Time as numbers: Date as days, factor as level codes. The type is
-# validated by .time_type().
+# Time as numbers: Date as days, POSIXct as hours, factor as level codes.
+# The type is validated by .time_type().
 .time_numeric <- function(time) {
-    if (is.factor(time)) as.integer(time) else as.numeric(time)
+    if (is.factor(time)) {
+        return(as.integer(time))
+    }
+    as.numeric(time) / if (inherits(time, "POSIXct")) 3600 else 1
+}
+
+# Inverse of .time_numeric() for continuous times: numbers t back to the
+# class of time, Date or POSIXct (in its time zone); other t unchanged.
+.time_restore <- function(t, time) {
+    if (inherits(time, "Date")) {
+        return(.Date(t))
+    }
+    if (inherits(time, "POSIXct")) {
+        return(.POSIXct(t * 3600, attr(time, "tzone")))
+    }
+    t
 }
 
 # Error unless max.gap is NULL or a single positive number.
@@ -98,7 +117,8 @@
 
 # Add integer column .segment, increasing within each subject when the
 # gap to the previous sample exceeds max.gap. Distance is numeric
-# difference, days for Date, or level steps for visit factors.
+# difference, days for Date, hours for POSIXct, or level steps for visit
+# factors.
 # max.gap = NULL keeps one segment per subject.
 #' @importFrom stats ave
 .break_gaps <- function(df, time.col, group = NULL, max.gap = NULL) {
@@ -228,8 +248,8 @@
 # Check events and return them as a data.frame, or NULL. Columns: start
 # (required), end and label (optional) and group (optional; without it,
 # each event applies to all subjects). start and end must have the type
-# of time.col: numeric, Date, or levels of the visit factor (returned as
-# that factor). end NA marks a single time point.
+# of time.col: numeric, Date, POSIXct, or levels of the visit factor
+# (returned as that factor). end NA marks a single time point.
 .check_events <- function(events, x, time.col, group = NULL) {
     if (is.null(events)) {
         return(NULL)
@@ -245,8 +265,8 @@
         if (is.factor(time)) {
             ok <- all(is.na(v) | as.character(v) %in% levels(time))
             v <- factor(as.character(v), levels = levels(time))
-        } else if (inherits(time, "Date")) {
-            ok <- inherits(v, "Date")
+        } else if (inherits(time, c("Date", "POSIXct"))) {
+            ok <- inherits(v, class(time)[1L])
         } else {
             ok <- is.numeric(v)
         }
