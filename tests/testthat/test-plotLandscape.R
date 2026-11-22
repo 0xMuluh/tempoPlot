@@ -26,6 +26,14 @@ test_that("plotLandscape draws the density and the potential", {
     expect_identical(q$labels$y, "potential (-log density)")
 })
 
+test_that("plotLandscape passes bw and adjust to density, ... to the line", {
+    p <- plotLandscape(toy, "v", bw = 0.3, adjust = 2, linetype = "dashed",
+        linewidth = 2)
+    expect_equal(p$data$.y, density(toy$v, bw = 0.3, adjust = 2)$y)
+    ld <- layer_data(p, 1L)
+    expect_true(all(ld$linetype == "dashed" & ld$linewidth == 2))
+})
+
 test_that("plotLandscape draws one curve per group", {
     p <- plotLandscape(toy, "v", group.by = "arm")
     expect_setequal(p$data$.by, c("a", "b"))

@@ -16,21 +16,13 @@
 #'   panel. (Default: \code{NULL})
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay of
-#'   abundances. Values are turned into proportions of each sample.
+#'   abundances. To plot taxonomic ranks, agglomerate \code{x} first with
+#'   \code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
 #'   (Default: \code{NULL}, the first assay)
 #'
-#' @param rank \code{Character scalar}. Specifies the column of
-#'   \code{rowData(x)}, such as a taxonomic rank, whose levels are summed
-#'   before plotting. (Default: \code{NULL})
-#'
 #' @param top \code{Integer scalar}. Number of most abundant features, by
-#'   mean proportion, to show; the rest are summed into "Other".
-#'   (Default: \code{5})
-#'
-#' @param y \code{Character scalar}. Specifies a categorical column from
-#'   \code{colData(x)}, such as a state, to plot instead of the assay: the
-#'   share of samples in each state at each time, one panel per
-#'   \code{group.by} group. (Default: \code{NULL})
+#'   mean proportion, to show; the rest, and a feature already named
+#'   "Other", are summed into "Other". (Default: \code{5})
 #'
 #' @param as.relative \code{Logical scalar}. Turns the assay into
 #'   proportions of each sample (\code{TRUE}) or stacks its values as they
@@ -47,8 +39,8 @@
 #'   group at each time (\code{"group"}). (Default: \code{"subject"})
 #'
 #' @param group.by \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that groups subjects when \code{level = "group"}.
-#'   (Default: \code{NULL})
+#'   \code{colData(x)} that groups subjects when \code{level = "group"}. If
+#'   \code{NULL}, all subjects form one group. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_bar]{geom_col}},
@@ -63,8 +55,20 @@
 #' @examples
 #' # A defined community of 16 species in three replicate bioreactors
 #' data("minimalgut", package = "miaTime")
-#' plotComposition(minimalgut, time.col = "Time_hr_num",
+#' tse <- minimalgut
+#' plotComposition(tse, time.col = "Time_hr_num",
 #'     group = "StudyIdentifier", top = 8, layout = "area")
+#'
+#' # Biomass of each species, relative abundance times optical density,
+#' # as a stream
+#' tse <- tse[, !is.na(tse$OpticalDensity)]
+#' tse <- mia::transformAssay(tse, method = "relabundance")
+#' SummarizedExperiment::assay(tse, "biomass") <-
+#'     t(t(SummarizedExperiment::assay(tse, "relabundance")) *
+#'     tse$OpticalDensity)
+#' plotComposition(tse, time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", assay.type = "biomass", top = 8,
+#'     as.relative = FALSE, layout = "stream")
 #'
 #' # Phyla of five subjects over their visits
 #' data("hitchip1006", package = "miaTime")
@@ -73,39 +77,22 @@
 #' tse <- tse[, !duplicated(t(SummarizedExperiment::assay(tse, "counts")))]
 #' tse <- tse[, tse$subject %in% names(which(table(tse$subject) == 5))]
 #' tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
-#' plotComposition(tse, time.col = "visit", group = "subject",
-#'     rank = "Phylum")
+#' tse <- mia::agglomerateByRank(tse, rank = "Phylum")
+#' plotComposition(tse, time.col = "visit", group = "subject")
 #'
 #' # Mean phylum composition by sex at each visit
 #' plotComposition(tse, time.col = "visit", group = "subject",
-#'     rank = "Phylum", level = "group", group.by = "sex")
-#'
-#' # Biomass of each species, relative abundance times optical density,
-#' # as a stream
-#' mg <- minimalgut[, !is.na(minimalgut$OpticalDensity)]
-#' mg <- mia::transformAssay(mg, method = "relabundance")
-#' SummarizedExperiment::assay(mg, "biomass") <-
-#'     t(t(SummarizedExperiment::assay(mg, "relabundance")) *
-#'     mg$OpticalDensity)
-#' plotComposition(mg, time.col = "Time_hr_num",
-#'     group = "StudyIdentifier", assay.type = "biomass", top = 8,
-#'     as.relative = FALSE, layout = "stream")
-#'
-#' # Share of samples by dominant genus at each visit
-#' tse <- mia::addDominant(tse, name = "dominant", n = 4)
-#' plotComposition(tse, time.col = "visit", group = "subject",
-#'     y = "dominant")
+#'     level = "group", group.by = "sex")
 NULL
 
 #' @rdname plotComposition
-#' @importFrom SummarizedExperiment assay colData rowData
+#' @importFrom SummarizedExperiment assay colData
 #' @importFrom stats aggregate
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
-    function(x, time.col, group = NULL, assay.type = NULL, rank = NULL,
-            top = 5, y = NULL, as.relative = TRUE,
-            layout = c("bar", "area", "stream"),
+    function(x, time.col, group = NULL, assay.type = NULL, top = 5,
+            as.relative = TRUE, layout = c("bar", "area", "stream"),
             level = c("subject", "group"), group.by = NULL, ...) {
         layout <- match.arg(layout)
         level <- match.arg(level)
@@ -113,7 +100,6 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         # Errors on character and other unsupported time types.
         .time_type(x, time.col)
         .check_column(x, group.by)
-        .check_column(x, rank, where = "rowData")
         if (!(is.numeric(top) && length(top) == 1L && top >= 1)) {
             stop("'top' must be a single number of at least 1.",
                 call. = FALSE)
@@ -121,29 +107,20 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
             stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
         }
-        if (level == "group" && is.null(group.by)) {
-            stop("'level' = \"group\" needs 'group.by'.", call. = FALSE)
-        }
-        if (!is.null(y)) {
-            df <- .state_shares(x, y, time.col, group.by)
-            return(.plot_composition(df, time.col, group.by, layout, y,
-                ylab = "Share of samples", ...))
-        }
 
         mat <- as.matrix(assay(x, assay.type %||% 1L))
-        if (!is.null(rank)) {
-            mat <- rowsum(mat, as.character(rowData(x)[[rank]]))
-        }
         prop <- prop.table(mat, 2L)
-        keep <- order(rowMeans(prop), decreasing = TRUE)[seq_len(
-            min(top, nrow(prop)))]
+        # A feature already named "Other" is summed with the rest.
+        m <- rowMeans(prop)
+        m[rownames(prop) == "Other"] <- -Inf
+        keep <- order(m, decreasing = TRUE)[seq_len(min(top, nrow(prop)))]
         if (!as.relative) {
             prop <- mat
         }
-        if (length(keep) < nrow(prop)) {
-            prop <- rbind(prop[keep, , drop = FALSE],
-                Other = colSums(prop[-keep, , drop = FALSE]))
-        }
+        lab <- rownames(prop)
+        lab[-keep] <- "Other"
+        prop <- rowsum(prop, factor(lab, levels = unique(c(lab[keep],
+            "Other"))))
 
         cols <- unique(c(time.col, group, group.by))
         cd <- as.data.frame(colData(x)[, cols, drop = FALSE],
@@ -158,53 +135,22 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
             panel <- group.by
         }
 
-        .plot_composition(df, time.col, panel, layout,
-            rank %||% "feature", ylab = if (as.relative)
-                "Relative abundance" else assay.type %||% "Abundance",
-            ...)
+        ylab <- if (as.relative) "Relative abundance" else
+            assay.type %||% "Abundance"
+        .plot_composition(df, time.col, panel, layout, ylab, ...)
     }
 )
 
-# Share of samples in each state of the colData column y at each time,
-# within each group.by group.
-#' @importFrom SummarizedExperiment colData
-.state_shares <- function(x, y, time.col, group.by) {
-    .check_column(x, y)
-    if (is.null(y)) {
-        stop("'y' must be one column name of colData(x).", call. = FALSE)
-    }
-    state <- colData(x)[[y]]
-    if (!(is.factor(state) || is.character(state) || is.logical(state))) {
-        stop("'y' must be a factor, character or logical column.",
-            call. = FALSE)
-    }
-    cols <- unique(c(time.col, group.by))
-    cd <- as.data.frame(colData(x)[, cols, drop = FALSE], optional = TRUE)
-    cd$.feature <- factor(state)
-    cd <- cd[!is.na(cd$.feature), , drop = FALSE]
-    tab <- as.data.frame(table(cd[c(time.col, group.by, ".feature")]),
-        responseName = ".n")
-    tab$.value <- tab$.n / ave(tab$.n, tab[c(time.col, group.by)],
-        FUN = sum)
-    tab <- tab[!is.nan(tab$.value), , drop = FALSE]
-    # table() turns times into factors; restore numeric and Date times.
-    time <- colData(x)[[time.col]]
-    if (!is.factor(time)) {
-        lv <- as.character(tab[[time.col]])
-        tab[[time.col]] <- sort(unique(time))[match(lv,
-            as.character(sort(unique(time))))]
-    }
-    tab
-}
-
 #' @importFrom ggplot2 ggplot aes .data geom_col geom_area geom_ribbon
-#'   facet_wrap vars labs scale_x_discrete
+#'   facet_wrap vars labs scale_x_discrete theme element_blank
 #' @importFrom stats ave
-.plot_composition <- function(df, time.col, panel, layout, fill,
-        ylab = "Relative abundance", ...) {
+.plot_composition <- function(df, time.col, panel, layout, ylab, ...) {
     if (layout == "stream") {
-        # Stack the features at each time, then centre the stack on zero.
-        df <- df[order(df[[time.col]], df$.feature), , drop = FALSE]
+        # Stack the features at each time, the first on top as in bars and
+        # areas, and centre the stack on zero. Only heights are meaningful,
+        # so the y axis is left unlabelled.
+        df <- df[order(df[[time.col]], -as.integer(df$.feature)), ,
+            drop = FALSE]
         keys <- if (is.null(panel)) list(df[[time.col]]) else
             list(df[[time.col]], df[[panel]])
         top <- ave(df$.value, keys, FUN = cumsum)
@@ -214,14 +160,16 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         p <- ggplot(df, aes(x = .data[[time.col]], ymin = .data$.ymin,
                 ymax = .data$.ymax, fill = .data$.feature,
                 group = .data$.feature)) +
-            geom_ribbon(...)
+            geom_ribbon(...) +
+            theme(axis.text.y = element_blank(),
+                axis.ticks.y = element_blank())
     } else {
         geom <- switch(layout, bar = geom_col, area = geom_area)
         p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
                 fill = .data$.feature, group = .data$.feature)) +
             geom(...)
     }
-    p <- p + labs(x = time.col, y = ylab, fill = fill)
+    p <- p + labs(x = time.col, y = ylab, fill = "feature")
     if (!is.null(panel)) {
         p <- p + facet_wrap(vars(.data[[panel]]))
     }

@@ -23,9 +23,15 @@
 #'   \code{colData(x)} that splits the samples into curves.
 #'   (Default: \code{NULL})
 #'
+#' @param bw \code{Numeric scalar} or \code{Character scalar}. Bandwidth
+#'   of the kernel, passed to \code{\link[stats:density]{density}}.
+#'   (Default: \code{"nrd0"})
+#'
+#' @param adjust \code{Numeric scalar}. Multiplies the bandwidth.
+#'   (Default: \code{1})
+#'
 #' @param ... additional arguments passed to
-#'   \code{\link[stats:density]{density}}, such as \code{bw} or
-#'   \code{adjust}.
+#'   \code{\link[ggplot2:geom_line]{geom_line}}.
 #'
 #' @details
 #' Densities are Gaussian kernel estimates; the bandwidth sets how many
@@ -59,7 +65,7 @@ NULL
 #' @export
 setMethod("plotLandscape", signature = c(x = "SummarizedExperiment"),
     function(x, y, assay.type = NULL, scale = c("density", "potential"),
-            group.by = NULL, ...) {
+            group.by = NULL, bw = "nrd0", adjust = 1, ...) {
         scale <- match.arg(scale)
         .check_column(x, group.by)
         value <- unname(.resolve_y(x, y, assay.type))
@@ -73,7 +79,7 @@ setMethod("plotLandscape", signature = c(x = "SummarizedExperiment"),
                 call. = FALSE)
         }
         curves <- do.call(rbind, lapply(seq_along(groups), function(i) {
-            d <- density(groups[[i]], ...)
+            d <- density(groups[[i]], bw = bw, adjust = adjust)
             data.frame(.by = names(groups)[i], .x = d$x, .y = d$y)
         }))
         if (scale == "potential") {
@@ -81,15 +87,17 @@ setMethod("plotLandscape", signature = c(x = "SummarizedExperiment"),
             curves$.y <- -log(curves$.y)
         }
         samples <- data.frame(.by = by[keep], .x = value[keep])
-        .plot_landscape(curves, samples, y, scale, group.by)
+        .plot_landscape(curves, samples, y, scale, group.by, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_rug labs
-.plot_landscape <- function(curves, samples, y, scale, group.by) {
+#' @importFrom utils modifyList
+.plot_landscape <- function(curves, samples, y, scale, group.by, ...) {
     colour <- if (!is.null(group.by)) aes(colour = .data$.by)
     ggplot(curves, aes(x = .data$.x, y = .data$.y, group = .data$.by)) +
-        geom_line(colour, linewidth = 1) +
+        do.call(geom_line, modifyList(list(colour, linewidth = 1),
+            list(...))) +
         geom_rug(aes(x = .data$.x, colour = if (!is.null(group.by))
             .data$.by), data = samples, inherit.aes = FALSE, sides = "b",
             alpha = 0.3) +

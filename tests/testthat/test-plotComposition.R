@@ -15,10 +15,6 @@ test_that("plotComposition checks its arguments", {
     expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
         top = 0), "'top'")
     expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
-        rank = "missing"), "'rank'")
-    expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
-        level = "group"), "group.by")
-    expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
         layout = "muller"))
 })
 
@@ -44,24 +40,34 @@ test_that("plotComposition keeps the most abundant features and Other", {
     expect_identical(nlevels(p$data$.feature), nrow(mg))
 })
 
-test_that("plotComposition sums features of a rank", {
-    p <- plotComposition(h, "visit", "subject", rank = "Phylum", top = 3)
-    phyla <- rowsum(assay(h, "counts"), rowData(h)$Phylum)
-    phyla <- prop.table(phyla, 2L)
-    expected <- names(sort(rowMeans(phyla), decreasing = TRUE))[1:3]
-    expect_identical(levels(p$data$.feature), c(expected, "Other"))
-    expect_identical(get_labs(p)$fill, "Phylum")
+test_that("plotComposition sums into a feature already named Other", {
+    # "Other" is the most abundant row, as after mia::subsetBy(collapse).
+    toy <- SummarizedExperiment(
+        assays = list(counts = matrix(c(5, 4, 3, 9, 6, 2, 1, 6), 4L,
+            dimnames = list(c("a", "b", "c", "Other"), c("s1", "s2")))),
+        colData = DataFrame(t = c(1, 2)))
+    df <- plotComposition(toy, "t", top = 1)$data
+    expect_identical(levels(df$.feature), c("a", "Other"))
+    expect_equal(df$.value[df$.feature == "Other"], c(16, 9) / c(21, 15))
+    df <- plotComposition(toy, "t", top = 5)$data
+    expect_identical(levels(df$.feature), c("a", "b", "c", "Other"))
 })
 
 test_that("plotComposition averages groups at each time", {
-    p <- plotComposition(h, "visit", "subject", rank = "Phylum", top = 3,
-        level = "group", group.by = "sex")
-    phyla <- prop.table(rowsum(assay(h, "counts"), rowData(h)$Phylum), 2L)
+    p <- plotComposition(h, "visit", "subject", top = 3, level = "group",
+        group.by = "sex")
+    hp <- prop.table(assay(h, "counts"), 2L)
+    f <- levels(p$data$.feature)[1L]
     first <- h$visit == "1" & h$sex == "female"
     d <- p$data[p$data$visit == "1" & p$data$sex == "female" &
-        p$data$.feature == "Firmicutes", ]
-    expect_equal(d$.value, mean(phyla["Firmicutes", first]))
+        p$data$.feature == f, ]
+    expect_equal(d$.value, mean(hp[f, first]))
     expect_length(unique(layer_data(p, 1L)$PANEL), length(unique(h$sex)))
+    # Without group.by, all subjects form one group in one panel.
+    p <- plotComposition(h, "visit", "subject", top = 3, level = "group")
+    d <- p$data[p$data$visit == "1" & p$data$.feature == f, ]
+    expect_equal(d$.value, mean(hp[f, h$visit == "1"]))
+    expect_s3_class(p$facet, "FacetNull")
 })
 
 test_that("plotComposition draws areas and keeps unused visits", {
@@ -71,26 +77,8 @@ test_that("plotComposition draws areas and keeps unused visits", {
     expect_true(all(layer_data(p, 1L)$alpha == 0.5))
 
     h$visit <- factor(h$visit, levels = c(levels(h$visit), "6"))
-    p <- plotComposition(h, "visit", "subject", rank = "Phylum")
+    p <- plotComposition(h, "visit", "subject")
     expect_true("6" %in% layer_scales(p)$x$get_limits())
-})
-
-test_that("plotComposition draws shares of states", {
-    toy <- SummarizedExperiment::SummarizedExperiment(
-        assays = list(counts = matrix(1, 1L, 6L)),
-        colData = S4Vectors::DataFrame(
-            id = c("s1", "s2", "s3", "s1", "s2", "s3"),
-            t = c(1, 1, 1, 2, 2, 2), state = c("A", "A", "B", "B", NA, "B"),
-            arm = c("x", "x", "y", "x", "x", "y")))
-    df <- plotComposition(toy, "t", "id", y = "state")$data
-    expect_equal(df$.value[df$t == 1 & df$.feature == "A"], 2 / 3)
-    # The NA state at time 2 is left out of the shares.
-    expect_equal(df$.value[df$t == 2 & df$.feature == "B"], 1)
-    expect_true(is.numeric(df$t))
-    p <- plotComposition(toy, "t", "id", y = "state", group.by = "arm")
-    expect_equal(p$data$.value[p$data$t == 1 & p$data$arm == "y" &
-        p$data$.feature == "B"], 1)
-    expect_error(plotComposition(toy, "t", "id", y = "t"), "factor")
 })
 
 test_that("plotComposition stacks absolute values and streams", {
@@ -112,6 +100,12 @@ test_that("plotComposition stacks absolute values and streams", {
     lo <- tapply(d$.ymin, key, min)
     hi <- tapply(d$.ymax, key, max)
     expect_equal(lo[!is.na(lo)], -hi[!is.na(hi)])
+    # The first feature is on top, as in bars, and the centred y axis is
+    # unlabelled.
+    first <- d[d$.feature == levels(d$.feature)[1L], ]
+    expect_equal(first$.ymax, as.vector(hi[cbind(
+        as.character(first$Time_hr_num), first$StudyIdentifier)]))
+    expect_s3_class(p$theme$axis.text.y, "element_blank")
     expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
         as.relative = "yes"), "'as.relative'")
 })

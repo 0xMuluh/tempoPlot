@@ -73,6 +73,12 @@ test_that("plotTiles orders by clustering and handles visits and Dates", {
     expect_true(all(df$.width == 1))
     toy$date <- as.Date("2020-01-01") + toy$t
     expect_s3_class(plotTiles(toy, "date", "id")$data$.mid, "Date")
+    # A tile reaches at most max.gap / 2, so the gap from 1 to 3 is blank.
+    s1 <- cells(plotTiles(toy, "t", "id", max.gap = 1.5))
+    s1 <- s1[s1$.panel == "s1" & s1$.feature == "a", ]
+    expect_equal(s1$.lower, c(-0.5, 0.5, 2.25))
+    expect_equal(s1$.upper, c(0.5, 1.75, 3.75))
+    expect_error(plotTiles(toy, "t", "id", max.gap = 0), "'max.gap'")
     one <- toy[, toy$id == "s1"]
     p <- plotTiles(one, "t")
     expect_identical(nrow(p$data), 6L)
@@ -81,7 +87,7 @@ test_that("plotTiles orders by clustering and handles visits and Dates", {
 test_that("plotTiles draws effects from a results table", {
     res <- data.frame(
         feature = rep(c("a", "b", "c"), each = 2),
-        visit = rep(c("v1", "v2"), 3),
+        visit = factor(rep(c("v1", "v2"), 3)),
         lfc = c(1, -2, 0.1, 0.2, 3, 4),
         q = c(0.01, 0.2, 0.5, 0.5, 0.04, 0.001))
     p <- plotTiles(res, "visit", effect = "lfc", p.col = "q")
@@ -108,4 +114,19 @@ test_that("plotTiles checks results tables", {
     expect_error(plotTiles(res, "t", effect = "lfc", threshold = 2),
         "'threshold'")
     expect_s3_class(plotTiles(res, "t", effect = "lfc"), "ggplot")
+    res$t <- c("week2", "week10")
+    expect_error(plotTiles(res, "t", effect = "lfc"), "factor")
+})
+
+test_that("plotTiles keeps the time type of results tables", {
+    res <- data.frame(feature = "a", lfc = 1:3,
+        day = as.Date("2020-01-01") + c(0, 1, 30))
+    df <- plotTiles(res, "day", effect = "lfc", max.gap = 2)$data
+    df <- df[order(df$.time), ]
+    expect_s3_class(df$.mid, "Date")
+    # Dates keep their spacing; the 29-day gap stays blank.
+    expect_equal(df$.width, c(1, 1.5, 2))
+    res$visit <- factor(c("w2", "w10", "w20"), levels = c("w2", "w10", "w20"))
+    df <- plotTiles(res, "visit", effect = "lfc")$data
+    expect_equal(df$.time[order(df$.value)], 1:3)
 })

@@ -18,11 +18,11 @@
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
 #'
-#' @param normalize \code{Character scalar}. Shows the share of transitions
-#'   from each state (\code{"row"}) or the counts (\code{"none"}).
-#'   (Default: \code{"row"})
+#' @param as.relative \code{Logical scalar}. Shows the share of transitions
+#'   from each state (\code{TRUE}) or the counts (\code{FALSE}).
+#'   (Default: \code{TRUE})
 #'
-#' @param group.by \code{Character scalar}. Specifies the column from
+#' @param facet.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that splits the transitions into panels. Each
 #'   transition takes the value of its earlier sample.
 #'   (Default: \code{NULL})
@@ -49,7 +49,7 @@
 #'
 #' # Counts by sex
 #' plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
-#'     group = "subject", normalize = "none", group.by = "sex")
+#'     group = "subject", as.relative = FALSE, facet.by = "sex")
 NULL
 
 #' @rdname plotTransitionMatrix
@@ -57,9 +57,8 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
-    function(x, state.col, time.col, group, normalize = c("row", "none"),
-            group.by = NULL, ...) {
-        normalize <- match.arg(normalize)
+    function(x, state.col, time.col, group, as.relative = TRUE,
+            facet.by = NULL, ...) {
         if (is.null(group)) {
             stop("'group' must be one column name of colData(x).",
                 call. = FALSE)
@@ -67,7 +66,10 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
         .check_longitudinal(x, time.col, group)
         .time_type(x, time.col)
         .check_column(x, state.col)
-        .check_column(x, group.by)
+        .check_column(x, facet.by)
+        if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
+            stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
+        }
         if (is.null(state.col)) {
             stop("'state.col' must be one column name of colData(x).",
                 call. = FALSE)
@@ -79,19 +81,20 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
                 "column.", call. = FALSE)
         }
 
-        cols <- unique(c(time.col, group, state.col, group.by))
+        cols <- unique(c(time.col, group, state.col, facet.by))
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
         df <- .order_time(df, time.col, group)
-        df <- .count_transitions(df, state.col, group, group.by, normalize)
-        .plot_transition_matrix(df, state.col, group.by, normalize, ...)
+        df <- .count_transitions(df, state.col, group, facet.by, as.relative)
+        .plot_transition_matrix(df, state.col, facet.by, as.relative, ...)
     }
 )
 
 # Count transitions between consecutive samples of each subject. Returns
-# one row per from-to pair (and group.by level), all pairs included, with
+# one row per from-to pair (and facet.by level), all pairs included, with
 # columns from, to, n and value (count or share of the from row).
-.count_transitions <- function(df, state.col, group, group.by, normalize) {
+.count_transitions <- function(df, state.col, group, facet.by,
+        as.relative) {
     state <- df[[state.col]]
     lv <- if (is.factor(state)) levels(state) else sort(unique(
         as.character(state[!is.na(state)])))
@@ -102,20 +105,20 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
         stop("No subject has two consecutive samples with a state.",
             call. = FALSE)
     }
-    by <- if (is.null(group.by)) rep("", n - 1L) else
-        as.character(df[[group.by]][-n])
+    by <- if (is.null(facet.by)) rep("", n - 1L) else
+        as.character(df[[facet.by]][-n])
     tr <- data.frame(
         from = factor(as.character(state[-n]), levels = lv)[keep],
         to = factor(as.character(state[-1L]), levels = lv)[keep],
         by = factor(by[keep]))
     tab <- as.data.frame(table(tr), responseName = "n")
     tab$value <- tab$n
-    if (normalize == "row") {
+    if (as.relative) {
         total <- ave(tab$n, tab$from, tab$by, FUN = sum)
         tab$value <- ifelse(total > 0, tab$n / total, NA_real_)
     }
-    if (!is.null(group.by)) {
-        names(tab)[names(tab) == "by"] <- group.by
+    if (!is.null(facet.by)) {
+        names(tab)[names(tab) == "by"] <- facet.by
     }
     tab
 }
@@ -123,9 +126,9 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
 #' @importFrom ggplot2 ggplot aes .data geom_tile geom_text labs
 #'   facet_wrap vars scale_y_discrete scale_fill_gradient theme
 #'   element_text
-.plot_transition_matrix <- function(df, state.col, group.by, normalize,
+.plot_transition_matrix <- function(df, state.col, facet.by, as.relative,
         ...) {
-    label <- if (normalize == "row") round(df$value, 2) else df$n
+    label <- if (as.relative) sprintf("%.2f", df$value) else df$n
     df$.label <- ifelse(df$n > 0, label, "")
     p <- ggplot(df, aes(x = .data$to, y = .data$from)) +
         geom_tile(aes(fill = .data$value), ...) +
@@ -135,9 +138,9 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
             na.value = "white") +
         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
         labs(x = paste(state.col, "after"), y = paste(state.col, "before"),
-            fill = if (normalize == "row") "share" else "count")
-    if (!is.null(group.by)) {
-        p <- p + facet_wrap(vars(.data[[group.by]]))
+            fill = if (as.relative) "share" else "count")
+    if (!is.null(facet.by)) {
+        p <- p + facet_wrap(vars(.data[[facet.by]]))
     }
     p
 }
