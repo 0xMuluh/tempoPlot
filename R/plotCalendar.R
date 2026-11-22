@@ -28,15 +28,20 @@
 #'
 #' @examples
 #' # Daily sampling of 20 people; study days placed on an arbitrary
-#' # calendar starting on 1 March
+#' # calendar starting on 1 March, with no samples at weekends
 #' data("temporalMicrobiome20", package = "miaTime")
 #' tse <- temporalMicrobiome20
 #' tse$date <- as.Date("2021-03-01") + tse$day - 1
+#' tse <- tse[, !format(tse$date, "%u") %in% c("6", "7")]
 #' plotCalendar(tse, time.col = "date")
+#'
+#' # Samples per week of the year
+#' plotCalendar(tse, time.col = "date", unit = "week")
 NULL
 
 #' @rdname plotCalendar
 #' @importFrom SummarizedExperiment colData
+#' @importFrom stats aggregate
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotCalendar", signature = c(x = "SummarizedExperiment"),
@@ -44,7 +49,7 @@ setMethod("plotCalendar", signature = c(x = "SummarizedExperiment"),
         unit <- match.arg(unit)
         .check_column(x, time.col)
         date <- colData(x)[[time.col]]
-        if (is.null(time.col) || !inherits(date, "Date")) {
+        if (!inherits(date, "Date")) {
             stop("'time.col' must be a Date column of colData(x).",
                 call. = FALSE)
         }
@@ -56,29 +61,23 @@ setMethod("plotCalendar", signature = c(x = "SummarizedExperiment"),
         weekday <- as.integer(format(date, "%u"))
         monday <- date - (weekday - 1L)
         df <- if (unit == "day") {
-            tab <- as.data.frame(table(date = as.character(date)),
-                responseName = "n")
-            d <- as.Date(as.character(tab$date))
-            wd <- as.integer(format(d, "%u"))
-            data.frame(.x = d - (wd - 1L), .y = factor(wd, levels = 7:1,
-                labels = rev(c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-                    "Sun"))), n = tab$n)
+            data.frame(.x = monday, .y = factor(weekday, levels = 7:1,
+                labels = c("Sun", "Sat", "Fri", "Thu", "Wed", "Tue", "Mon")))
         } else {
-            key <- paste(format(monday, "%G"), format(monday, "%V"))
-            tab <- as.data.frame(table(key), responseName = "n")
-            parts <- do.call(rbind, strsplit(as.character(tab$key), " "))
-            data.frame(.x = as.integer(parts[, 2L]), .y = factor(parts[, 1L]),
-                n = tab$n)
+            data.frame(.x = as.integer(format(monday, "%V")),
+                .y = factor(format(monday, "%G")))
         }
+        df <- aggregate(list(n = rep(1L, nrow(df))), by = df, FUN = sum)
         .plot_calendar(df, unit, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_tile labs scale_fill_gradient
 #'   scale_x_date
+#' @importFrom utils modifyList
 .plot_calendar <- function(df, unit, ...) {
     p <- ggplot(df, aes(x = .data$.x, y = .data$.y, fill = .data$n)) +
-        geom_tile(colour = "white", ...) +
+        do.call(geom_tile, modifyList(list(colour = "white"), list(...))) +
         scale_fill_gradient(low = "#c6dbef", high = "#08519c") +
         labs(fill = "samples")
     if (unit == "day") {

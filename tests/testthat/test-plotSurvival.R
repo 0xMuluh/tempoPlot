@@ -58,3 +58,14 @@ test_that("plotSurvival times state exits and outcomes by group", {
     df <- fits(event = "outcome", event.col = "sick")
     expect_equal(df$.time[df$.surv < 1], 5)
 })
+
+test_that("plotSurvival draws the confidence band behind the curve", {
+    # s1 leaves A at 5, s2 is censored at 2, s3 leaves B at 4.
+    p <- plotSurvival(toy, "t", "id", event = "state.exit",
+        state.col = "state")
+    fit <- survival::survfit(survival::Surv(c(5, 2, 4), c(1, 0, 1)) ~ 1)
+    expect_equal(p$data$.lower, c(1, fit$lower))
+    expect_equal(p$data$.upper, c(1, fit$upper))
+    expect_equal(p$data$.next, c(2, 4, 5, 5))
+    expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomRect")
+})

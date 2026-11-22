@@ -27,6 +27,7 @@ export(plotSurvival)
 export(plotSwimmer)
 export(plotTBI)
 export(plotTiles)
+export(plotTimeEffect)
 export(plotTimeLoadings)
 export(plotTransitionMatrix)
 export(plotTrend)
@@ -59,6 +60,7 @@ exportMethods(plotSurvival)
 exportMethods(plotSwimmer)
 exportMethods(plotTBI)
 exportMethods(plotTiles)
+exportMethods(plotTimeEffect)
 exportMethods(plotTimeLoadings)
 exportMethods(plotTransitionMatrix)
 exportMethods(plotTrend)
@@ -83,7 +85,6 @@ importFrom(SummarizedExperiment,
 importFrom(ggplot2,
   .data,
   aes,
-  annotate,
   arrow,
   coord_equal,
   coord_polar,
@@ -156,6 +157,7 @@ importFrom(stats,
   dist,
   hclust,
   lm,
+  lowess,
   median,
   na.pass,
   optimize,

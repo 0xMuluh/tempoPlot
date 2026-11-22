@@ -41,7 +41,7 @@ them computed with `r BiocStyle::Biocpkg("miaTime")` and
 | Question | Functions |
 |---|---|
 | When were samples taken? | `plotSwimmer()`, `plotGaps()`, `plotCalendar()` |
-| How does a value change over time? | `plotTrend()`, `plotPath()` |
+| How does a value change over time? | `plotTrend()`, `plotTimeEffect()`, `plotPath()` |
 | How does the composition change? | `plotComposition()`, `plotTiles()`, `plotHorizon()`, `plotRanks()`, `plotAccumulation()`, `plotAlluvial()`, `plotTransitionMatrix()` |
 | How fast and how much do communities change? | `plotTurnover()`, `plotTBI()`, `plotRecurrence()`, `plotIndividuality()`, `plotFingerprint()`, `plotLagProfile()` |
 | Are there states, rhythms or leads? | `plotLandscape()`, `plotSpectrum()`, `plotLagHeatmap()`, `plotSurvival()` |
@@ -153,19 +153,41 @@ plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", baseline = "difference", smooth = "mean")
 ```
 
-`align.to` draws time relative to an event of each subject and `limits` a
-reference range. After Blautia hydrogenotrophica was added at 152 h,
-acetate rose above its range before the addition.
+`align.to` draws time relative to an event of each subject. The result is
+a ggplot, so further layers can be added, such as the range of acetate
+before Blautia hydrogenotrophica was added at 152 h. After the addition,
+acetate rose above that range.
 
 ```{r}
 #| label: plot-trend-align
 #| fig-height: 4
 
 minimalgut$added <- 152
-before <- minimalgut$Time_hr_num < 152
+before <- range(minimalgut$Acetate[minimalgut$Time_hr_num < 152])
 plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
-    align.to = "added", limits = range(minimalgut$Acetate[before]))
+    align.to = "added") +
+    ggplot2::annotate("rect", xmin = -Inf, xmax = Inf, ymin = before[1],
+        ymax = before[2], alpha = 0.2)
+```
+
+`plotTimeEffect()` draws an effect at each time with its confidence
+interval, such as the difference in diversity between men and women at
+each visit. Each subject has one sample per visit, so a linear model per
+visit compares independent subjects.
+
+```{r}
+#| label: plot-time-effect
+#| fig-height: 4
+
+cd <- as.data.frame(colData(tse))
+effect <- do.call(rbind, lapply(split(cd, cd$visit), function(d) {
+    model <- lm(diversity ~ sex, data = d)
+    ci <- confint(model)["sexmale", ]
+    data.frame(visit = d$visit[1], estimate = coef(model)[["sexmale"]],
+        lower = ci[[1]], upper = ci[[2]])
+}))
+plotTimeEffect(effect, time.col = "visit")
 ```
 
 `plotPath()` follows subjects through an ordination or two variables;
@@ -300,8 +322,7 @@ plotSpectrum(minimalgut, y = "Acetate", time.col = "Time_hr_num",
 ```
 
 `plotLagHeatmap()` correlates features with a target at lags of a few
-samples, and `plotSurvival()` draws the time until an event, such as
-leaving the first state.
+samples.
 
 ```{r}
 #| label: plot-lag-heatmap
@@ -310,6 +331,18 @@ leaving the first state.
 clr <- transformAssay(minimalgut, method = "clr", pseudocount = 1)
 plotLagHeatmap(clr, target = "Acetate", time.col = "Time.hr",
     group = "StudyIdentifier", assay.type = "clr")
+```
+
+`plotSurvival()` draws the time until an event, here until the dominant
+genus of each subject first changes.
+
+```{r}
+#| label: plot-survival
+#| fig-height: 4
+
+tse <- addDominant(tse, name = "dominant")
+plotSurvival(tse, time.col = "time", group = "subject",
+    event = "state.exit", state.col = "dominant", group.by = "sex")
 ```
 
 ## Features and subjects
@@ -325,7 +358,17 @@ plotFeatureScatter(first, x.stat = "mean", y.stat = "variance",
     fit = "power")
 ```
 
-`plotVolcano()` and `plotStats()` draw results per feature;
+`plotVolcano()` and `plotStats()` draw results per feature, such as the
+bimodality of each genus computed by miaTime.
+
+```{r}
+#| label: plot-stats
+#| fig-height: 4
+
+tse <- addBimodality(tse, assay.type = "counts")
+plotStats(tse, stat = "bimodality", top = 20, colour.by = "Phylum")
+```
+
 `plotSubjectScatter()` draws two statistics per subject, or the subject
 loadings of a tensor decomposition, and `plotTimeLoadings()` its time
 loadings. Here the TEMPTED decomposition of the bioreactors (Shi et al.

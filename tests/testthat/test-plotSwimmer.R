@@ -86,6 +86,15 @@ test_that("plotSwimmer draws visits in level order with unused levels", {
     )
 })
 
+test_that("plotSwimmer hides the labels of more than 60 subjects", {
+    few <- x[, x$subject %in% unique(x$subject)[1:60]]
+    expect_null(plotSwimmer(few, "time", "subject")$theme$axis.text.y)
+    many <- hitchip1006[, hitchip1006$subject %in%
+        names(which(table(hitchip1006$subject) >= 2))]
+    p <- plotSwimmer(many, "time", "subject")
+    expect_match(class(p$theme$axis.text.y)[1L], "element_blank")
+})
+
 test_that("plotSwimmer draws Date times on a continuous axis", {
     x$date <- as.Date("2000-01-01") + round(x$time * 30)
     p <- plotSwimmer(x, "date", "subject")
@@ -163,6 +172,14 @@ test_that("plotSwimmer drops subjects with missing samples", {
         plotSwimmer(v[, v$id != "s1"], "visit", "id", missing = "drop"),
         "All subjects"
     )
+    # Factor subjects whose labels look like the codes of other subjects:
+    # subject "3" (code 2) has a gap, so subject "2" must stay.
+    v$id <- factor(c("2", "2", "2", "3", "3", "9", "9"))
+    expect_message(
+        p <- plotSwimmer(v, "visit", "id", missing = "drop"),
+        "Removed 2 subjects"
+    )
+    expect_identical(levels(p$data$id), "2")
 })
 
 test_that("plotSwimmer draws events on subject rows and across subjects", {

@@ -78,7 +78,8 @@ and one point per sample. A lane joins the samples of each subject.
 }
 \details{
 Numeric and \code{Date} times are drawn on a continuous axis. Visits are
-drawn in level order, including levels without samples.
+drawn in level order, including levels without samples. Above 60
+subjects, subject labels are hidden.
 
 For visits, a sample is missing when a subject has no sample at a visit
 after its first one, including visits after its last sample (dropout).
@@ -99,20 +100,21 @@ plotSwimmer(tse, time.col = "time", group = "subject", max.gap = 1,
 
 # Perturbations of three bioreactors run on the same schedule
 data("minimalgut", package = "miaTime")
+tse <- minimalgut
 events <- data.frame(
     start = c(0, 152, 432),
     end = c(24, NA, 436),
     label = c("batch", "Blautia added", "double dilution rate"))
-plotSwimmer(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+plotSwimmer(tse, time.col = "Time.hr", group = "StudyIdentifier",
     events = events)
 
 # Which samples have species counts, short-chain fatty acids and
 # optical density
-cd <- SummarizedExperiment::colData(minimalgut)
+cd <- SummarizedExperiment::colData(tse)
 od <- !is.na(cd$OpticalDensity)
 mae <- MultiAssayExperiment::MultiAssayExperiment(
     experiments = list(
-        species = minimalgut,
+        species = tse,
         SCFA = SummarizedExperiment::SummarizedExperiment(
             t(as.matrix(cd[, c("Acetate", "Butyrate", "Propionate")]))),
         density = SummarizedExperiment::SummarizedExperiment(

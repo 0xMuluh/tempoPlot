@@ -318,19 +318,20 @@ test_that("plotTrend draws a table of model results with intervals", {
         fit = grid[, c("StudyIdentifier", "estimate")]), "estimate")
 })
 
-test_that("plotTrend checks reference, limits and align.to", {
+test_that("plotTrend checks align.to", {
     data("minimalgut", package = "miaTime")
     m <- minimalgut
-    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
-        "StudyIdentifier", reference = data.frame(a = 1)), "'reference'")
-    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
-        "StudyIdentifier", limits = 1), "'limits'")
     m$event <- "a"
     expect_error(plotTrend(m, "Acetate", "Time_hr_num",
         "StudyIdentifier", align.to = "event"), "'align.to'")
     m$event <- seq_len(ncol(m))
     expect_error(plotTrend(m, "Acetate", "Time_hr_num",
         "StudyIdentifier", align.to = "event"), "constant")
+    # A subject without the event is not dropped silently.
+    m$event <- c(`Bioreactor A` = 100, `Bioreactor B` = NA,
+        `Bioreactor C` = 0)[m$StudyIdentifier]
+    expect_error(plotTrend(m, "Acetate", "Time_hr_num",
+        "StudyIdentifier", align.to = "event"), "NA values")
 })
 
 test_that("plotTrend aligns time to an event per subject", {
@@ -344,24 +345,13 @@ test_that("plotTrend aligns time to an event per subject", {
     expect_equal(sort(p$data$Time_hr_num[a]),
         sort(m$Time_hr_num[m$StudyIdentifier == "Bioreactor A"] - 100))
     expect_identical(p$labels$x, "Time_hr_num since event")
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    expect_equal(layer_data(p, which(geoms == "GeomVline"))$xintercept, 0)
     m$date <- as.Date("2020-01-01") + round(m$Time_hr_num / 24)
     m$start <- as.Date("2020-01-05")
     p <- plotTrend(m[, !duplicated(paste(m$StudyIdentifier, m$date))],
         "Acetate", "date", "StudyIdentifier", align.to = "start")
     expect_true(min(p$data$date) == -4)
-})
-
-test_that("plotTrend draws limits and a reference curve behind the data", {
-    data("minimalgut", package = "miaTime")
-    ref <- data.frame(Time_hr_num = c(0, 460), estimate = c(10, 20),
-        lower = c(5, 15), upper = c(15, 25))
-    p <- plotTrend(minimalgut, "Acetate", "Time_hr_num", "StudyIdentifier",
-        reference = ref, limits = c(30, 60))
-    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
-    expect_identical(unname(geoms[1:4]),
-        c("GeomRect", "GeomRibbon", "GeomLine", "GeomLine"))
-    expect_equal(layer_data(p, 1L)$ymin, 30)
-    expect_equal(layer_data(p, 3L)$y, c(10, 20))
 })
 
 test_that("plotTrend draws rolling statistics", {
@@ -372,8 +362,15 @@ test_that("plotTrend draws rolling statistics", {
     expect_equal(p$data$.y, c(2, 5, 11, 20))
     p <- plotTrend(toy, "v", "t", rolling = "variance", window = 2)
     expect_equal(p$data$.y[1], 0.5)
-    expect_match(p$labels$y, "Rolling variance")
+    expect_identical(p$labels$y, "Rolling variance of v (2 samples)")
     expect_error(plotTrend(toy, "v", "t", window = 1), "'window'")
+    # No subject reaches the window: an error, not an empty plot.
+    expect_error(plotTrend(toy, "v", "t", rolling = "mean", window = 7),
+        "'window'")
+    # Fitted values are on the scale of y, not of the rolling statistic.
+    toy$fitted <- toy$v
+    expect_error(plotTrend(toy, "v", "t", rolling = "mean", window = 3,
+        fit = "fitted"), "'rolling'")
 })
 
 test_that("plotTrend wraps time into periods", {
@@ -385,13 +382,11 @@ test_that("plotTrend wraps time into periods", {
     expect_equal(p$data$t, c(0, 6, 12, 0, 6, 12))
     expect_identical(nlevels(p$data$.line), 2L)
     expect_error(plotTrend(toy, "v", "t", period = -1), "'period'")
-})
-
-test_that("plotTrend draws ridges", {
-    skip_if_not_installed("ggridges")
-    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
-        layout = "ridge")
-    expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomDensityRidges")
+    # Events and fit tables keep absolute times, so they are not wrapped.
+    expect_error(plotTrend(toy, "v", "t", period = 24,
+        events = data.frame(start = 30)), "'period'")
+    expect_error(plotTrend(toy, "v", "t", period = 24,
+        fit = data.frame(t = 30, estimate = 1)), "'period'")
 })
 
 test_that("plotTrend draws medians and quantile bands", {
@@ -421,6 +416,49 @@ test_that("plotTrend draws violins", {
     expect_true(all(layer_data(p, 2L)$alpha == 0.3))
 })
 
+test_that("boxes and violins are drawn per group.by group", {
+    data("hitchip1006", package = "miaTime")
+    h <- hitchip1006[, !is.na(hitchip1006$sex) & hitchip1006$subject %in%
+        names(which(table(hitchip1006$subject) >= 3))]
+    h$visit <- factor(ave(h$time, h$subject, FUN = rank))
+    cells <- nrow(unique(colData(h)[, c("visit", "sex")]))
+    for (layout in c("box", "violin")) {
+        p <- plotTrend(h, "diversity", "visit", "subject", group.by = "sex",
+            layout = layout)
+        ld <- layer_data(p, 1L)
+        expect_length(unique(ld$group), cells)
+        expect_length(unique(ld$fill), 2L)
+        # Boxes of one visit sit side by side.
+        expect_length(unique(ld$x), cells)
+    }
+})
+
+test_that("many subject lines fade", {
+    data("hitchip1006", package = "miaTime")
+    h <- hitchip1006[, hitchip1006$subject %in%
+        names(which(table(hitchip1006$subject) >= 3))]
+    p <- plotTrend(h, "diversity", "time", "subject")
+    expect_equal(unique(layer_data(p, 1L)$alpha),
+        30 / length(unique(h$subject)))
+})
+
+test_that("summaries over single samples per time warn", {
+    data("hitchip1006", package = "miaTime")
+    h <- hitchip1006[, hitchip1006$subject %in%
+        names(which(table(hitchip1006$subject) >= 3))]
+    h$age.time <- h$age + h$time
+    expect_warning(plotTrend(h, "diversity", "age.time", "subject",
+        smooth = "mean"), "single sample")
+    expect_no_warning(plotTrend(x, "Acetate", "Time_hr_num",
+        "StudyIdentifier", smooth = "mean"))
+})
+
+test_that("plotTrend keeps all colData columns for further layers", {
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier")
+    expect_true(all(names(colData(x)) %in% names(p$data)))
+    expect_s3_class(p + facet_wrap(~ Pertubation), "ggplot")
+})
+
 test_that("plotTrend draws the rolling slope", {
     toy <- SummarizedExperiment::SummarizedExperiment(
         assays = list(counts = matrix(1, 1L, 6L)),
@@ -448,6 +486,10 @@ test_that("plotTrend marks events and intervals", {
     expect_identical(p$labels$linetype, "event")
     expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
         events = data.frame(start = "a")), "type of 'time.col'")
+    # Events of single subjects belong to align.to.
+    expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        events = data.frame(StudyIdentifier = "Bioreactor A", start = 152)),
+        "'align.to'")
     # Visits are drawn at their level codes.
     x$visit <- factor(ave(x$Time_hr_num, x$StudyIdentifier, FUN = rank))
     p <- plotTrend(x, "Acetate", "visit", "StudyIdentifier",

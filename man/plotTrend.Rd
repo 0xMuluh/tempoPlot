@@ -13,7 +13,7 @@ plotTrend(x, ...)
   time.col,
   group = NULL,
   assay.type = NULL,
-  layout = c("line", "box", "violin", "ridge"),
+  layout = c("line", "box", "violin"),
   show.individuals = TRUE,
   smooth = c("none", "mean", "median", "loess"),
   band = NULL,
@@ -22,8 +22,6 @@ plotTrend(x, ...)
   rolling = c("none", "mean", "variance", "acf1", "slope"),
   window = 5,
   period = NULL,
-  reference = NULL,
-  limits = NULL,
   events = NULL,
   align.to = NULL,
   group.by = NULL,
@@ -38,10 +36,9 @@ object.}
 
 \item{...}{additional arguments passed to the main layer
 (\code{\link[ggplot2:geom_line]{geom_line}} for \code{layout = "line"},
-\code{\link[ggplot2:geom_violin]{geom_violin}} for
-\code{layout = "violin"}
-or \code{\link[ggplot2:geom_boxplot]{geom_boxplot}} for
-\code{layout = "box"}).}
+\code{\link[ggplot2:geom_boxplot]{geom_boxplot}} for
+\code{layout = "box"} or \code{\link[ggplot2:geom_violin]{geom_violin}}
+for \code{layout = "violin"}).}
 
 \item{y}{\code{Character scalar}. Specifies the feature, column or
 ordination component to plot: a column of \code{colData(x)}, a row of
@@ -60,30 +57,35 @@ feature name. (Default: \code{NULL})}
 
 \item{layout}{\code{Character scalar}. Specifies the plot layout:
 \code{"line"} draws one line per subject; \code{"box"} and
-\code{"violin"} draw boxes or violins of \code{y} per time point;
-\code{"ridge"} draws the density of \code{y} at each time point as
-stacked ridges (needs ggridges).
-(Default: \code{"line"})}
+\code{"violin"} draw boxes or violins of \code{y} per time point, one
+per \code{group.by} group side by side. Subject lines and points stay
+at the centre of each time point. (Default: \code{"line"})}
 
 \item{show.individuals}{\code{Logical scalar}. When \code{TRUE}, draws
 subject lines and points. When \code{FALSE}, hides subject lines and
 points, leaving only boxes or the smooth curve. (Default: \code{TRUE})}
 
 \item{smooth}{\code{Character scalar}. Specifies a group summary on top:
-\code{"none"}, \code{"mean"} or \code{"median"} (at each time point),
-or \code{"loess"} (loess curve). (Default: \code{"none"})}
+\code{"none"}, \code{"mean"} or \code{"median"} (over the samples at
+each distinct time), or \code{"loess"} (loess curve). With irregular
+times, where most times have one sample, use \code{"loess"} or a
+factor of visits. (Default: \code{"none"})}
 
 \item{band}{\code{Numeric vector} of length 2. Draws the range between
-these quantiles of \code{y} at each time point, such as
+these quantiles of \code{y} at each distinct time, such as
 \code{c(0.25, 0.75)} for the interquartile range, per
 \code{group.by} group. (Default: \code{NULL})}
 
-\item{fit}{Model results to draw over the data: the name of a numeric
-\code{colData(x)} column of fitted values per sample, drawn as a dashed
-line per subject, or a table with the columns \code{time.col} and
+\item{fit}{Model results on the scale of \code{y}, drawn over the data:
+a \code{character scalar} naming a numeric \code{colData(x)} column of
+fitted values per sample, drawn as a dashed line per subject, or a
+\code{data.frame} with the columns \code{time.col} and
 \code{estimate}, optionally \code{lower} and \code{upper} for an
-interval and the \code{group.by} column for groups. Not combined with
-\code{baseline}. (Default: \code{NULL})}
+interval and the \code{group.by} column for one curve per group.
+Without the \code{group.by} column, the table draws one curve, such
+as a microbiota-for-age reference. Not combined with \code{baseline}
+or \code{rolling}. For effects, such as differences between groups,
+use \code{\link{plotTimeEffect}}. (Default: \code{NULL})}
 
 \item{baseline}{\code{Character scalar}. Expresses \code{y} relative to
 each subject's first sample: unchanged (\code{"none"}), as the
@@ -97,7 +99,9 @@ statistic over the last \code{window} samples of each subject:
 autocorrelation) or \code{"slope"} (change of \code{y} per
 \code{time.col} unit, from a least-squares line; per visit step for
 visits). Rising variance and autocorrelation are early warning signals
-of a transition. (Default: \code{"none"})}
+of a transition. Windows count samples, also across \code{max.gap}
+breaks; subjects with fewer than \code{window} samples are dropped.
+(Default: \code{"none"})}
 
 \item{window}{\code{Integer scalar}. Number of samples in the rolling
 window. (Default: \code{5})}
@@ -105,35 +109,30 @@ window. (Default: \code{5})}
 \item{period}{\code{Numeric scalar}. Wraps time into cycles of this
 length, in \code{time.col} units (days for \code{Date} times), to
 show daily or seasonal patterns; each cycle is drawn as its own line.
-(Default: \code{NULL})}
-
-\item{reference}{A reference curve to draw behind the data, such as
-microbiota-for-age: a table with the columns \code{time.col} and
-\code{estimate}, optionally \code{lower} and \code{upper} for a band.
-(Default: \code{NULL})}
-
-\item{limits}{\code{Numeric vector} of length 2. Draws a band between
-these values of \code{y}, such as a normal range.
+Cycles start at time 0, which for \code{Date} times is 1970-01-01, a
+Thursday. Not combined with \code{events} or a \code{fit} table.
 (Default: \code{NULL})}
 
 \item{events}{\code{data.frame}. Events or intervals to mark, one per
 row, with columns \code{start} and optionally \code{end} and
 \code{label}, in the units of \code{time.col} (visit levels for
-visits): interventions such as antibiotic courses, or the time
-intervals where groups differ, as estimated by MetaLonDA or
-SplinectomeR. Rows with an \code{end} are drawn as grey bands with
-their label at the top, the others as vertical lines. Events apply to
-all subjects. (Default: \code{NULL})}
+visits), relative to the event with \code{align.to}: interventions
+such as antibiotic courses, or the time intervals where groups differ,
+as estimated by MetaLonDA or SplinectomeR. Rows with an \code{end} are
+drawn as grey bands with their label at the top, the others as
+vertical lines. Events apply to all subjects; for an event time per
+subject, use \code{align.to}. (Default: \code{NULL})}
 
 \item{align.to}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} with the time of an event for each subject, such as
 the start of a treatment, in the units of \code{time.col}. Time is then
-drawn relative to the event. Not available for visits.
-(Default: \code{NULL})}
+drawn relative to the event, marked by a dashed line at 0. The column
+must not contain NA values, so remove subjects without the event
+first. Not available for visits. (Default: \code{NULL})}
 
 \item{group.by}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} to colour subjects and smooth curves.
-(Default: \code{NULL})}
+\code{colData(x)} that colours subjects, smooth curves and fits and
+splits boxes and violins. (Default: \code{NULL})}
 
 \item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} to facet by. (Default: \code{NULL})}
@@ -146,16 +145,18 @@ units. \code{NULL} never breaks trajectories. (Default: \code{NULL})}
 A \code{ggplot} object.
 }
 \description{
-\code{plotTrend()} plots the trajectory of a feature, colData column or
-ordination component over time for each subject, with optional group
-summaries, boxplot paired layouts, and values relative to each
-subject's first sample.
+\code{plotTrend()} plots a feature, colData column or ordination
+component over time: one line per subject or boxes per time point, with
+optional group summaries, model fits, and values relative to each
+subject's first sample or to an event.
 }
 \details{
 Numeric and \code{Date} times are drawn on a continuous axis. Visits are
 drawn in level order, including levels without samples. With
-\code{align.to}, the times of \code{fit} and \code{reference} tables are
+\code{align.to}, the times of \code{fit} tables and \code{events} are
 relative to the event as well; for \code{Date} times they are in days.
+The plot data hold all columns of \code{colData(x)}, so further layers
+can use them.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -166,19 +167,24 @@ tse <- tse[, !duplicated(t(counts))]
 tse <- tse[, tse$subject \%in\% names(which(table(tse$subject) >= 3))]
 
 # Divergence from each subject's first sample, computed by miaTime,
-# per visit (the order of each subject's samples)
+# per visit (the order of each subject's samples), by sex
 tse <- miaTime::addBaselineDivergence(tse, group = "subject",
     time.col = "time", assay.type = "counts")
 tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
 plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
-    layout = "box")
+    group.by = "sex", layout = "box")
 
 # Change in diversity from the first visit, mean by sex
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", baseline = "difference", smooth = "mean")
 
+# Median diversity with the interquartile range, by sex
+plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
+    group.by = "sex", smooth = "median", band = c(0.25, 0.75),
+    show.individuals = FALSE)
+
 # Mean diversity per visit and sex from a linear model, with 95\%
-# confidence intervals
+# confidence intervals; each subject has one sample per visit
 cd <- as.data.frame(SummarizedExperiment::colData(tse))
 model <- lm(diversity ~ visit * sex, data = cd)
 means <- expand.grid(visit = levels(tse$visit), sex = levels(tse$sex))
@@ -187,49 +193,57 @@ names(means)[3:5] <- c("estimate", "lower", "upper")
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", fit = means)
 
-# Fitted acetate of each bioreactor from a cubic time trend per reactor
+# Acetate in three replicate bioreactors sampled every few hours
 data("minimalgut", package = "miaTime")
-cd <- as.data.frame(SummarizedExperiment::colData(minimalgut))
+tse <- minimalgut
+plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier")
+
+# Fitted acetate of each bioreactor from a cubic time trend per reactor
+cd <- as.data.frame(SummarizedExperiment::colData(tse))
 model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
-minimalgut$fitted <- fitted(model)
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+tse$fitted <- fitted(model)
+plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
     fit = "fitted")
 
-# Acetate in three replicate bioreactors sampled every few hours
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
-    group = "StudyIdentifier", group.by = "StudyIdentifier")
-
 # Hours since Blautia hydrogenotrophica was added at 152 h, against the
 # range of acetate before it was added
-minimalgut$added <- 152
-before <- minimalgut$Time_hr_num < 152
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+tse$added <- 152
+before <- range(tse$Acetate[tse$Time_hr_num < 152])
+plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
-    align.to = "added", limits = range(minimalgut$Acetate[before]))
+    align.to = "added") +
+    ggplot2::annotate("rect", xmin = -Inf, xmax = Inf,
+        ymin = before[1L], ymax = before[2L], alpha = 0.2)
 
 # Acetate over the day, one line per day and bioreactor
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier", period = 24)
 
 # Rolling variance of acetate over 10 samples
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
     rolling = "variance", window = 10)
-
-# Median diversity with the interquartile range, by sex
-plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
-    group.by = "sex", smooth = "median", band = c(0.25, 0.75),
-    show.individuals = FALSE)
 
 # Acetate with the batch phase and the addition of Blautia marked
 events <- data.frame(start = c(0, 152), end = c(24, NA),
     label = c("batch", "Blautia added"))
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
     events = events)
+}
+\references{
+Bokulich NA, et al. (2018). q2-longitudinal: longitudinal and
+paired-sample analyses of microbiome data. \emph{mSystems} 3(6):e00219-18.
 
-# Distribution of diversity at each visit
-plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
-    layout = "ridge")
+Dakos V, et al. (2012). Methods for detecting early warnings of critical
+transitions in time series illustrated using simulated ecological data.
+\emph{PLoS One} 7(7):e41010.
+
+Subramanian S, et al. (2014). Persistent gut microbiota immaturity in
+malnourished Bangladeshi children. \emph{Nature} 510(7505):417-421.
+}
+\seealso{
+\code{\link{plotTimeEffect}} for effects over time.
 }
