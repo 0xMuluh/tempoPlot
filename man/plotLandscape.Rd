@@ -10,7 +10,7 @@ plotLandscape(x, ...)
 \S4method{plotLandscape}{SummarizedExperiment}(
   x,
   y,
-  assay.type = NULL,
+  assay.type = "counts",
   scale = c("density", "potential"),
   group.by = NULL,
   bw = "nrd0",
@@ -31,7 +31,7 @@ object.}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay to
 retrieve \code{y} from when \code{y} is a feature name.
-(Default: \code{NULL})}
+(Default: \code{"counts"})}
 
 \item{scale}{\code{Character scalar}. Draws the density
 (\code{"density"}) or the potential (\code{"potential"}).

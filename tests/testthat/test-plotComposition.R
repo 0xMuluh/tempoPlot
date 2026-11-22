@@ -40,6 +40,41 @@ test_that("plotComposition keeps the most abundant features and Other", {
     expect_identical(nlevels(p$data$.feature), nrow(mg))
 })
 
+test_that("plotComposition reads counts by default and selects features", {
+    # The first assay is not counts. s2 is ten times deeper than s1.
+    counts <- matrix(c(1, 2, 7, 60, 30, 10), 3L,
+        dimnames = list(c("a", "b", "c"), c("s1", "s2")))
+    toy <- SummarizedExperiment(
+        assays = list(other = counts * 0 + 1, counts = counts),
+        colData = DataFrame(t = c(1, 2)))
+    expect_error(plotComposition(toy, "t", assay.type = "none"),
+        "'assay.type'")
+    # Top by mean plotted value: c by proportion (0.4 against 0.35 for a),
+    # a by count (30.5 against 8.5).
+    df <- plotComposition(toy, "t", top = 1)$data
+    expect_identical(levels(df$.feature), c("c", "Other"))
+    df <- plotComposition(toy, "t", top = 1, as.relative = FALSE)$data
+    expect_identical(levels(df$.feature), c("a", "Other"))
+    expect_equal(df$.value[df$.feature == "a"], c(1, 60))
+    df <- plotComposition(toy, "t", features = c("b", "a"))$data
+    expect_identical(levels(df$.feature), c("b", "a", "Other"))
+    expect_error(plotComposition(toy, "t", features = "z"), "'features'")
+})
+
+test_that("plotComposition colours features in order and Other grey", {
+    p <- plotComposition(mg, "Time_hr_num", "StudyIdentifier", top = 3)
+    ld <- layer_data(p, 1L)
+    fill <- as.vector(tapply(ld$fill, ld$group, unique))
+    expect_identical(fill, c(.okabe_ito[1:3], "grey50"))
+    expect_identical(p$theme$legend.position, "bottom")
+    # More than six features: viridis, and Other stays grey.
+    p <- plotComposition(mg, "Time_hr_num", "StudyIdentifier", top = 8)
+    ld <- layer_data(p, 1L)
+    fill <- as.vector(tapply(ld$fill, ld$group, unique))
+    expect_identical(fill, c(grDevices::hcl.colors(8, "viridis"),
+        "grey50"))
+})
+
 test_that("plotComposition sums into a feature already named Other", {
     # "Other" is the most abundant row, as after mia::subsetBy(collapse).
     toy <- SummarizedExperiment(
@@ -91,7 +126,7 @@ test_that("plotComposition stacks absolute values and streams", {
         sum(assay(mg, "counts")[, colnames(mg)[mg$Time_hr_num ==
             s1$Time_hr_num[1] & mg$StudyIdentifier ==
             s1$StudyIdentifier[1]]]))
-    expect_identical(p$labels$y, "Abundance")
+    expect_identical(p$labels$y, "counts")
     p <- plotComposition(mg, "Time_hr_num", "StudyIdentifier", top = 3,
         as.relative = FALSE, layout = "stream")
     d <- p$data

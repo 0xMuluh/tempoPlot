@@ -14,6 +14,7 @@ plotTransitionMatrix(x, ...)
   group,
   as.relative = TRUE,
   facet.by = NULL,
+  max.gap = NULL,
   ...
 )
 }
@@ -43,6 +44,12 @@ from each state (\code{TRUE}) or the counts (\code{FALSE}).
 \code{colData(x)} that splits the transitions into panels. Each
 transition takes the value of its earlier sample.
 (Default: \code{NULL})}
+
+\item{max.gap}{\code{Numeric scalar}. Skips the transitions between
+consecutive samples of a subject that are further apart than this, in
+\code{time.col} units. For visits, \code{NULL} skips transitions
+across visits without a sample; otherwise \code{NULL} counts all of
+them. (Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.

@@ -13,7 +13,7 @@
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay to
 #'   retrieve \code{y} from when \code{y} is a feature name.
-#'   (Default: \code{NULL})
+#'   (Default: \code{"counts"})
 #'
 #' @param scale \code{Character scalar}. Draws the density
 #'   (\code{"density"}) or the potential (\code{"potential"}).
@@ -64,7 +64,8 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLandscape", signature = c(x = "SummarizedExperiment"),
-    function(x, y, assay.type = NULL, scale = c("density", "potential"),
+    function(x, y, assay.type = "counts",
+            scale = c("density", "potential"),
             group.by = NULL, bw = "nrd0", adjust = 1, ...) {
         scale <- match.arg(scale)
         .check_column(x, group.by)
@@ -101,6 +102,8 @@ setMethod("plotLandscape", signature = c(x = "SummarizedExperiment"),
         geom_rug(aes(x = .data$.x, colour = if (!is.null(group.by))
             .data$.by), data = samples, inherit.aes = FALSE, sides = "b",
             alpha = 0.3) +
+        .scale_categorical("colour") +
         labs(x = y, y = if (scale == "density") "density" else
-            "potential (-log density)", colour = group.by)
+            "potential (-log density)", colour = group.by) +
+        .theme_tempoPlot()
 }

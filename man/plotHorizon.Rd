@@ -18,6 +18,7 @@ plotHorizon(x, ...)
   centre = c("median", "baseline", "mean"),
   level = c("subject", "group"),
   group.by = NULL,
+  max.gap = NULL,
   ...
 )
 }
@@ -61,6 +62,12 @@ subject (\code{"subject"}) or averages the subjects of each
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that groups subjects when \code{level = "group"}. If
 \code{NULL}, all subjects form one group. (Default: \code{NULL})}
+
+\item{max.gap}{\code{Numeric scalar}. Breaks a strip where consecutive
+samples of a subject are further apart than this, in \code{time.col}
+units. For visits, \code{NULL} breaks strips at visits without a
+sample; otherwise \code{NULL} never breaks strips.
+(Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.
@@ -68,8 +75,8 @@ A \code{ggplot} object.
 \description{
 \code{plotHorizon()} draws one strip per feature. Each value is centred,
 cut into \code{bands} bands of equal height and the bands are overlaid,
-so that deviations above and below the centre show as darker blues and
-reds in a short strip.
+so that deviations above and below the centre show as darker reds and
+blues in a short strip.
 }
 \details{
 The band height of a feature is its largest absolute deviation from the

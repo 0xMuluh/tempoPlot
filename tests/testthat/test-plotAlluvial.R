@@ -50,3 +50,12 @@ test_that("plotAlluvial drops subjects and hides small flows", {
     expect_error(suppressWarnings(plotAlluvial(toy, "state", "v", "id",
         min.flow = 5)), "No path")
 })
+
+test_that("plotAlluvial colours states in order and missing grey", {
+    skip_if_not_installed("ggalluvial")
+    p <- suppressWarnings(plotAlluvial(toy, "state", "v", "id"))
+    fill <- ggplot_build(p)$plot$scales$get_scales("fill")
+    expect_identical(fill$map(c("A", "B", "missing")),
+        c(.okabe_ito[1:2], "grey50"))
+    expect_identical(p$theme$legend.position, "bottom")
+})

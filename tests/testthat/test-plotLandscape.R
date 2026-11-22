@@ -38,4 +38,14 @@ test_that("plotLandscape draws one curve per group", {
     p <- plotLandscape(toy, "v", group.by = "arm")
     expect_setequal(p$data$.by, c("a", "b"))
     expect_identical(p$labels$colour, "arm")
+    expect_identical(unique(layer_data(p, 1L)$colour), .okabe_ito[1:2])
+    expect_identical(p$theme$legend.position, "bottom")
+})
+
+test_that("plotLandscape reads features from counts by default", {
+    se <- SummarizedExperiment(
+        assays = list(other = matrix(0, 1L, 60L, dimnames = list("f")),
+            counts = matrix(toy$v, 1L, dimnames = list("f"))))
+    p <- plotLandscape(se, "f", bw = 0.3)
+    expect_equal(p$data$.y, density(toy$v, bw = 0.3)$y)
 })

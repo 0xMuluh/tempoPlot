@@ -19,7 +19,8 @@ test_that("plotTurnover checks its arguments", {
         "'assay.type'")
     expect_error(plotTurnover(toy, "t", "id", type = "total"))
     expect_error(suppressWarnings(plotTurnover(toy[, c(1, 4)], "t", "id")),
-        "more than one sample")
+        "two consecutive samples")
+    expect_error(plotTurnover(toy, "t", "id", detection = NA), "'detection'")
 })
 
 test_that("plotTurnover counts gains and losses", {
@@ -62,4 +63,34 @@ test_that("plotTurnover spans intervals and stacks components", {
     s1 <- df[df$.panel == "s1" & df$.time == 1, ]
     expect_equal(s1$.ymin, c(0, 1 / 3))
     expect_equal(s1$.ymax, c(1 / 3, 2 / 3))
+})
+
+test_that("plotTurnover counts presence above detection", {
+    # Above 1: s1 {} -> {c} -> {}; s2 {a} -> {}.
+    df <- plotTurnover(toy, "t", "id", detection = 1)$data
+    expect_equal(value(df, "s1", 1, "gained"), 1)
+    expect_equal(value(df, "s1", 2, "lost"), -1)
+    expect_equal(value(df, "s2", 3, "lost"), -1)
+})
+
+test_that("plotTurnover skips intervals across gaps", {
+    # s2 misses visit 2: its interval from visit 1 to 3 is skipped.
+    toy$v <- factor(c(1, 2, 3, 1, 3), levels = 1:3)
+    df <- plotTurnover(toy, "v", "id")$data
+    expect_setequal(df$.panel, "s1")
+    df <- plotTurnover(toy, "v", "id", max.gap = 2)$data
+    expect_equal(value(df, "s2", 3 - 0.05, "lost"), -1)
+    # Numeric times are skipped only beyond max.gap.
+    df <- plotTurnover(toy, "t", "id", max.gap = 2)$data
+    expect_setequal(df$.panel, "s1")
+    expect_error(plotTurnover(toy[, 4:5], "v", "id"),
+        "two consecutive samples")
+})
+
+test_that("plotTurnover fills parts with the categorical palette", {
+    p <- plotTurnover(toy, "t", "id")
+    ld <- layer_data(p, 1L)
+    expect_identical(ld$fill[p$data$.part == "gained"][1L], .okabe_ito[1L])
+    expect_identical(ld$fill[p$data$.part == "lost"][1L], .okabe_ito[2L])
+    expect_identical(p$theme$legend.position, "bottom")
 })

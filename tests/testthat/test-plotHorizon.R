@@ -29,8 +29,28 @@ test_that("plotHorizon folds deviations into bands", {
     expect_equal(band(df, "a", "s1", "-3"), c(0, 0, 1))
     # A constant series has no deviation.
     expect_true(all(band(df, "b", "s1", "1") == 0))
+})
+
+test_that("plotHorizon draws bands red above and blue below the centre", {
+    p <- plotHorizon(toy, "t", "id", bands = 3)
     # Legend from the highest band to the lowest.
-    expect_identical(levels(df$.band), c("3", "2", "1", "-1", "-2", "-3"))
+    expect_identical(get_guide_data(p, "fill")$.label,
+        c("3", "2", "1", "-1", "-2", "-3"))
+    fill <- ggplot_build(p)$plot$scales$get_scales("fill")
+    expect_identical(fill$map(c(3, -3)), c("#B2182B", "#2166AC"))
+    expect_identical(p$theme$legend.position, "bottom")
+})
+
+test_that("plotHorizon breaks strips at skipped visits and at max.gap", {
+    toy$v <- factor(c(0, 1, 3, 0, 1), levels = 0:3)
+    df <- plotHorizon(toy, "v", "id")$data
+    s1 <- df[df$.feature == "a" & df$.panel == "s1" & df$.band == 1, ]
+    expect_equal(s1$.segment, c(1, 1, 2))
+    p <- plotHorizon(toy, "t", "id", max.gap = 0.5)
+    s1 <- p$data[p$data$.feature == "a" & p$data$.panel == "s1" &
+        p$data$.band == 1, ]
+    expect_equal(s1$.segment, 1:3)
+    expect_true(all(plotHorizon(toy, "t", "id")$data$.segment == 1))
 })
 
 test_that("plotHorizon centres on baseline and mean", {

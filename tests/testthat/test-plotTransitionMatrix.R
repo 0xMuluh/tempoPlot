@@ -59,3 +59,32 @@ test_that("plotTransitionMatrix keeps factor levels", {
     expect_identical(levels(df$from), c("B", "A", "C"))
     expect_identical(nrow(df), 9L)
 })
+
+test_that("plotTransitionMatrix skips transitions across gaps", {
+    # s1 misses visit v3: its B at v4 does not follow A at v2.
+    toy$v <- factor(c("v1", "v2", "v4", "v1", "v2", "v3", "v4"),
+        levels = paste0("v", 1:4))
+    df <- plotTransitionMatrix(toy, "state", "v", "id",
+        as.relative = FALSE)$data
+    expect_identical(cell(df, "A", "B"), 0L)
+    expect_identical(sum(df$n), 2L)
+    df <- plotTransitionMatrix(toy, "state", "v", "id", as.relative = FALSE,
+        max.gap = 2)$data
+    expect_identical(cell(df, "A", "B"), 1L)
+    # Numeric times are skipped only beyond max.gap.
+    toy$t <- c(1, 2, 9, 1, 2, 3, 4)
+    df <- plotTransitionMatrix(toy, "state", "t", "id", as.relative = FALSE,
+        max.gap = 3)$data
+    expect_identical(cell(df, "A", "B"), 0L)
+    expect_error(plotTransitionMatrix(toy, "state", "t", "id", max.gap = 0),
+        "'max.gap'")
+})
+
+test_that("plotTransitionMatrix fills shares on the sequential scale", {
+    p <- plotTransitionMatrix(toy, "state", "t", "id")
+    ld <- layer_data(p, 1L)
+    # Rows without transitions (from B) are NA and grey.
+    expect_true(all(ld$fill[is.na(p$data$value)] == "grey50"))
+    expect_identical(ld$fill[which.max(p$data$value)], "#FDE725")
+    expect_identical(p$theme$legend.position, "bottom")
+})

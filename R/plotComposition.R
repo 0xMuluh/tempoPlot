@@ -18,11 +18,16 @@
 #' @param assay.type \code{Character scalar}. Specifies the assay of
 #'   abundances. To plot taxonomic ranks, agglomerate \code{x} first with
 #'   \code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
-#'   (Default: \code{NULL}, the first assay)
+#'   (Default: \code{"counts"})
 #'
-#' @param top \code{Integer scalar}. Number of most abundant features, by
-#'   mean proportion, to show; the rest, and a feature already named
-#'   "Other", are summed into "Other". (Default: \code{5})
+#' @param features \code{Character vector}. Features to plot. If
+#'   \code{NULL}, plots the \code{top} features with the largest mean
+#'   plotted value: proportion, or assay value with
+#'   \code{as.relative = FALSE}. The rest, and a feature already named
+#'   "Other", are summed into "Other". (Default: \code{NULL})
+#'
+#' @param top \code{Integer scalar}. Number of features to plot when
+#'   \code{features} is \code{NULL}. (Default: \code{5})
 #'
 #' @param as.relative \code{Logical scalar}. Turns the assay into
 #'   proportions of each sample (\code{TRUE}) or stacks its values as they
@@ -86,63 +91,59 @@
 NULL
 
 #' @rdname plotComposition
-#' @importFrom SummarizedExperiment assay colData
+#' @importFrom SummarizedExperiment colData
 #' @importFrom stats aggregate
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
-    function(x, time.col, group = NULL, assay.type = NULL, top = 5,
-            as.relative = TRUE, layout = c("bar", "area", "stream"),
+    function(x, time.col, group = NULL, assay.type = "counts",
+            features = NULL, top = 5, as.relative = TRUE,
+            layout = c("bar", "area", "stream"),
             level = c("subject", "group"), group.by = NULL, ...) {
         layout <- match.arg(layout)
         level <- match.arg(level)
         .check_longitudinal(x, time.col, group)
-        # Errors on character and other unsupported time types.
-        .time_type(x, time.col)
         .check_column(x, group.by)
-        if (!(is.numeric(top) && length(top) == 1L && top >= 1)) {
-            stop("'top' must be a single number of at least 1.",
-                call. = FALSE)
-        }
         if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
             stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
         }
-
-        mat <- as.matrix(assay(x, assay.type %||% 1L))
-        prop <- prop.table(mat, 2L)
-        # A feature already named "Other" is summed with the rest.
-        m <- rowMeans(prop)
-        m[rownames(prop) == "Other"] <- -Inf
-        keep <- order(m, decreasing = TRUE)[seq_len(min(top, nrow(prop)))]
-        if (!as.relative) {
-            prop <- mat
+        mat <- .get_assay(x, assay.type)
+        if (as.relative) {
+            mat <- prop.table(mat, 2L)
         }
-        lab <- rownames(prop)
-        lab[-keep] <- "Other"
-        prop <- rowsum(prop, factor(lab, levels = unique(c(lab[keep],
-            "Other"))))
+        mat <- .sum_other(mat, features, top)
 
         cols <- unique(c(time.col, group, group.by))
         cd <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
-        df <- cd[rep(seq_len(ncol(x)), each = nrow(prop)), , drop = FALSE]
-        df$.feature <- factor(rownames(prop), levels = rownames(prop))
-        df$.value <- as.vector(prop)
+        df <- cd[rep(seq_len(ncol(x)), each = nrow(mat)), , drop = FALSE]
+        df$.feature <- factor(rownames(mat), levels = rownames(mat))
+        df$.value <- as.vector(mat)
         panel <- group
         if (level == "group") {
             df <- aggregate(df[".value"], df[c(time.col, group.by,
                 ".feature")], mean)
             panel <- group.by
         }
-
-        ylab <- if (as.relative) "Relative abundance" else
-            assay.type %||% "Abundance"
+        ylab <- if (as.relative) "Relative abundance" else assay.type
         .plot_composition(df, time.col, panel, layout, ylab, ...)
     }
 )
 
+# Rows of the selected features, in selection order, and a last row
+# "Other" with the sum of the rest. A row already named "Other" is never
+# selected and is summed with the rest.
+.sum_other <- function(mat, features, top) {
+    keep <- .select_features(mat[rownames(mat) != "Other", , drop = FALSE],
+        features, top)
+    lab <- rownames(mat)
+    lab[!lab %in% keep] <- "Other"
+    rowsum(mat, factor(lab, levels = c(keep, "Other")))
+}
+
 #' @importFrom ggplot2 ggplot aes .data geom_col geom_area geom_ribbon
-#'   facet_wrap vars labs scale_x_discrete theme element_blank
+#'   facet_wrap vars labs scale_x_discrete scale_fill_manual theme
+#'   element_blank
 #' @importFrom stats ave
 .plot_composition <- function(df, time.col, panel, layout, ylab, ...) {
     if (layout == "stream") {
@@ -160,16 +161,24 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         p <- ggplot(df, aes(x = .data[[time.col]], ymin = .data$.ymin,
                 ymax = .data$.ymax, fill = .data$.feature,
                 group = .data$.feature)) +
-            geom_ribbon(...) +
-            theme(axis.text.y = element_blank(),
-                axis.ticks.y = element_blank())
+            geom_ribbon(...)
     } else {
         geom <- switch(layout, bar = geom_col, area = geom_area)
         p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
                 fill = .data$.feature, group = .data$.feature)) +
             geom(...)
     }
-    p <- p + labs(x = time.col, y = ylab, fill = "feature")
+    # The features in the categorical palette, "Other" in neutral grey.
+    lv <- setdiff(levels(df$.feature), "Other")
+    values <- c(.palette_categorical(length(lv)), .na_colour)
+    names(values) <- c(lv, "Other")
+    p <- p + scale_fill_manual(values = values) +
+        labs(x = time.col, y = ylab, fill = "feature") +
+        .theme_tempoPlot()
+    if (layout == "stream") {
+        p <- p + theme(axis.text.y = element_blank(),
+            axis.ticks.y = element_blank())
+    }
     if (!is.null(panel)) {
         p <- p + facet_wrap(vars(.data[[panel]]))
     }

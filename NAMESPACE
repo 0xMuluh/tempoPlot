@@ -152,11 +152,7 @@ importFrom(ggplot2,
   ylim
 )
 importFrom(ggrepel,geom_text_repel)
-importFrom(grDevices,
-  colorRampPalette,
-  hcl,
-  hcl.colors
-)
+importFrom(grDevices,hcl.colors)
 importFrom(methods,
   setGeneric,
   setMethod

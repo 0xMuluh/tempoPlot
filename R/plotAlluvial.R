@@ -61,17 +61,9 @@ setMethod("plotAlluvial", signature = c(x = "SummarizedExperiment"),
             stop("plotAlluvial() requires the ggalluvial package.",
                 call. = FALSE)
         }
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, group)
         .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
-        .check_column(x, state.col)
-        if (is.null(state.col)) {
-            stop("'state.col' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, state.col)
         if (!(is.numeric(min.flow) && length(min.flow) == 1L &&
                 min.flow >= 1)) {
             stop("'min.flow' must be a single number of at least 1.",
@@ -88,60 +80,59 @@ setMethod("plotAlluvial", signature = c(x = "SummarizedExperiment"),
         wide <- matrix(NA_character_, length(unique(subject)), length(axes),
             dimnames = list(unique(subject), axes))
         wide[cbind(subject, as.character(time))] <- as.character(state)
-
-        if (missing == "drop") {
-            gapped <- rowSums(is.na(wide)) > 0
-            if (all(gapped)) {
-                stop("All subjects have missing time points.",
-                    call. = FALSE)
-            }
-            if (any(gapped)) {
-                message("Removed ", sum(gapped),
-                    " subjects with missing time points.")
-            }
-            wide <- wide[!gapped, , drop = FALSE]
-        } else {
-            wide[is.na(wide)] <- "missing"
-            if (any(wide == "missing")) {
-                states <- c(setdiff(states, "missing"), "missing")
-            }
-        }
-
-        # One flow per distinct path, weighted by its number of subjects.
-        path <- apply(wide, 1L, paste, collapse = "\r")
-        n <- table(path)
-        keep <- names(n)[n >= min.flow]
-        if (length(keep) == 0L) {
-            stop("No path is followed by 'min.flow' subjects.",
-                call. = FALSE)
-        }
-        if (length(keep) < length(n)) {
-            message("Hid ", sum(n[n < min.flow]), " subjects on paths ",
-                "followed by fewer than ", min.flow, " subjects.")
-        }
-        first <- wide[match(keep, path), , drop = FALSE]
-        df <- data.frame(
-            .flow = rep(seq_along(keep), times = length(axes)),
-            .time = factor(rep(axes, each = length(keep)), levels = axes),
-            .state = factor(as.vector(first), levels = states),
-            .n = rep(as.vector(n[keep]), times = length(axes)))
+        df <- .alluvial_flows(wide, states, missing, min.flow)
         .plot_alluvial(df, state.col, time.col, ...)
     }
 )
 
+# One row per distinct path of states through the time points (columns of
+# wide, one row per subject) and time point, weighted by its number of
+# subjects. Gaps become the state "missing" or drop their subject.
+.alluvial_flows <- function(wide, states, missing, min.flow) {
+    if (missing == "drop") {
+        gapped <- rowSums(is.na(wide)) > 0
+        if (all(gapped)) {
+            stop("All subjects have missing time points.", call. = FALSE)
+        }
+        if (any(gapped)) {
+            message("Removed ", sum(gapped),
+                " subjects with missing time points.")
+        }
+        wide <- wide[!gapped, , drop = FALSE]
+    } else if (anyNA(wide)) {
+        wide[is.na(wide)] <- "missing"
+        states <- c(setdiff(states, "missing"), "missing")
+    }
+    path <- apply(wide, 1L, paste, collapse = "\r")
+    n <- table(path)
+    keep <- names(n)[n >= min.flow]
+    if (length(keep) == 0L) {
+        stop("No path is followed by 'min.flow' subjects.", call. = FALSE)
+    }
+    if (length(keep) < length(n)) {
+        message("Hid ", sum(n[n < min.flow]), " subjects on paths ",
+            "followed by fewer than ", min.flow, " subjects.")
+    }
+    first <- wide[match(keep, path), , drop = FALSE]
+    axes <- colnames(wide)
+    data.frame(
+        .flow = rep(seq_along(keep), times = length(axes)),
+        .time = factor(rep(axes, each = length(keep)), levels = axes),
+        .state = factor(as.vector(first), levels = states),
+        .n = rep(as.vector(n[keep]), times = length(axes)))
+}
+
 #' @importFrom ggplot2 ggplot aes .data labs scale_fill_manual
-#' @importFrom grDevices hcl
 .plot_alluvial <- function(df, state.col, time.col, ...) {
-    states <- levels(df$.state)
-    k <- length(setdiff(states, "missing"))
-    colours <- hcl(h = seq(15, 375, length.out = k + 1L)[seq_len(k)],
-        c = 100, l = 65)
-    names(colours) <- setdiff(states, "missing")
-    colours <- c(colours, missing = "grey80")
+    # The states in the categorical palette, "missing" in neutral grey.
+    states <- setdiff(levels(df$.state), "missing")
+    values <- c(.palette_categorical(length(states)), .na_colour)
+    names(values) <- c(states, "missing")
     ggplot(df, aes(x = .data$.time, stratum = .data$.state,
             alluvium = .data$.flow, y = .data$.n, fill = .data$.state)) +
         ggalluvial::geom_flow(...) +
         ggalluvial::geom_stratum(colour = "white", linewidth = 0.3) +
-        scale_fill_manual(values = colours) +
-        labs(x = time.col, y = "subjects", fill = state.col)
+        scale_fill_manual(values = values) +
+        labs(x = time.col, y = "subjects", fill = state.col) +
+        .theme_tempoPlot()
 }

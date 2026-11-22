@@ -2,8 +2,8 @@
 #'
 #' \code{plotHorizon()} draws one strip per feature. Each value is centred,
 #' cut into \code{bands} bands of equal height and the bands are overlaid,
-#' so that deviations above and below the centre show as darker blues and
-#' reds in a short strip.
+#' so that deviations above and below the centre show as darker reds and
+#' blues in a short strip.
 #'
 #' @param x a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
 #'   object.
@@ -41,6 +41,12 @@
 #' @param group.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that groups subjects when \code{level = "group"}. If
 #'   \code{NULL}, all subjects form one group. (Default: \code{NULL})
+#'
+#' @param max.gap \code{Numeric scalar}. Breaks a strip where consecutive
+#'   samples of a subject are further apart than this, in \code{time.col}
+#'   units. For visits, \code{NULL} breaks strips at visits without a
+#'   sample; otherwise \code{NULL} never breaks strips.
+#'   (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_ribbon]{geom_ribbon}}.
@@ -82,7 +88,8 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = "counts",
             features = NULL, top = 20, bands = 3,
             centre = c("median", "baseline", "mean"),
-            level = c("subject", "group"), group.by = NULL, ...) {
+            level = c("subject", "group"), group.by = NULL, max.gap = NULL,
+            ...) {
         centre <- match.arg(centre)
         level <- match.arg(level)
         if (!(is.numeric(bands) && length(bands) == 1L && bands >= 1)) {
@@ -96,14 +103,18 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
         # Features in selection order, the most abundant at the top.
         df$.feature <- factor(df$.feature, levels = unique(df$.feature))
         df <- df[order(df$.feature, df$.panel, df$.time), , drop = FALSE]
+        df$.series <- interaction(df$.feature, df$.panel, drop = TRUE)
+        if (is.null(max.gap) && type == "visit") {
+            max.gap <- 1
+        }
+        df <- .break_gaps(df, ".time", ".series", max.gap)
 
-        series <- interaction(df$.feature, df$.panel, drop = TRUE)
         mid <- switch(centre,
-            median = ave(df$.value, series, FUN = function(v)
+            median = ave(df$.value, df$.series, FUN = function(v)
                 median(v, na.rm = TRUE)),
-            mean = ave(df$.value, series, FUN = function(v)
+            mean = ave(df$.value, df$.series, FUN = function(v)
                 mean(v, na.rm = TRUE)),
-            baseline = ave(df$.value, series, FUN = function(v) v[1L]))
+            baseline = ave(df$.value, df$.series, FUN = function(v) v[1L]))
         df$.value <- df$.value - mid
         df <- .horizon_bands(df, bands)
         if (type == "date") {
@@ -119,7 +130,7 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
 # .y the part of the deviation inside band k, in band heights (0 to 1).
 .horizon_bands <- function(df, bands) {
     height <- ave(abs(df$.value), df$.feature, FUN = function(v) {
-        m <- suppressWarnings(max(v, na.rm = TRUE))
+        m <- max(0, v, na.rm = TRUE)
         if (is.finite(m) && m > 0) m / bands else 1
     })
     z <- df$.value / height
@@ -129,33 +140,28 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
         rbind(cbind(df, .band = k, .y = up),
             cbind(df, .band = -k, .y = down))
     })
-    res <- do.call(rbind, res)
-    # Legend from the highest band above the centre to the lowest below.
-    res$.band <- factor(res$.band, levels = c(rev(seq_len(bands)),
-        -seq_len(bands)))
-    res
+    do.call(rbind, res)
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_ribbon labs facet_grid vars
-#'   scale_fill_manual scale_x_continuous theme element_blank element_text
-#' @importFrom grDevices colorRampPalette
+#'   scale_x_continuous theme element_blank element_text
 .plot_horizon <- function(df, time.col, bands, panel, levels, ...) {
-    colours <- c(
-        colorRampPalette(c("#f4c7c3", "#b2182b"))(bands),
-        colorRampPalette(c("#c6dbef", "#2166ac"))(bands))
-    names(colours) <- c(-seq_len(bands), seq_len(bands))
     p <- ggplot(df, aes(x = .data$.time, ymin = 0, ymax = .data$.y,
             fill = .data$.band,
-            group = interaction(.data$.band, .data$.panel))) +
+            group = interaction(.data$.band, .data$.panel,
+                .data$.segment))) +
         geom_ribbon(...) +
-        scale_fill_manual(values = colours, drop = FALSE) +
+        # Legend from the highest band above the centre to the lowest below.
+        .scale_diverging("fill", limits = c(-bands, bands),
+            breaks = c(rev(seq_len(bands)), -seq_len(bands)),
+            guide = "legend") +
         facet_grid(rows = vars(.data$.feature),
             cols = if (panel) vars(.data$.panel), switch = "y") +
         labs(x = time.col, y = NULL, fill = "band") +
+        .theme_tempoPlot() +
         theme(axis.text.y = element_blank(),
             axis.ticks.y = element_blank(),
             panel.grid.major.y = element_blank(),
-            panel.grid.minor.y = element_blank(),
             strip.text.y.left = element_text(angle = 0, hjust = 1))
     if (!is.null(levels)) {
         p <- p + scale_x_continuous(breaks = seq_along(levels),
