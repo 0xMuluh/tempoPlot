@@ -234,13 +234,13 @@ plotTransitionMatrix(h, state.col = "dominant", time.col = "time",
 
 `plotTurnover()` counts the features gained and lost between consecutive
 samples; `plotTBI()` splits the change between two time points into losses
-and gains (Legendre 2019).
+and gains (Legendre 2019), here of genera present or absent.
 
 ```{r}
 #| label: plot-tbi
 #| fig-height: 5
 
-plotTBI(tse, time.col = "visit", group = "subject", t1 = "1", t2 = "2",
+plotTBI(tse, time.col = "visit", group = "subject", time.point = c("1", "2"),
     colour.by = "sex")
 ```
 
@@ -358,7 +358,7 @@ dissimilarity-overlap curve.
 mg <- addMDS(mg, assay.type = "relabundance", method = "bray",
     name = "PCoA")
 plotDirection(mg, time.col = "Time.hr", group = "StudyIdentifier",
-    dimred = "PCoA", group.by = "StudyIdentifier")
+    dimred = "PCoA", facet.by = "StudyIdentifier")
 ```
 
 ## Reports

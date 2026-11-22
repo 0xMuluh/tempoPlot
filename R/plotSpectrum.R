@@ -1,6 +1,6 @@
 #' Plot the power spectrum of a series
 #'
-#' \code{plotSpectrum()} draws the power of a variable at each frequency,
+#' \code{plotSpectrum()} draws the Lomb-Scargle periodogram of a variable,
 #' one curve per subject. Peaks show periodic changes, such as daily
 #' rhythms.
 #'
@@ -22,21 +22,16 @@
 #'   retrieve \code{y} from when \code{y} is a feature name.
 #'   (Default: \code{NULL})
 #'
-#' @param method \code{Character scalar}. Computes a Lomb-Scargle
-#'   periodogram, which allows uneven sampling (\code{"lomb"}), or a
-#'   periodogram by the fast Fourier transform, which assumes even
-#'   sampling (\code{"fft"}). (Default: \code{"lomb"})
-#'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_line]{geom_line}}.
 #'
 #' @details
 #' Frequencies are in cycles per \code{time.col} unit (per day for
 #' \code{Date} times), from one cycle over the series to half the median
-#' sampling rate. A linear trend is removed first. The Lomb-Scargle power
-#' is normalised by the variance of the series. For \code{"fft"}, samples
-#' are taken as evenly spaced at the median interval. Subjects with fewer
-#' than four samples are left out.
+#' sampling rate. A linear trend is removed first. The power is normalised
+#' by the variance of the series. The periodogram allows uneven sampling;
+#' for even sampling it equals the classical periodogram. Subjects with
+#' fewer than four samples are left out.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -60,13 +55,11 @@ NULL
 
 #' @rdname plotSpectrum
 #' @importFrom SummarizedExperiment colData
-#' @importFrom stats median spec.pgram var lm residuals
+#' @importFrom stats median var lm residuals
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotSpectrum", signature = c(x = "SummarizedExperiment"),
-    function(x, y, time.col, group = NULL, assay.type = NULL,
-            method = c("lomb", "fft"), ...) {
-        method <- match.arg(method)
+    function(x, y, time.col, group = NULL, assay.type = NULL, ...) {
         .check_longitudinal(x, time.col, group)
         if (.time_type(x, time.col) == "visit") {
             stop("'time.col' must be numeric or Date.", call. = FALSE)
@@ -86,22 +79,16 @@ setMethod("plotSpectrum", signature = c(x = "SummarizedExperiment"),
         df <- do.call(rbind, lapply(seq_along(series), function(i) {
             s <- series[[i]]
             s <- s[order(s$t), , drop = FALSE]
-            res <- if (method == "lomb") .lomb_scargle(s$t, s$v) else {
-                dt <- median(diff(s$t))
-                sp <- spec.pgram(s$v, taper = 0, detrend = TRUE,
-                    plot = FALSE)
-                data.frame(frequency = sp$freq / dt, power = sp$spec)
-            }
-            cbind(.subject = names(series)[i], res)
+            cbind(.subject = names(series)[i], .lomb_scargle(s$t, s$v))
         }))
-        .plot_spectrum(df, y, time.col, !is.null(group), ...)
+        .plot_spectrum(df, y, time.col, group, ...)
     }
 )
 
 # Normalised Lomb-Scargle periodogram on a grid from one cycle over the
 # series to half the median sampling rate.
 .lomb_scargle <- function(t, v, n = 200L) {
-    # Remove a linear trend, as spec.pgram() does for "fft".
+    # Remove a linear trend.
     v <- residuals(lm(v ~ t))
     s2 <- var(v)
     span <- max(t) - min(t)
@@ -118,10 +105,11 @@ setMethod("plotSpectrum", signature = c(x = "SummarizedExperiment"),
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_line labs
-.plot_spectrum <- function(df, y, time.col, by, ...) {
+.plot_spectrum <- function(df, y, time.col, group, ...) {
     ggplot(df, aes(x = .data$frequency, y = .data$power,
-            colour = if (by) .data$.subject, group = .data$.subject)) +
+            colour = if (!is.null(group)) .data$.subject,
+            group = .data$.subject)) +
         geom_line(...) +
         labs(x = paste("frequency (cycles per", time.col, "unit)"),
-            y = paste("power of", y), colour = NULL)
+            y = paste("power of", y), colour = group)
 }

@@ -15,20 +15,21 @@
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
 #'
-#' @param t1,t2 Values of \code{time.col} to compare: the first and the
-#'   second time point. Subjects without a sample at both are left out.
+#' @param time.point \code{Vector} of two values of \code{time.col}: the
+#'   first and the second time point. Subjects without a sample at both are
+#'   left out.
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay of
 #'   abundances. (Default: \code{"counts"})
 #'
-#' @param method \code{Character scalar}. Splits the percentage difference
-#'   (Bray-Curtis) of abundances (\code{"bray"}) or the Sorensen
-#'   dissimilarity of presence and absence (\code{"sorensen"}).
-#'   (Default: \code{"bray"})
+#' @param method \code{Character scalar}. Splits the Sorensen
+#'   dissimilarity of presence and absence (\code{"sorensen"}) or the
+#'   percentage difference (Bray-Curtis) of abundances (\code{"bray"}).
+#'   (Default: \code{"sorensen"})
 #'
 #' @param colour.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that colours the points, taken from the sample at
-#'   \code{t1}. (Default: \code{NULL})
+#'   the first time point. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_point]{geom_point}}.
@@ -38,7 +39,16 @@
 #' losses \eqn{B = \sum \max(y_1 - y_2, 0)} and gains
 #' \eqn{C = \sum \max(y_2 - y_1, 0)}. Both axes are divided by
 #' \eqn{2A + B + C}, so that losses and gains add up to the dissimilarity.
-#' With \code{"sorensen"}, the abundances are presence (1) and absence (0).
+#' With \code{"sorensen"}, the abundances are presence (1) and absence (0),
+#' and losses and gains count the features lost and gained.
+#'
+#' \code{"bray"} needs absolute abundances, such as counts scaled by qPCR
+#' or flow cytometry. \eqn{B - C} is the difference of the sample totals,
+#' so on relative abundances losses always equal gains, and on sequencing
+#' counts they differ only by library size.
+#'
+#' Legendre's permutation test of subjects that changed in exceptional
+#' ways is not included.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -51,12 +61,13 @@
 #' @name plotTBI
 #'
 #' @examples
-#' # Change between the first and the second sample of each subject
+#' # Genera lost and gained between the first and the second sample of
+#' # each subject
 #' data("hitchip1006", package = "miaTime")
 #' tse <- hitchip1006
 #' tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
-#' plotTBI(tse, time.col = "visit", group = "subject", t1 = "1",
-#'     t2 = "2", colour.by = "sex")
+#' plotTBI(tse, time.col = "visit", group = "subject",
+#'     time.point = c("1", "2"), colour.by = "sex")
 NULL
 
 #' @rdname plotTBI
@@ -64,8 +75,8 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
-    function(x, time.col, group, t1, t2, assay.type = "counts",
-            method = c("bray", "sorensen"), colour.by = NULL, ...) {
+    function(x, time.col, group, time.point, assay.type = "counts",
+            method = c("sorensen", "bray"), colour.by = NULL, ...) {
         method <- match.arg(method)
         if (is.null(group)) {
             stop("'group' must be one column name of colData(x).",
@@ -78,21 +89,13 @@ setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
             stop("'assay.type' must be one of assayNames(x).",
                 call. = FALSE)
         }
-        time <- colData(x)[[time.col]]
-        for (arg in c("t1", "t2")) {
-            v <- get(arg)
-            if (length(v) != 1L || !as.character(v) %in%
-                    as.character(time)) {
-                stop("'", arg, "' must be one value of 'time.col'.",
-                    call. = FALSE)
-            }
-        }
+        i <- .time_point_index(x, time.col, time.point)
         subject <- as.character(colData(x)[[group]])
-        i1 <- which(as.character(time) == as.character(t1))
-        i2 <- which(as.character(time) == as.character(t2))
+        i1 <- i[[1L]]
+        i2 <- i[[2L]]
         both <- intersect(subject[i1], subject[i2])
         if (length(both) == 0L) {
-            stop("No subject has samples at both 't1' and 't2'.",
+            stop("No subject has samples at both values of 'time.point'.",
                 call. = FALSE)
         }
         i1 <- i1[match(both, subject[i1])]
@@ -113,13 +116,13 @@ setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
         if (!is.null(colour.by)) {
             df[[colour.by]] <- colData(x)[[colour.by]][i1]
         }
-        .plot_tbi(df, t1, t2, colour.by, ...)
+        .plot_tbi(df, time.point, colour.by, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_abline labs
 #'   coord_equal
-.plot_tbi <- function(df, t1, t2, colour.by, ...) {
+.plot_tbi <- function(df, time.point, colour.by, ...) {
     lim <- c(0, max(c(df$losses, df$gains), 1e-12))
     ggplot(df, aes(x = .data$losses, y = .data$gains,
             colour = if (!is.null(colour.by)) .data[[colour.by]])) +
@@ -127,6 +130,19 @@ setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
             colour = "grey40") +
         geom_point(...) +
         coord_equal(xlim = lim, ylim = lim) +
-        labs(x = paste("losses from", t1, "to", t2),
-            y = paste("gains from", t1, "to", t2), colour = colour.by)
+        labs(x = paste("losses from", time.point[1L], "to", time.point[2L]),
+            y = paste("gains from", time.point[1L], "to", time.point[2L]),
+            colour = colour.by)
+}
+
+# Sample indices at each of the two values of time.col in time.point.
+#' @importFrom SummarizedExperiment colData
+.time_point_index <- function(x, time.col, time.point) {
+    time <- as.character(colData(x)[[time.col]])
+    tp <- as.character(time.point)
+    if (length(tp) != 2L || !all(tp %in% time) || tp[1L] == tp[2L]) {
+        stop("'time.point' must be two different values of 'time.col'.",
+            call. = FALSE)
+    }
+    lapply(tp, function(v) which(time == v))
 }

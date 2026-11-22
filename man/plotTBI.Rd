@@ -11,10 +11,9 @@ plotTBI(x, ...)
   x,
   time.col,
   group,
-  t1,
-  t2,
+  time.point,
   assay.type = "counts",
-  method = c("bray", "sorensen"),
+  method = c("sorensen", "bray"),
   colour.by = NULL,
   ...
 )
@@ -33,20 +32,21 @@ a factor of visits.}
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}
 
-\item{t1, t2}{Values of \code{time.col} to compare: the first and the
-second time point. Subjects without a sample at both are left out.}
+\item{time.point}{\code{Vector} of two values of \code{time.col}: the
+first and the second time point. Subjects without a sample at both are
+left out.}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay of
 abundances. (Default: \code{"counts"})}
 
-\item{method}{\code{Character scalar}. Splits the percentage difference
-(Bray-Curtis) of abundances (\code{"bray"}) or the Sorensen
-dissimilarity of presence and absence (\code{"sorensen"}).
-(Default: \code{"bray"})}
+\item{method}{\code{Character scalar}. Splits the Sorensen
+dissimilarity of presence and absence (\code{"sorensen"}) or the
+percentage difference (Bray-Curtis) of abundances (\code{"bray"}).
+(Default: \code{"sorensen"})}
 
 \item{colour.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that colours the points, taken from the sample at
-\code{t1}. (Default: \code{NULL})}
+the first time point. (Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.
@@ -62,15 +62,25 @@ For abundances \eqn{y_1} and \eqn{y_2}, \eqn{A = \sum \min(y_1, y_2)},
 losses \eqn{B = \sum \max(y_1 - y_2, 0)} and gains
 \eqn{C = \sum \max(y_2 - y_1, 0)}. Both axes are divided by
 \eqn{2A + B + C}, so that losses and gains add up to the dissimilarity.
-With \code{"sorensen"}, the abundances are presence (1) and absence (0).
+With \code{"sorensen"}, the abundances are presence (1) and absence (0),
+and losses and gains count the features lost and gained.
+
+\code{"bray"} needs absolute abundances, such as counts scaled by qPCR
+or flow cytometry. \eqn{B - C} is the difference of the sample totals,
+so on relative abundances losses always equal gains, and on sequencing
+counts they differ only by library size.
+
+Legendre's permutation test of subjects that changed in exceptional
+ways is not included.
 }
 \examples{
-# Change between the first and the second sample of each subject
+# Genera lost and gained between the first and the second sample of
+# each subject
 data("hitchip1006", package = "miaTime")
 tse <- hitchip1006
 tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
-plotTBI(tse, time.col = "visit", group = "subject", t1 = "1",
-    t2 = "2", colour.by = "sex")
+plotTBI(tse, time.col = "visit", group = "subject",
+    time.point = c("1", "2"), colour.by = "sex")
 }
 \references{
 Legendre P (2019). A temporal beta-diversity index to identify sites

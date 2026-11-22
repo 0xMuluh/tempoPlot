@@ -69,12 +69,24 @@ importFrom(MultiAssayExperiment,
   experiments,
   sampleMap
 )
-importFrom(S4Vectors,metadata)
+importFrom(S4Vectors,
+  from,
+  mcols,
+  metadata,
+  nnode,
+  to
+)
 importFrom(SingleCellExperiment,
+  colPair,
+  colPairNames,
   reducedDim,
-  reducedDimNames
+  reducedDimNames,
+  rowPair,
+  rowPairNames
 )
 importFrom(SummarizedExperiment,
+  "colData<-",
+  SummarizedExperiment,
   assay,
   assayNames,
   colData,
@@ -130,6 +142,7 @@ importFrom(ggplot2,
   scale_y_discrete,
   scale_y_log10,
   scale_y_reverse,
+  scale_y_sqrt,
   stat_summary,
   theme,
   theme_void,
@@ -164,7 +177,6 @@ importFrom(stats,
   residuals,
   sd,
   setNames,
-  spec.pgram,
   var
 )
 importFrom(survival,

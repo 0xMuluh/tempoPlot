@@ -8,14 +8,7 @@
 \usage{
 plotProcrustes(x, ...)
 
-\S4method{plotProcrustes}{SummarizedExperiment}(
-  x,
-  dimred,
-  dimred2 = dimred,
-  ncomponents = 2,
-  colour.by = NULL,
-  ...
-)
+\S4method{plotProcrustes}{SummarizedExperiment}(x, dimred, dimred2, ncomponents = 2, colour.by = NULL, ...)
 
 \S4method{plotProcrustes}{MultiAssayExperiment}(
   x,
@@ -40,12 +33,13 @@ object, such as a \code{TreeSummarizedExperiment}, or a
 \code{reducedDim}.}
 
 \item{dimred2}{\code{Character scalar}. Specifies the second
-\code{reducedDim}, of \code{x} or of \code{experiment2}.
-(Default: \code{dimred})}
+\code{reducedDim}, of \code{x} or of \code{experiment2}. For a
+\code{MultiAssayExperiment}, it defaults to \code{dimred}.}
 
-\item{ncomponents}{\code{Integer scalar}. Number of components of each
-ordination used in the rotation; the first two are drawn.
-(Default: \code{2})}
+\item{ncomponents}{\code{Numeric scalar} or \code{vector}. The
+components of each ordination used in the rotation: the first
+\code{ncomponents}, or the components given by index or name. The
+first two are drawn. (Default: \code{2})}
 
 \item{colour.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that colours the points. (Default: \code{NULL})}

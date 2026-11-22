@@ -1,3 +1,13 @@
+Changes in version 0.99.56 (2026-11-22)
++ plotTBI: method = "sorensen" by default; bray needs absolute abundances
++ plotLagHeatmap: target read from assay.type; correlations within subjects
++ plotNetwork: directed edges with arrows, self-loops, undirected diff
++ plotSpectrum: Lomb-Scargle only (method removed)
++ plotTBI and plotFingerprint: time.point; ncomponents as in scater;
+  facet.by for panels in plotDirection and plotIndividuality
++ Fixes in plotLagProfile, plotFingerprint, plotPath, plotFeatureScatter,
+  plotTimeLoadings and plotDirection
+
 Changes in version 0.99.53 (2026-11-17)
 + Added plotAccumulation
 

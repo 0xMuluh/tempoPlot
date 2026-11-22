@@ -7,15 +7,7 @@
 \usage{
 plotFingerprint(x, ...)
 
-\S4method{plotFingerprint}{SummarizedExperiment}(
-  x,
-  dissimilarity,
-  time.col,
-  group,
-  reference.time,
-  query.time,
-  ...
-)
+\S4method{plotFingerprint}{SummarizedExperiment}(x, dissimilarity, time.col, group, time.point, ...)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -35,9 +27,9 @@ a factor of visits.}
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}
 
-\item{reference.time, query.time}{Values of \code{time.col}: the samples
-to identify from (\code{reference.time}) and the samples to identify
-(\code{query.time}).}
+\item{time.point}{\code{Vector} of two values of \code{time.col}: the
+reference time, whose samples subjects are identified from, and the
+query time, whose samples are identified.}
 }
 \value{
 A \code{ggplot} object.
@@ -53,6 +45,8 @@ Each point is a subject with samples at both times: the dissimilarity
 of its query sample to its own reference sample (x) and to the nearest
 reference sample of another subject (y). Points above the 1:1 line are
 identified. The subtitle gives the share of subjects identified.
+Franzosa et al. (2015) identified people by metagenomic codes; this plot
+applies the same idea to the nearest sample on a dissimilarity.
 }
 \examples{
 # Is each subject's second sample closest to its own first sample?
@@ -64,7 +58,7 @@ tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
 tse <- tse[, tse$visit \%in\% c("1", "2")]
 tse <- mia::addDissimilarity(tse, method = "bray", assay.type = "counts")
 plotFingerprint(tse, dissimilarity = "bray", time.col = "visit",
-    group = "subject", reference.time = "1", query.time = "2")
+    group = "subject", time.point = c("1", "2"))
 }
 \references{
 Franzosa EA, et al. (2015). Identifying personal microbiomes using

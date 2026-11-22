@@ -19,7 +19,7 @@
 #'   (\code{"density"}), box plots (\code{"box"}) or violins
 #'   (\code{"violin"}). (Default: \code{"density"})
 #'
-#' @param group.by \code{Character scalar}. Specifies the column from
+#' @param facet.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that splits the pairs into panels. Only pairs of
 #'   samples from the same group are kept. (Default: \code{NULL})
 #'
@@ -29,7 +29,9 @@
 #'   \code{\link[ggplot2:geom_violin]{geom_violin}}.
 #'
 #' @details
-#' Each pair of samples is counted once.
+#' Each pair of samples is counted once. A subject with \eqn{k} samples
+#' gives \eqn{k(k-1)/2} within-subject pairs, so subjects sampled often
+#' weigh most in the within distribution.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -45,7 +47,7 @@
 #'
 #' # By sex
 #' plotIndividuality(tse, dissimilarity = "bray", group = "subject",
-#'     layout = "box", group.by = "sex")
+#'     layout = "box", facet.by = "sex")
 NULL
 
 #' @rdname plotIndividuality
@@ -54,14 +56,14 @@ NULL
 #' @export
 setMethod("plotIndividuality", signature = c(x = "SummarizedExperiment"),
     function(x, dissimilarity, group, layout = c("density", "box", "violin"),
-            group.by = NULL, ...) {
+            facet.by = NULL, ...) {
         layout <- match.arg(layout)
         if (is.null(group)) {
             stop("'group' must be one column name of colData(x).",
                 call. = FALSE)
         }
         .check_column(x, group)
-        .check_column(x, group.by)
+        .check_column(x, facet.by)
         d <- .get_dissimilarity(x, dissimilarity)
 
         pairs <- which(lower.tri(d), arr.ind = TRUE)
@@ -71,24 +73,24 @@ setMethod("plotIndividuality", signature = c(x = "SummarizedExperiment"),
             dissimilarity = d[pairs],
             pair = factor(ifelse(same, "within", "between"),
                 levels = c("within", "between")))
-        if (!is.null(group.by)) {
-            by <- as.character(colData(x)[[group.by]])
+        if (!is.null(facet.by)) {
+            by <- as.character(colData(x)[[facet.by]])
             keep <- by[pairs[, 1L]] == by[pairs[, 2L]]
             keep <- !is.na(keep) & keep
-            df[[group.by]] <- by[pairs[, 1L]]
+            df[[facet.by]] <- by[pairs[, 1L]]
             df <- df[keep, , drop = FALSE]
         }
         df <- df[!is.na(df$dissimilarity), , drop = FALSE]
         if (!any(df$pair == "within")) {
             stop("No subject has more than one sample.", call. = FALSE)
         }
-        .plot_individuality(df, dissimilarity, layout, group.by, ...)
+        .plot_individuality(df, dissimilarity, layout, facet.by, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_density geom_boxplot
 #'   geom_violin labs facet_wrap vars
-.plot_individuality <- function(df, dissimilarity, layout, group.by, ...) {
+.plot_individuality <- function(df, dissimilarity, layout, facet.by, ...) {
     if (layout == "density") {
         p <- ggplot(df, aes(x = .data$dissimilarity,
                 colour = .data$pair)) +
@@ -100,8 +102,8 @@ setMethod("plotIndividuality", signature = c(x = "SummarizedExperiment"),
             geom(...) +
             labs(x = "pair", y = dissimilarity)
     }
-    if (!is.null(group.by)) {
-        p <- p + facet_wrap(vars(.data[[group.by]]))
+    if (!is.null(facet.by)) {
+        p <- p + facet_wrap(vars(.data[[facet.by]]))
     }
     p
 }

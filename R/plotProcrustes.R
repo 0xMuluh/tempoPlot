@@ -13,12 +13,13 @@
 #'   \code{reducedDim}.
 #'
 #' @param dimred2 \code{Character scalar}. Specifies the second
-#'   \code{reducedDim}, of \code{x} or of \code{experiment2}.
-#'   (Default: \code{dimred})
+#'   \code{reducedDim}, of \code{x} or of \code{experiment2}. For a
+#'   \code{MultiAssayExperiment}, it defaults to \code{dimred}.
 #'
-#' @param ncomponents \code{Integer scalar}. Number of components of each
-#'   ordination used in the rotation; the first two are drawn.
-#'   (Default: \code{2})
+#' @param ncomponents \code{Numeric scalar} or \code{vector}. The
+#'   components of each ordination used in the rotation: the first
+#'   \code{ncomponents}, or the components given by index or name. The
+#'   first two are drawn. (Default: \code{2})
 #'
 #' @param colour.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that colours the points. (Default: \code{NULL})
@@ -65,8 +66,7 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotProcrustes", signature = c(x = "SummarizedExperiment"),
-    function(x, dimred, dimred2 = dimred, ncomponents = 2,
-            colour.by = NULL, ...) {
+    function(x, dimred, dimred2, ncomponents = 2, colour.by = NULL, ...) {
         .check_column(x, colour.by)
         a <- .get_reduced_dim(x, dimred, ncomponents, "dimred")
         b <- .get_reduced_dim(x, dimred2, ncomponents, "dimred2")
@@ -119,21 +119,39 @@ setMethod("plotProcrustes", signature = c(x = "MultiAssayExperiment"),
     }
 )
 
-# The first ncomponents columns of a reducedDim, checked.
+# The ncomponents columns of a reducedDim, checked (n of them, if given)
+# and named "<dimred>:<index>".
 #' @importFrom SingleCellExperiment reducedDim reducedDimNames
-.get_reduced_dim <- function(x, dimred, ncomponents, arg) {
+.get_reduced_dim <- function(x, dimred, ncomponents, arg = "dimred",
+        n = NULL) {
     if (!inherits(x, "SingleCellExperiment") || !.is_one_name(dimred) ||
             !dimred %in% reducedDimNames(x)) {
         stop("'", arg, "' must be one of reducedDimNames().",
             call. = FALSE)
     }
     rd <- as.matrix(reducedDim(x, dimred))
-    if (!(is.numeric(ncomponents) && length(ncomponents) == 1L &&
-            ncomponents >= 2 && ncomponents <= ncol(rd))) {
-        stop("'ncomponents' must be between 2 and the number of ",
-            "components of '", arg, "'.", call. = FALSE)
+    j <- .components(ncomponents, rd, n)
+    rd <- rd[, j, drop = FALSE]
+    colnames(rd) <- paste0(dimred, ":", j)
+    rd
+}
+
+# Indices of the components chosen by ncomponents, as in
+# scater::plotReducedDim(): a number n gives the first n, a vector gives
+# those components, by index or column name of m. With n, exactly n
+# components must be chosen.
+.components <- function(ncomponents, m, n = NULL) {
+    if (is.numeric(ncomponents) && length(ncomponents) == 1L &&
+            isTRUE(ncomponents >= 1)) {
+        ncomponents <- seq_len(ncomponents)
     }
-    rd[, seq_len(ncomponents), drop = FALSE]
+    j <- if (is.character(ncomponents)) match(ncomponents, colnames(m)) else
+        if (is.numeric(ncomponents)) match(ncomponents, seq_len(ncol(m)))
+    if (length(j) == 0L || anyNA(j) || (!is.null(n) && length(j) != n)) {
+        stop("'ncomponents' must select ", if (!is.null(n)) paste0(n, " "),
+            "components out of ", ncol(m), ".", call. = FALSE)
+    }
+    j
 }
 
 # Symmetric Procrustes: centre, scale to unit sum of squares and rotate b
@@ -151,8 +169,12 @@ setMethod("plotProcrustes", signature = c(x = "MultiAssayExperiment"),
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_segment labs arrow
-#'   unit
+#'   unit coord_equal
 .plot_procrustes <- function(a, b, lab1, lab2, colour, colour.by, ...) {
+    if (ncol(a) < 2L || ncol(b) < 2L) {
+        stop("'ncomponents' must select at least two components.",
+            call. = FALSE)
+    }
     fit <- .procrustes(a, b)
     df <- data.frame(.x = fit$a[, 1L], .y = fit$a[, 2L],
         .x2 = fit$b[, 1L], .y2 = fit$b[, 2L])
@@ -164,6 +186,7 @@ setMethod("plotProcrustes", signature = c(x = "MultiAssayExperiment"),
             yend = .data$.y2), arrow = arrow(length = unit(0.12, "cm")),
             alpha = 0.6) +
         geom_point(aes(x = .data$.x, y = .data$.y), ...) +
+        coord_equal() +
         labs(x = "dimension 1", y = "dimension 2", colour = colour.by,
             subtitle = sprintf("%s (points) to %s (arrows); m2 = %.3f",
                 lab1, lab2, fit$m2))

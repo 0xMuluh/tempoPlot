@@ -111,7 +111,7 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
 
 #' @importFrom ggplot2 ggplot aes .data geom_rect labs facet_wrap vars
 #'   scale_fill_gradient scale_fill_manual scale_x_continuous
-#'   scale_y_continuous
+#'   scale_y_continuous theme
 .plot_recurrence <- function(df, dissimilarity, time.col, group, threshold,
         levels, ...) {
     p <- ggplot(df, aes(xmin = .data$xmin, xmax = .data$xmax,
@@ -133,6 +133,8 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
         p <- p + scale_x_continuous(breaks = breaks, labels = levels) +
             scale_y_continuous(breaks = breaks, labels = levels)
     }
+    # Square panels: both axes are the same times.
     p + facet_wrap(vars(.data[[group]]), scales = "free") +
+        theme(aspect.ratio = 1) +
         labs(x = time.col, y = time.col)
 }

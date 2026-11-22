@@ -46,8 +46,11 @@ test_that("plotSubjectScatter draws subject loadings of a decomposition", {
         source = "tem", ncomponents = c(1, 3))
     expect_identical(as.character(p$data$.subject), c("s1", "s2", "s3"))
     expect_equal(p$data$.y, c(0.7, 0.8, 0.9))
-    expect_identical(p$labels$x, "PC1 (50%)")
-    expect_identical(p$labels$y, "PC3 (10%)")
+    expect_identical(p$labels$x, "PC1 (R\u00b2 0.50)")
+    expect_identical(p$labels$y, "PC3 (R\u00b2 0.10)")
+    q <- plotSubjectScatter(toy, group = "id", source = "tem",
+        ncomponents = c("PC1", "PC3"))
+    expect_equal(q$data$.y, p$data$.y)
     # Only subjects of x are drawn.
     p <- plotSubjectScatter(toy, group = "id", source = "par")
     expect_identical(as.character(p$data$.subject), "s2")

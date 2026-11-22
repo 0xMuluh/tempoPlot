@@ -51,13 +51,14 @@ optionally a fitted curve: Taylor's power law of mean and variance, or
 the neutral model of occupancy and mean relative abundance.
 }
 \details{
-With \code{fit = "power"}, both axes are log10 and the legend gives the
-slope. With \code{fit = "neutral"}, the mean is of relative abundances
+With \code{fit = "power"}, both axes are log10 and the subtitle gives
+the slope. With \code{group.by}, each group has its own curve in its
+colour. With \code{fit = "neutral"}, the mean is of relative abundances
 and the curve is \eqn{1 - F(1/N; Nmp, Nm(1-p))}, with \eqn{F} the beta
 distribution function, \eqn{N} the mean sample total, \eqn{p} the mean
 relative abundance and the migration rate \eqn{m} fitted by least
-squares. With a fit, features with a zero statistic on a log axis are
-not drawn and are left out of the fit.
+squares; the subtitle gives \eqn{m}. With a fit, features with a zero
+statistic on a log axis are not drawn and are left out of the fit.
 }
 \examples{
 data("hitchip1006", package = "miaTime")

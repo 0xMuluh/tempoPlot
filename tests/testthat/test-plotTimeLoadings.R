@@ -22,9 +22,11 @@ test_that("plotTimeLoadings reads TEMPTED results", {
     expect_equal(p$data$.time, c(0, 5, 10, 0, 5, 10))
     expect_equal(p$data$.value, c(0, 1, 2, 3, 2, 1))
     expect_identical(levels(p$data$.component),
-        c("PC1 (60%)", "PC2 (25%)"))
+        c("PC1 (R\u00b2 0.60)", "PC2 (R\u00b2 0.25)"))
     p <- plotTimeLoadings(toy, "tem", ncomponents = 1)
     expect_identical(nlevels(p$data$.component), 1L)
+    p <- plotTimeLoadings(toy, "tem", ncomponents = "PC2")
+    expect_equal(p$data$.value, c(3, 2, 1))
 })
 
 test_that("plotTimeLoadings reads PARAFAC models and matrices", {

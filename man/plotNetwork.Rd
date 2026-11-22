@@ -7,7 +7,7 @@
 \usage{
 plotNetwork(x, ...)
 
-\S4method{plotNetwork}{SummarizedExperiment}(x, edges, split.by = NULL, diff = FALSE, ...)
+\S4method{plotNetwork}{SummarizedExperiment}(x, edges, split.by = NULL, diff = FALSE, directed = FALSE, ...)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -30,6 +30,11 @@ drawn with the same node positions. (Default: \code{NULL})}
 draws one network that marks the edges only in the first level
 (lost), only in the second (gained) or in both (kept).
 (Default: \code{FALSE})}
+
+\item{directed}{\code{Logical scalar}. Whether edges point from
+\code{from} to \code{to}, such as transitions between states. Directed
+edges are drawn as arrows, and \code{diff} tells a-b from b-a;
+otherwise they are the same edge. (Default: \code{FALSE})}
 }
 \value{
 A \code{ggplot} object.
@@ -43,8 +48,10 @@ states or associations estimated in time windows.
 \details{
 Requires igraph for the layout (Kamada-Kawai, which gives the same
 positions on every run). Edges are coloured by the sign of
-\code{weight} and their width follows its absolute value. Node names
-are drawn for up to 40 nodes.
+\code{weight} and their width follows its absolute value. Self-loops
+(\code{from} equal to \code{to}), such as staying in a state, are drawn
+as rings around their node. With \code{diff}, an edge whose weight
+changes sign is kept. Node names are drawn for up to 40 nodes.
 }
 \examples{
 # Correlations above 0.4 between 15 genera, in women and men
@@ -65,4 +72,16 @@ plotNetwork(tse, edges = "correlations", split.by = "sex")
 
 # Edges gained and lost from women to men
 plotNetwork(tse, edges = "correlations", split.by = "sex", diff = TRUE)
+
+# Moves between the dominant genera of consecutive samples
+tse <- mia::addDominant(hitchip1006, name = "dominant")
+cd <- as.data.frame(SummarizedExperiment::colData(tse))
+cd <- cd[order(cd$subject, cd$time), ]
+n <- nrow(cd)
+same <- cd$subject[-1] == cd$subject[-n]
+moves <- data.frame(from = cd$dominant[-n][same],
+    to = cd$dominant[-1][same], weight = 1)
+moves <- aggregate(weight ~ from + to, data = moves, FUN = sum)
+S4Vectors::metadata(tse)$moves <- moves
+plotNetwork(tse, edges = "moves", directed = TRUE)
 }

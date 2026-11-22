@@ -38,8 +38,8 @@ test_that("plotIndividuality matches samples by name", {
     expect_setequal(df$dissimilarity[df$pair == "within"], c(1, 2))
 })
 
-test_that("plotIndividuality keeps pairs within group.by", {
-    p <- plotIndividuality(toy, "d", "id", layout = "box", group.by = "arm")
+test_that("plotIndividuality keeps pairs within facet.by", {
+    p <- plotIndividuality(toy, "d", "id", layout = "box", facet.by = "arm")
     # Pairs in arm x: c1-c2 (within), c1-c4, c2-c4 (between).
     expect_setequal(p$data$dissimilarity, c(1, 6, 8))
     expect_true(all(p$data$arm == "x"))

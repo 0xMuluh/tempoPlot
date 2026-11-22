@@ -21,9 +21,9 @@ test_that("plotPath checks its arguments", {
     expect_error(plotPath(x, "time", "subject", dimred = "MDS"),
         "reducedDimNames")
     expect_error(plotPath(x, "time", "subject", dimred = "PCA",
-        ncomponents = 1:3), "two")
+        ncomponents = 3), "2 components")
     expect_error(plotPath(x, "time", "subject", dimred = "PCA",
-        ncomponents = c(1, 9)), "two")
+        ncomponents = c(1, 9)), "2 components")
     expect_error(plotPath(x, "time", "subject", x.var = "missing",
         y.var = "diversity"), "'x.var' was not found")
     expect_error(plotPath(x, "time", "subject", dimred = "PCA",
@@ -38,6 +38,7 @@ test_that("plotPath joins each subject's samples in time order", {
     expect_equal(ld$y, unname(pca[ord, 2L]))
     expect_identical(get_labs(p)$x, "PCA:1")
     expect_false(is.null(p$layers[[1L]]$geom_params$arrow))
+    expect_identical(p$coordinates$ratio, 1)
 
     p <- plotPath(x, "time", "subject", dimred = "PCA",
         ncomponents = c("PC3", "PC2"), arrows = FALSE)
@@ -78,6 +79,16 @@ test_that("plotPath colours by a column and breaks paths at gaps", {
     p <- plotPath(x, "time", "subject", dimred = "PCA", max.gap = 0.3)
     expect_length(unique(layer_data(p, 1L)$group),
         n_subjects + sum(gaps > 0.3))
+})
+
+test_that("plotPath draws one path without group", {
+    one <- x[, x$subject == x$subject[1L]]
+    p <- plotPath(one, "time", dimred = "PCA", origin = "baseline")
+    ld <- layer_data(p, 1L)
+    expect_length(unique(ld$group), 1L)
+    expect_equal(ld$x[1L], 0)
+    p <- plotPath(one, "time", x.var = "diversity", lag = 1)
+    expect_identical(nrow(p$data), ncol(one) - 1L)
 })
 
 test_that("plotPath checks centroids, field, lag and animate", {
