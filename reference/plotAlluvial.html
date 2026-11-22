@@ -18,7 +18,7 @@ point as stacked strata and the subjects moving between states as flows."><!-- m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.58</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@ point as stacked strata and the subjects moving between states as flows."><!-- m
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot flows of subjects between states over time</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotAlluvial.R" class="external-link"><code>R/plotAlluvial.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/plotAlluvial.R" class="external-link"><code>R/plotAlluvial.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotAlluvial.Rd</code></div>
     </div>
 
@@ -66,7 +66,10 @@ point as stacked strata and the subjects moving between states as flows.</p>
 <span>  min.flow <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  missing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"show"</span>, <span class="st">"drop"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
+<span><span class="fu">plotAlluvial</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -110,6 +113,12 @@ points followed by fewer subjects than this. (Default: <code>1</code>)</p></dd>
 sample or a state as a <code>"missing"</code> stratum (<code>"show"</code>) or
 removes the subjects that have them (<code>"drop"</code>).
 (Default: <code>"show"</code>)</p></dd>
+
+
+<dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
+<dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
+<code>MultiAssayExperiment</code>, the experiment to plot; its samples get
+the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
 
 </dl></div>
     <div id="value">

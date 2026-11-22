@@ -20,7 +20,7 @@ of the subject loadings of a tensor decomposition such as TEMPTED."><!-- mathjax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.58</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ of the subject loadings of a tensor decomposition such as TEMPTED."><!-- mathjax
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot two subject-level statistics against each other</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSubjectScatter.R" class="external-link"><code>R/plotSubjectScatter.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/plotSubjectScatter.R" class="external-link"><code>R/plotSubjectScatter.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotSubjectScatter.Rd</code></div>
     </div>
 
@@ -72,7 +72,10 @@ of the subject loadings of a tensor decomposition such as TEMPTED.</p>
 <span>  source <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncomponents <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
+<span><span class="fu">plotSubjectScatter</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -127,6 +130,12 @@ matrix of subjects by components with subjects as row names.
 <dd><p><code>Numeric scalar</code> or <code>vector</code>. The two
 components of <code>source</code> on the x and y axes: <code>2</code> for the
 first two, or two components by index or name. (Default: <code>2</code>)</p></dd>
+
+
+<dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
+<dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
+<code>MultiAssayExperiment</code>, the experiment to plot; its samples get
+the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
 
 </dl></div>
     <div id="value">

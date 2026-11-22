@@ -19,7 +19,7 @@ rhythms."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.58</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ rhythms."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the power spectrum of a series</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSpectrum.R" class="external-link"><code>R/plotSpectrum.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/plotSpectrum.R" class="external-link"><code>R/plotSpectrum.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotSpectrum.Rd</code></div>
     </div>
 
@@ -60,7 +60,10 @@ rhythms.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'SummarizedExperiment'</span></span>
-<span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">time.col</span>, group <span class="op">=</span> <span class="cn">NULL</span>, assay.type <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">time.col</span>, group <span class="op">=</span> <span class="cn">NULL</span>, assay.type <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
+<span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -98,6 +101,12 @@ form one series. (Default: <code>NULL</code>)</p></dd>
 <dd><p><code>Character scalar</code>. Specifies the assay to
 retrieve <code>y</code> from when <code>y</code> is a feature name.
 (Default: <code>NULL</code>)</p></dd>
+
+
+<dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
+<dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
+<code>MultiAssayExperiment</code>, the experiment to plot; its samples get
+the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
 
 </dl></div>
     <div id="value">

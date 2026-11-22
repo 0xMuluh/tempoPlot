@@ -19,7 +19,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.58</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot lagged correlations of features with a target</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotLagHeatmap.Rd</code></div>
     </div>
 
@@ -73,19 +73,7 @@ correlations as features by lag tiles.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
-<span><span class="fu">plotLagHeatmap</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">target</span>,</span>
-<span>  <span class="va">time.col</span>,</span>
-<span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">experiment</span>,</span>
-<span>  <span class="va">target.experiment</span>,</span>
-<span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
-<span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  top <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  max.lag <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">plotLagHeatmap</span><span class="op">(</span><span class="va">x</span>, <span class="va">target</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span>, target.experiment <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -143,12 +131,19 @@ features. (Default: <code>"counts"</code>)</p></dd>
 directions. (Default: <code>3</code>)</p></dd>
 
 
-<dt id="arg-experiment-target-experiment">experiment, target.experiment<a class="anchor" aria-label="anchor" href="#arg-experiment-target-experiment"></a></dt>
-<dd><p><code>Character scalar</code>. For a
-<code>MultiAssayExperiment</code>, the experiments holding the features and
-the <code>target</code>; samples are matched by their primary names. The
-target is looked up in <code>target.experiment</code> as for a
-<code>SummarizedExperiment</code>, in its first assay for a feature.</p></dd>
+<dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
+<dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
+<code>MultiAssayExperiment</code>, the experiment to plot; its samples get
+the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
+
+
+<dt id="arg-target-experiment">target.experiment<a class="anchor" aria-label="anchor" href="#arg-target-experiment"></a></dt>
+<dd><p><code>Character scalar</code> or <code>integer
+scalar</code>. For a <code>MultiAssayExperiment</code>, the experiment holding
+<code>target</code>, looked up there as for a <code>SummarizedExperiment</code>,
+in its first assay for a feature. Only samples whose primary sample is
+in both experiments are used. If <code>NULL</code>, <code>target</code> is
+looked up in <code>experiment</code>. (Default: <code>NULL</code>)</p></dd>
 
 </dl></div>
     <div id="value">

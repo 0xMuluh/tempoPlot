@@ -20,7 +20,7 @@ the neutral model of occupancy and mean relative abundance."><!-- mathjax --><sc
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.58</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ the neutral model of occupancy and mean relative abundance."><!-- mathjax --><sc
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot two statistics of each feature with a fit</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotFeatureScatter.R" class="external-link"><code>R/plotFeatureScatter.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/plotFeatureScatter.R" class="external-link"><code>R/plotFeatureScatter.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-core/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotFeatureScatter.Rd</code></div>
     </div>
 
@@ -70,7 +70,10 @@ the neutral model of occupancy and mean relative abundance.</p>
 <span>  fit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"power"</span>, <span class="st">"neutral"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
+<span><span class="fu">plotFeatureScatter</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -110,6 +113,12 @@ and <code>y.stat = "occupancy"</code> of counts. (Default: <code>"none"</code>)<
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> that splits the samples; statistics and fits are
 computed within each group. (Default: <code>NULL</code>)</p></dd>
+
+
+<dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
+<dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
+<code>MultiAssayExperiment</code>, the experiment to plot; its samples get
+the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
 
 </dl></div>
     <div id="value">
