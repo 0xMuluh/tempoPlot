@@ -12,8 +12,10 @@
 #'   community type or the dominant taxon.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
@@ -66,12 +68,10 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
     function(x, state.col, time.col, group, as.relative = TRUE,
             facet.by = NULL, max.gap = NULL, ...) {
         .require_column(x, group)
-        type <- .check_longitudinal(x, time.col, group)
+        .check_longitudinal(x, time.col, group)
         .require_column(x, state.col)
         .check_column(x, facet.by)
-        if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
-            stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
-        }
+        .check_flag(as.relative)
         state <- colData(x)[[state.col]]
         if (!(is.factor(state) || is.character(state) ||
                 is.logical(state))) {
@@ -83,9 +83,6 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
         df <- .order_time(df, time.col, group)
-        if (is.null(max.gap) && type == "visit") {
-            max.gap <- 1
-        }
         df <- .break_gaps(df, time.col, group, max.gap)
         df <- .count_transitions(df, state.col, group, facet.by, as.relative)
         .plot_transition_matrix(df, state.col, facet.by, as.relative, ...)
@@ -101,9 +98,8 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
     state <- df[[state.col]]
     lv <- if (is.factor(state)) levels(state) else sort(unique(
         as.character(state[!is.na(state)])))
-    i <- .next_in_subject(df[[group]])
-    i <- i[df$.segment[i] == df$.segment[i + 1L] & !is.na(state[i]) &
-        !is.na(state[i + 1L])]
+    i <- .next_in_subject(df[[group]], segment = df$.segment)
+    i <- i[!is.na(state[i]) & !is.na(state[i + 1L])]
     if (length(i) == 0L) {
         stop("No subject has two consecutive samples with a state.",
             call. = FALSE)

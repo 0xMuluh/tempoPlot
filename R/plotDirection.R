@@ -8,8 +8,10 @@
 #'   object, such as a \code{TreeSummarizedExperiment}.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
@@ -65,14 +67,9 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group, dimred, ncomponents = 2, bins = 16,
             facet.by = NULL, max.gap = NULL, ...) {
         .require_column(x, group)
-        if (.check_longitudinal(x, time.col, group) == "visit") {
-            max.gap <- max.gap %||% 1
-        }
+        .check_longitudinal(x, time.col, group)
         .check_column(x, facet.by)
-        if (!(is.numeric(bins) && length(bins) == 1L && bins >= 2)) {
-            stop("'bins' must be a single number of at least 2.",
-                call. = FALSE)
-        }
+        .check_number(bins, 2)
         rd <- .get_reduced_dim(x, dimred, ncomponents, n = 2L)
         cols <- unique(c(time.col, group, facet.by))
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
@@ -81,7 +78,7 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
         df$.y <- rd[, 2L]
         df <- .order_time(df, time.col, group)
         df <- .break_gaps(df, time.col, group, max.gap)
-        i <- .next_in_subject(paste(df[[group]], df$.segment))
+        i <- .next_in_subject(df[[group]], segment = df$.segment)
         dx <- df$.x[i + 1L] - df$.x[i]
         dy <- df$.y[i + 1L] - df$.y[i]
         moves <- data.frame(

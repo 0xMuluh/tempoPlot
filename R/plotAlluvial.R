@@ -11,8 +11,9 @@
 #'   community type or the dominant taxon.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains the time points shared by the subjects,
-#'   best a factor of visits. Each distinct time is one axis.
+#'   \code{colData(x)} that contains the time points shared by the subjects:
+#'   numeric, \code{Date}, \code{POSIXct} or, best, a factor of visits.
+#'   Each distinct time is one axis.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
@@ -64,11 +65,7 @@ setMethod("plotAlluvial", signature = c(x = "SummarizedExperiment"),
         .require_column(x, group)
         .check_longitudinal(x, time.col, group)
         .require_column(x, state.col)
-        if (!(is.numeric(min.flow) && length(min.flow) == 1L &&
-                min.flow >= 1)) {
-            stop("'min.flow' must be a single number of at least 1.",
-                call. = FALSE)
-        }
+        .check_number(min.flow, 1)
 
         time <- colData(x)[[time.col]]
         axes <- if (is.factor(time)) levels(droplevels(time)) else
@@ -122,17 +119,13 @@ setMethod("plotAlluvial", signature = c(x = "SummarizedExperiment"),
         .n = rep(as.vector(n[keep]), times = length(axes)))
 }
 
-#' @importFrom ggplot2 ggplot aes .data labs scale_fill_manual
+#' @importFrom ggplot2 ggplot aes .data labs
 .plot_alluvial <- function(df, state.col, time.col, ...) {
-    # The states in the categorical palette, "missing" in neutral grey.
-    states <- setdiff(levels(df$.state), "missing")
-    values <- c(.palette_categorical(length(states)), .na_colour)
-    names(values) <- c(states, "missing")
     ggplot(df, aes(x = .data$.time, stratum = .data$.state,
             alluvium = .data$.flow, y = .data$.n, fill = .data$.state)) +
         ggalluvial::geom_flow(...) +
         ggalluvial::geom_stratum(colour = "white", linewidth = 0.3) +
-        scale_fill_manual(values = values) +
+        .scale_categorical("fill", grey = "missing") +
         labs(x = time.col, y = "subjects", fill = state.col) +
         .theme_tempoPlot()
 }

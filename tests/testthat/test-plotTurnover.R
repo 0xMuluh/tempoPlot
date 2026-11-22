@@ -63,6 +63,13 @@ test_that("plotTurnover spans intervals and stacks components", {
     s1 <- df[df$.panel == "s1" & df$.time == 1, ]
     expect_equal(s1$.ymin, c(0, 1 / 3))
     expect_equal(s1$.ymax, c(1 / 3, 2 / 3))
+    # Date and POSIXct intervals keep their class.
+    toy$date <- as.Date("2020-01-01") + toy$t
+    expect_s3_class(plotTurnover(toy, "date", "id")$data$.from, "Date")
+    toy$hour <- as.POSIXct("2020-01-01", tz = "UTC") + toy$t * 3600
+    df <- plotTurnover(toy, "hour", "id")$data
+    expect_s3_class(df$.time, "POSIXct")
+    expect_equal(unique(df$.time[df$.panel == "s2"]), toy$hour[5L])
 })
 
 test_that("plotTurnover counts presence above detection", {

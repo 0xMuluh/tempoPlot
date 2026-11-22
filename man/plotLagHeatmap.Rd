@@ -36,8 +36,8 @@ column of \code{colData(x)}, a row of \code{assay(x, assay.type)}, or
 \code{"<dimred>:<component>"}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling times: numeric, \code{Date} or
-a factor of visits.}
+\code{colData(x)} that contains sampling times: numeric, \code{Date},
+\code{POSIXct} or a factor of visits.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects. If \code{NULL}, all samples

@@ -76,12 +76,12 @@ test_that(".check_longitudinal errors on NA and duplicates", {
 })
 
 test_that(".time_type handles numeric, Date, factor and character", {
-    expect_identical(.time_type(hitchip1006, "time"), "numeric")
+    expect_identical(.time_type(hitchip1006$time), "numeric")
 
     x_date <- hitchip1006
     colData(x_date)$time <- as.Date("2000-01-01") +
         as.integer(colData(x_date)$time)
-    expect_identical(.time_type(x_date, "time"), "date")
+    expect_identical(.time_type(x_date$time), "date")
 
     x_visit <- hitchip1006
     t <- colData(x_visit)$time
@@ -90,15 +90,15 @@ test_that(".time_type handles numeric, Date, factor and character", {
         levels = paste0("V", sort(unique(t))),
         ordered = TRUE
     )
-    expect_identical(.time_type(x_visit, "time"), "visit")
+    expect_identical(.time_type(x_visit$time), "visit")
 
     x_fac <- hitchip1006
     colData(x_fac)$time <- factor(paste0("V", colData(x_fac)$time))
-    expect_identical(.time_type(x_fac, "time"), "visit")
+    expect_identical(.time_type(x_fac$time), "visit")
 
     x_chr <- hitchip1006
     colData(x_chr)$time <- as.character(colData(x_chr)$time)
-    expect_error(.time_type(x_chr, "time"), "POSIXct or factor")
+    expect_error(.time_type(x_chr$time), "POSIXct or factor")
 })
 
 test_that("POSIXct times are continuous time in hours", {
@@ -184,6 +184,15 @@ test_that(".break_gaps breaks numeric, Date and visit gaps", {
     )
     # V1->V2 = 1; V2->V5 = 3 > 2
     expect_identical(out_visit$.segment, c(1L, 1L, 2L))
+    # Without max.gap, visits break at every skipped level, also when the
+    # codes are numbers and visit says so.
+    expect_identical(.break_gaps(df_visit, "time", "subject")$.segment,
+        c(1L, 1L, 2L))
+    df_codes <- transform(df_visit, time = as.integer(time))
+    expect_identical(.break_gaps(df_codes, "time", "subject")$.segment,
+        rep(1L, 3L))
+    expect_identical(.break_gaps(df_codes, "time", "subject",
+        visit = TRUE)$.segment, c(1L, 1L, 2L))
 
     expect_error(
         .break_gaps(df, "time", max.gap = -1),
@@ -235,4 +244,6 @@ test_that(".resolve_y errors on ambiguous, missing and non-numeric", {
     expect_error(.resolve_y(x, "missing_y"), "not found")
 
     expect_error(.resolve_y(x, "sex"), "numeric")
+    expect_error(.resolve_y(hitchip1006, taxon, assay.type = "clr"),
+        "'assay.type' must be one of assayNames")
 })

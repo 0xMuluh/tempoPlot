@@ -23,8 +23,9 @@ object.}
 \code{colData(x)}, a row of \code{assay(x, assay.type)}, or
 \code{"<dimred>:<component>"}.}
 
-\item{time.col}{\code{Character scalar}. Specifies the numeric or
-\code{Date} column from \code{colData(x)} that contains sampling times.}
+\item{time.col}{\code{Character scalar}. Specifies the column from
+\code{colData(x)} that contains sampling times: numeric, \code{Date}
+or \code{POSIXct}.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -48,11 +49,12 @@ rhythms.
 }
 \details{
 Frequencies are in cycles per \code{time.col} unit (per day for
-\code{Date} times), from one cycle over the series to half the median
-sampling rate. A linear trend is removed first. The power is normalised
-by the variance of the series. The periodogram allows uneven sampling;
-for even sampling it equals the classical periodogram. Subjects with
-fewer than four samples are left out.
+\code{Date}, per hour for \code{POSIXct} times), from one cycle over
+the series to half the median sampling rate. A linear trend is removed
+first. The power is normalised by the variance of the series. The
+periodogram allows uneven sampling; for even sampling it equals the
+classical periodogram. Subjects with fewer than four samples are left
+out.
 }
 \examples{
 # Acetate in three bioreactors fasted once a day: peaks near 1/24 per

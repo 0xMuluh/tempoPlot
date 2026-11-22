@@ -28,6 +28,9 @@ test_that("plotPath checks its arguments", {
         y.var = "diversity"), "'x.var' was not found")
     expect_error(plotPath(x, "time", "subject", dimred = "PCA",
         arrows = "yes"), "'arrows'")
+    expect_error(plotPath(x, "time", "subject", x.var = rownames(x)[1L],
+        y.var = "diversity", assay.type = "clr"),
+        "'assay.type' must be one of assayNames")
 })
 
 test_that("plotPath joins each subject's samples in time order", {

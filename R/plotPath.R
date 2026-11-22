@@ -8,8 +8,10 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -165,18 +167,11 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
 # lag plots do not support.
 .check_path_args <- function(arrows, centroids, animate, field, lag,
         origin) {
-    for (arg in c("arrows", "centroids", "animate")) {
-        if (!(isTRUE(get(arg)) || isFALSE(get(arg)))) {
-            stop("'", arg, "' must be TRUE or FALSE.", call. = FALSE)
-        }
-    }
-    for (arg in c("field", "lag")) {
-        v <- get(arg)
-        if (!is.null(v) && !(is.numeric(v) && length(v) == 1L && v >= 1)) {
-            stop("'", arg, "' must be NULL or a single number of at ",
-                "least 1.", call. = FALSE)
-        }
-    }
+    .check_flag(arrows)
+    .check_flag(centroids)
+    .check_flag(animate)
+    .check_number(field, 1, null = TRUE)
+    .check_number(lag, 1, null = TRUE)
     if (!is.null(lag) && (centroids || !is.null(field) || animate ||
             origin != "none")) {
         stop("'lag' cannot be combined with 'centroids', 'field', ",
@@ -194,9 +189,7 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
 #' @importFrom stats ave
 .path_table <- function(x, time.col, group, dimred, ncomponents, x.var,
         y.var, assay.type, colour.by, group.by, origin, max.gap) {
-    if (.check_longitudinal(x, time.col, group) == "visit") {
-        max.gap <- max.gap %||% 1
-    }
+    .check_longitudinal(x, time.col, group)
     .check_column(x, colour.by)
     .check_column(x, group.by)
     if (is.null(dimred) == (is.null(x.var) || is.null(y.var))) {

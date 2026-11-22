@@ -7,8 +7,8 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
@@ -27,8 +27,8 @@
 #'   \code{\link[ggplot2:geom_boxplot]{geom_boxplot}}.
 #'
 #' @details
-#' Intervals are in \code{time.col} units: days for \code{Date} times and
-#' visit steps for visits.
+#' Intervals are in \code{time.col} units: days for \code{Date}, hours for
+#' \code{POSIXct} times and visit steps for visits.
 #'
 #' @return
 #' A \code{ggplot} object.

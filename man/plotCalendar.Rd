@@ -20,7 +20,9 @@ object.}
 \code{\link[ggplot2:geom_tile]{geom_tile}}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling dates, of class \code{Date}.}
+\code{colData(x)} that contains sampling dates, of class \code{Date},
+or times of class \code{POSIXct}, counted on their date in their time
+zone.}
 
 \item{unit}{\code{Character scalar}. Counts samples per day, with weeks
 on the x axis and weekdays on the y axis (\code{"day"}), or per week,

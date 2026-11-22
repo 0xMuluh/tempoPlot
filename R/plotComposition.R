@@ -8,8 +8,8 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. Each subject gets its own
@@ -104,9 +104,7 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
         level <- match.arg(level)
         .check_longitudinal(x, time.col, group)
         .check_column(x, group.by)
-        if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
-            stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
-        }
+        .check_flag(as.relative)
         mat <- .get_assay(x, assay.type)
         if (as.relative) {
             mat <- prop.table(mat, 2L)
@@ -142,8 +140,7 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_col geom_area geom_ribbon
-#'   facet_wrap vars labs scale_x_discrete scale_fill_manual theme
-#'   element_blank
+#'   facet_wrap vars labs scale_x_discrete theme element_blank
 #' @importFrom stats ave
 .plot_composition <- function(df, time.col, panel, layout, ylab, ...) {
     if (layout == "stream") {
@@ -168,11 +165,7 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
                 fill = .data$.feature, group = .data$.feature)) +
             geom(...)
     }
-    # The features in the categorical palette, "Other" in neutral grey.
-    lv <- setdiff(levels(df$.feature), "Other")
-    values <- c(.palette_categorical(length(lv)), .na_colour)
-    names(values) <- c(lv, "Other")
-    p <- p + scale_fill_manual(values = values) +
+    p <- p + .scale_categorical("fill", grey = "Other") +
         labs(x = time.col, y = ylab, fill = "feature") +
         .theme_tempoPlot()
     if (layout == "stream") {

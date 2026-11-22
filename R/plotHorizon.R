@@ -9,8 +9,10 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -92,22 +94,17 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
             ...) {
         centre <- match.arg(centre)
         level <- match.arg(level)
-        if (!(is.numeric(bands) && length(bands) == 1L && bands >= 1)) {
-            stop("'bands' must be a single number of at least 1.",
-                call. = FALSE)
-        }
+        .check_number(bands, 1)
         bands <- as.integer(bands)
         df <- .feature_table(x, time.col, group, assay.type, features, top,
             "raw", level, group.by)
-        type <- .time_type(x, time.col)
+        time <- colData(x)[[time.col]]
         # Features in selection order, the most abundant at the top.
         df$.feature <- factor(df$.feature, levels = unique(df$.feature))
         df <- df[order(df$.feature, df$.panel, df$.time), , drop = FALSE]
         df$.series <- interaction(df$.feature, df$.panel, drop = TRUE)
-        if (is.null(max.gap) && type == "visit") {
-            max.gap <- 1
-        }
-        df <- .break_gaps(df, ".time", ".series", max.gap)
+        df <- .break_gaps(df, ".time", ".series", max.gap,
+            visit = is.factor(time))
 
         mid <- switch(centre,
             median = ave(df$.value, df$.series, FUN = function(v)
@@ -117,12 +114,9 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
             baseline = ave(df$.value, df$.series, FUN = function(v) v[1L]))
         df$.value <- df$.value - mid
         df <- .horizon_bands(df, bands)
-        if (type == "date") {
-            df$.time <- as.Date(df$.time, origin = "1970-01-01")
-        }
-        levels <- if (type == "visit") levels(colData(x)[[time.col]])
+        df$.time <- .time_restore(df$.time, time)
         panel <- !is.null(if (level == "subject") group else group.by)
-        .plot_horizon(df, time.col, bands, panel, levels, ...)
+        .plot_horizon(df, time.col, bands, panel, levels(time), ...)
     }
 )
 

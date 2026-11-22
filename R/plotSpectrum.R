@@ -11,8 +11,9 @@
 #'   \code{colData(x)}, a row of \code{assay(x, assay.type)}, or
 #'   \code{"<dimred>:<component>"}.
 #'
-#' @param time.col \code{Character scalar}. Specifies the numeric or
-#'   \code{Date} column from \code{colData(x)} that contains sampling times.
+#' @param time.col \code{Character scalar}. Specifies the column from
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date}
+#'   or \code{POSIXct}.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -27,11 +28,12 @@
 #'
 #' @details
 #' Frequencies are in cycles per \code{time.col} unit (per day for
-#' \code{Date} times), from one cycle over the series to half the median
-#' sampling rate. A linear trend is removed first. The power is normalised
-#' by the variance of the series. The periodogram allows uneven sampling;
-#' for even sampling it equals the classical periodogram. Subjects with
-#' fewer than four samples are left out.
+#' \code{Date}, per hour for \code{POSIXct} times), from one cycle over
+#' the series to half the median sampling rate. A linear trend is removed
+#' first. The power is normalised by the variance of the series. The
+#' periodogram allows uneven sampling; for even sampling it equals the
+#' classical periodogram. Subjects with fewer than four samples are left
+#' out.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -62,10 +64,11 @@ setMethod("plotSpectrum", signature = c(x = "SummarizedExperiment"),
     function(x, y, time.col, group = NULL, assay.type = "counts",
             ...) {
         if (.check_longitudinal(x, time.col, group) == "visit") {
-            stop("'time.col' must be numeric or Date.", call. = FALSE)
+            stop("'time.col' must be numeric, Date or POSIXct.",
+                call. = FALSE)
         }
         value <- unname(.resolve_y(x, y, assay.type))
-        time <- as.numeric(colData(x)[[time.col]])
+        time <- .time_numeric(colData(x)[[time.col]])
         subject <- if (is.null(group)) rep("", ncol(x)) else
             as.character(colData(x)[[group]])
         keep <- !is.na(value)

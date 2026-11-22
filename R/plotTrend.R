@@ -13,8 +13,10 @@
 #'   \code{assay(x, assay.type)}, or \code{"<dimred>:<component>"}.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap} and \code{period}, are in days for \code{Date} and
+#'   hours for \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. (Default: \code{NULL})
@@ -75,10 +77,10 @@
 #'   window. (Default: \code{5})
 #'
 #' @param period \code{Numeric scalar}. Wraps time into cycles of this
-#'   length, in \code{time.col} units (days for \code{Date} times), to
-#'   show daily or seasonal patterns; each cycle is drawn as its own line.
-#'   Cycles start at time 0, which for \code{Date} times is 1970-01-01, a
-#'   Thursday. Not combined with \code{events} or a \code{fit} table.
+#'   length, in \code{time.col} units, to show daily or seasonal patterns;
+#'   each cycle is drawn as its own line. Cycles start at time 0, which for
+#'   \code{Date} and \code{POSIXct} times is 1970-01-01 (UTC), a Thursday.
+#'   Not combined with \code{events} or a \code{fit} table.
 #'   (Default: \code{NULL})
 #'
 #' @param events \code{data.frame}. Events or intervals to mark, one per
@@ -242,9 +244,6 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         events <- .check_events(events, x, time.col)
         .check_trend_args(x, time.col, group, type, show.individuals, band,
             fit, baseline, rolling, window, period, events)
-        if (is.null(max.gap) && type == "visit") {
-            max.gap <- 1
-        }
         df <- .trend_data(x, y, time.col, group, assay.type, baseline,
             rolling, window, period, max.gap)
 
@@ -270,9 +269,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 #' @importFrom SummarizedExperiment colData
 .check_trend_args <- function(x, time.col, group, type, show.individuals,
         band, fit, baseline, rolling, window, period, events) {
-    if (!(isTRUE(show.individuals) || isFALSE(show.individuals))) {
-        stop("'show.individuals' must be TRUE or FALSE.", call. = FALSE)
-    }
+    .check_flag(show.individuals)
     if (!is.null(band) && !(is.numeric(band) && length(band) == 2L &&
             all(band >= 0 & band <= 1) && band[1L] < band[2L])) {
         stop("'band' must be NULL or two increasing probabilities.",
@@ -289,16 +286,12 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         stop("'fit' cannot be combined with 'baseline' or 'rolling'.",
             call. = FALSE)
     }
-    if (!(is.numeric(window) && length(window) == 1L && window >= 2)) {
-        stop("'window' must be a single number of at least 2.",
-            call. = FALSE)
-    }
-    if (!is.null(period) && !(is.numeric(period) && length(period) == 1L &&
-            period > 0 && type != "visit" && is.null(events) &&
-            !is.data.frame(fit))) {
-        stop("'period' must be NULL or a single positive number, for ",
-            "numeric or Date times, without 'events' or a 'fit' table.",
-            call. = FALSE)
+    .check_number(window, 2)
+    .check_number(period, 0, open = TRUE, null = TRUE)
+    if (!is.null(period) && (type == "visit" || !is.null(events) ||
+            is.data.frame(fit))) {
+        stop("'period' needs numeric, Date or POSIXct times, without ",
+            "'events' or a 'fit' table.", call. = FALSE)
     }
     if (any(group %in% names(events))) {
         stop("'events' apply to all subjects; use 'align.to' for an ",
@@ -316,10 +309,10 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     }
     time <- colData(x)[[time.col]]
     event <- colData(x)[[align.to]]
-    if (!(is.numeric(event) && is.numeric(time) ||
-            inherits(event, "Date") && inherits(time, "Date"))) {
+    if (is.factor(time) || !(if (is.numeric(time)) is.numeric(event) else
+            inherits(event, class(time)[1L]))) {
         stop("'align.to' must be a column with the type of 'time.col', ",
-            "which must be numeric or Date.", call. = FALSE)
+            "which must be numeric, Date or POSIXct.", call. = FALSE)
     }
     if (anyNA(event)) {
         stop("'align.to' must not contain NA values; remove the ",
@@ -330,7 +323,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         stop("'align.to' must be constant within each subject.",
             call. = FALSE)
     }
-    x[[time.col]] <- as.numeric(time) - as.numeric(event)
+    x[[time.col]] <- .time_numeric(time) - .time_numeric(event)
     x
 }
 
@@ -341,9 +334,6 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 #' @importFrom stats ave
 .trend_data <- function(x, y, time.col, group, assay.type, baseline,
         rolling, window, period, max.gap) {
-    if (isTRUE(y %in% rownames(x))) {
-        .get_assay(x, assay.type) # checks assay.type
-    }
     df <- as.data.frame(colData(x), optional = TRUE)
     df$.y <- unname(.resolve_y(x, y, assay.type))
     df <- .break_gaps(.order_time(df, time.col, group), time.col, group,
@@ -373,8 +363,9 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     }
     cycle <- 0L
     if (!is.null(period)) {
-        cycle <- as.numeric(df[[time.col]]) %/% period
-        df[[time.col]] <- as.numeric(df[[time.col]]) %% period
+        t <- .time_numeric(df[[time.col]])
+        cycle <- t %/% period
+        df[[time.col]] <- t %% period
     }
     df$.line <- interaction(df$.id, df$.segment, cycle, drop = TRUE)
     df
@@ -389,7 +380,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
             colour = if (!is.null(group.by)) .data[[group.by]],
             fill = if (!is.null(group.by)) .data[[group.by]])) +
-        .trend_event_bands(events)
+        .events_layer(events, "bands", text = TRUE)
     dots <- list(...)
     if (layout != "line") {
         # One box or violin per time and group.by group; individual points
@@ -421,7 +412,6 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         if (!is.null(facet.by)) facet_wrap(vars(.data[[facet.by]])),
         if (is.factor(df[[time.col]])) scale_x_discrete(drop = FALSE),
         labs(colour = group.by, fill = group.by),
-        if ("label" %in% names(events)) labs(linetype = "event"),
         .scale_by(df, group.by, c("colour", "fill")),
         .theme_tempoPlot())
 }
@@ -488,19 +478,4 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
                 var(t[j], na.rm = TRUE))
     }
     out
-}
-
-# Grey bands for events with an end, labelled at the top. The fill scale
-# stays free for group.by.
-#' @importFrom ggplot2 geom_text aes .data
-.trend_event_bands <- function(events) {
-    if (!"end" %in% names(events)) {
-        return(list())
-    }
-    bands <- events[!is.na(events$end), , drop = FALSE]
-    list(.events_layer(bands[setdiff(names(bands), "label")], "bands"),
-        if (nrow(bands) && "label" %in% names(bands)) geom_text(aes(
-            x = .data$start, y = Inf, label = .data$label), data = bands,
-            inherit.aes = FALSE, hjust = -0.05, vjust = 1.5, size = 3,
-            colour = "grey30"))
 }

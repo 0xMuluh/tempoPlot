@@ -9,7 +9,9 @@
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)}, or of a \code{data.frame} \code{x}, that contains
-#'   times: numeric, \code{Date} or a factor of visits.
+#'   times: numeric, \code{Date}, \code{POSIXct} or a factor of visits.
+#'   Time differences, as in \code{max.gap}, are in days for \code{Date}
+#'   and hours for \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -28,9 +30,13 @@
 #'
 #' @param value \code{Character scalar}. Plots the assay values
 #'   (\code{"raw"}), their change from the first sample of each subject
-#'   (\code{"change"}), or presence, a value above zero
+#'   (\code{"change"}), or presence, a value above \code{detection}
 #'   (\code{"occupancy"}). Effects from a results table are drawn by the
 #'   \code{data.frame} method. (Default: \code{"raw"})
+#'
+#' @param detection \code{Numeric scalar}. With \code{value =
+#'   "occupancy"}, a feature is present in a sample when its value is above
+#'   this. (Default: \code{0})
 #'
 #' @param effect \code{Character scalar}. For a \code{data.frame}, the
 #'   column of effects, such as log fold changes at each time point.
@@ -116,7 +122,7 @@ NULL
 setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = "counts",
             features = NULL, top = 20,
-            value = c("raw", "change", "occupancy"),
+            value = c("raw", "change", "occupancy"), detection = 0,
             order.by = c("mean", "cluster"),
             level = c("subject", "group"), group.by = NULL, max.gap = NULL,
             ...) {
@@ -124,15 +130,14 @@ setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
         order.by <- match.arg(order.by)
         level <- match.arg(level)
         df <- .feature_table(x, time.col, group, assay.type, features, top,
-            value, level, group.by)
-        type <- .time_type(x, time.col)
+            value, level, group.by, detection)
+        time <- colData(x)[[time.col]]
         df$.feature <- factor(df$.feature,
             levels = .order_features(df, order.by))
-        df <- .add_tile_edges(df, type, max.gap)
-        levels <- if (type == "visit") levels(colData(x)[[time.col]])
+        df <- .add_tile_edges(df, time, max.gap)
         panel.col <- if (level == "subject") group else group.by
         .plot_tiles(df, time.col, assay.type, value, level, panel.col,
-            levels, ...)
+            levels(time), ...)
     }
 )
 
@@ -144,10 +149,9 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
             features = NULL, top = 20, order.by = c("mean", "cluster"),
             feature.col = "feature", max.gap = NULL, ...) {
         order.by <- match.arg(order.by)
-        type <- .check_effects(x, time.col, effect, p.col, threshold,
-            feature.col)
+        .check_effects(x, time.col, effect, p.col, threshold, feature.col)
         time <- x[[time.col]]
-        if (type == "visit") {
+        if (is.factor(time)) {
             time <- droplevels(time)
         }
         # Features with the largest mean absolute effect.
@@ -168,9 +172,9 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
         }
         df$.feature <- factor(df$.feature,
             levels = .order_features(df, order.by))
-        df <- .add_tile_edges(df, type, max.gap)
+        df <- .add_tile_edges(df, time, max.gap)
         p <- .plot_tiles(df, time.col, effect, "effect", "subject", NULL,
-            if (type == "visit") levels(time), ...)
+            levels(time), ...)
         if (!is.null(p.col)) {
             p <- p + geom_point(aes(x = .data$.mid, y = .data$.feature),
                 data = df[df$.significant, , drop = FALSE], size = 1,
@@ -181,8 +185,8 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
     }
 )
 
-# Check the columns and threshold of a results table x for plotTiles() and
-# return the type of its time column: "numeric", "date" or "visit".
+# Check the columns, times and threshold of a results table x for
+# plotTiles().
 .check_effects <- function(x, time.col, effect, p.col, threshold,
         feature.col) {
     for (arg in c("time.col", "effect", "p.col", "feature.col")) {
@@ -196,18 +200,8 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
     if (!is.numeric(x[[effect]])) {
         stop("'effect' must be a numeric column.", call. = FALSE)
     }
-    if (!(is.numeric(threshold) && length(threshold) == 1L &&
-            threshold > 0 && threshold <= 1)) {
-        stop("'threshold' must be a single number in (0, 1].",
-            call. = FALSE)
-    }
-    time <- x[[time.col]]
-    if (!(is.numeric(time) || inherits(time, "Date") || is.factor(time))) {
-        stop("'time.col' must be numeric, Date or factor; ",
-            "convert character times to a factor.", call. = FALSE)
-    }
-    if (is.factor(time)) "visit" else if (is.numeric(time)) "numeric" else
-        "date"
+    .check_number(threshold, 0, 1, open = TRUE)
+    .time_type(x[[time.col]])
 }
 
 # Feature levels, bottom to top: by mean value (largest on top) or by the
@@ -227,16 +221,15 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
     rownames(wide)[hclust(dist(wide))$order]
 }
 
-# Tile centre and width of each time within each panel, for a time type
-# from .time_type(). A tile reaches at most max.gap / 2 from its time, so
-# longer gaps stay blank. Date centres are returned as Dates.
-.add_tile_edges <- function(df, type, max.gap = NULL) {
-    .check_max_gap(max.gap)
+# Tile centre and width of each time within each panel, for the times of
+# time.col. A tile reaches at most max.gap / 2 from its time, so longer
+# gaps stay blank. Centres are returned in the class of time.
+.add_tile_edges <- function(df, time, max.gap = NULL) {
+    .check_number(max.gap, 0, open = TRUE, null = TRUE)
     half <- (max.gap %||% Inf) / 2
     edges <- lapply(split(df$.time, df$.panel), function(t) {
         t <- sort(unique(t))
-        e <- if (type == "visit") list(lower = t - 0.5, upper = t + 0.5) else
-            .tile_edges(t)
+        e <- .tile_edges(t, is.factor(time))
         data.frame(.time = t, .lower = pmax(e$lower, t - half),
             .upper = pmin(e$upper, t + half))
     })
@@ -244,9 +237,7 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
     df <- merge(df, edges, by = c(".panel", ".time"), sort = FALSE)
     df$.mid <- (df$.lower + df$.upper) / 2
     df$.width <- df$.upper - df$.lower
-    if (type == "date") {
-        df$.mid <- as.Date(df$.mid, origin = "1970-01-01")
-    }
+    df$.mid <- .time_restore(df$.mid, time)
     df
 }
 

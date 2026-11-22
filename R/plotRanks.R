@@ -8,8 +8,10 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -80,7 +82,7 @@ setMethod("plotRanks", signature = c(x = "SummarizedExperiment"),
             features = NULL, top = 5, coord = c("cartesian", "polar"),
             max.gap = NULL, ...) {
         coord <- match.arg(coord)
-        type <- .check_longitudinal(x, time.col, group)
+        .check_longitudinal(x, time.col, group)
         mat <- .get_assay(x, assay.type)
         # matrix() keeps the dimensions when one feature is left.
         ranks <- matrix(apply(-mat, 2L, base::rank, ties.method = "average"),
@@ -92,9 +94,6 @@ setMethod("plotRanks", signature = c(x = "SummarizedExperiment"),
             as.character(colData(x)[[group]]),
             .time = colData(x)[[time.col]], .i = seq_len(ncol(x)))
         cd <- .order_time(cd, ".time", ".panel")
-        if (is.null(max.gap) && type == "visit") {
-            max.gap <- 1
-        }
         cd <- .break_gaps(cd, ".time", ".panel", max.gap)
         df <- data.frame(
             .feature = factor(rep(rownames(ranks), times = ncol(x)),

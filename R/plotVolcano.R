@@ -87,16 +87,8 @@ setMethod("plotVolcano", signature = c(x = "data.frame"),
                 stop("'", arg, "' must be a numeric column.", call. = FALSE)
             }
         }
-        if (!(is.numeric(threshold) && length(threshold) == 1L &&
-                threshold > 0 && threshold <= 1)) {
-            stop("'threshold' must be a single number in (0, 1].",
-                call. = FALSE)
-        }
-        if (!(is.numeric(label.top) && length(label.top) == 1L &&
-                label.top >= 0)) {
-            stop("'label.top' must be a single non-negative number.",
-                call. = FALSE)
-        }
+        .check_number(threshold, 0, 1, open = TRUE)
+        .check_number(label.top, 0)
         p <- x[[p.col]]
         if (any(p < 0 | p > 1, na.rm = TRUE)) {
             stop("'p.col' must contain values between 0 and 1.",
@@ -123,7 +115,6 @@ setMethod("plotVolcano", signature = c(x = "data.frame"),
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_hline geom_vline labs
-#'   scale_colour_manual
 #' @importFrom ggrepel geom_text_repel
 .plot_volcano <- function(df, effect, p.col, threshold, ...) {
     ggplot(df, aes(x = .data$effect, y = -log10(.data$p))) +
@@ -133,9 +124,7 @@ setMethod("plotVolcano", signature = c(x = "data.frame"),
         geom_point(aes(colour = .data$significant), ...) +
         geom_text_repel(aes(label = .data$.label), size = 3,
             max.overlaps = Inf, min.segment.length = 0) +
-        scale_colour_manual(values = c(`TRUE` = .okabe_ito[[1L]],
-            `FALSE` = "grey80"), labels = c(`TRUE` = "yes",
-            `FALSE` = "no")) +
+        .scale_highlight("colour") +
         labs(x = effect, y = paste0("-log10(", p.col, ")"),
             colour = paste(p.col, "<", threshold)) +
         .theme_tempoPlot()

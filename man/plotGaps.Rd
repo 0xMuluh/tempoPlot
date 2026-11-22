@@ -29,8 +29,8 @@ object.}
 \code{\link[ggplot2:geom_boxplot]{geom_boxplot}}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling times: numeric, \code{Date} or
-a factor of visits.}
+\code{colData(x)} that contains sampling times: numeric, \code{Date},
+\code{POSIXct} or a factor of visits.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}
@@ -55,8 +55,8 @@ A \code{ggplot} object.
 consecutive samples of each subject.
 }
 \details{
-Intervals are in \code{time.col} units: days for \code{Date} times and
-visit steps for visits.
+Intervals are in \code{time.col} units: days for \code{Date}, hours for
+\code{POSIXct} times and visit steps for visits.
 }
 \examples{
 data("hitchip1006", package = "miaTime")

@@ -14,8 +14,8 @@
 #'   \code{"<dimred>:<component>"}.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -95,10 +95,7 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
 # subject.
 #' @importFrom stats ave
 .lag_correlations <- function(mat, y, time, subject, max.lag) {
-    if (!(is.numeric(max.lag) && length(max.lag) == 1L && max.lag >= 0)) {
-        stop("'max.lag' must be a single non-negative number.",
-            call. = FALSE)
-    }
+    .check_number(max.lag, 0)
     max.lag <- as.integer(max.lag)
     ord <- order(subject, time)
     n <- length(ord)

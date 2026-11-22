@@ -88,11 +88,8 @@ setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
             stop("plotNetwork() requires the igraph package.",
                 call. = FALSE)
         }
-        for (arg in c("diff", "directed")) {
-            if (!(isTRUE(get(arg)) || isFALSE(get(arg)))) {
-                stop("'", arg, "' must be TRUE or FALSE.", call. = FALSE)
-            }
-        }
+        .check_flag(diff)
+        .check_flag(directed)
         df <- .edge_table(x, edges)
         if (!is.null(split.by)) {
             if (!.is_one_name(split.by) || !split.by %in% names(df)) {

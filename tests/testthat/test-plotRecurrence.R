@@ -54,10 +54,15 @@ test_that("plotRecurrence handles a single sample, visits and Dates", {
     toy$date <- as.Date("2020-01-01") + toy$t
     p <- plotRecurrence(toy, "d", "date", "id")
     expect_s3_class(p$data$xmin, "Date")
+    toy$hour <- as.POSIXct("2020-01-01", tz = "UTC") + toy$t * 3600
+    expect_s3_class(plotRecurrence(toy, "d", "hour", "id")$data$xmin,
+        "POSIXct")
     one <- toy[, 1:4]
     S4Vectors::metadata(one)$d <- d[1:4, 1:4]
+    # one has s1 at 3, 0 and 1, and s2 at 0.
     expect_warning(p <- plotRecurrence(one, "d", "t", "id",
-        subjects = "s2"), "single sample")
+        subjects = "s2"), "'group' has 1 subjects with a single sample.",
+        fixed = TRUE)
     expect_identical(nrow(p$data), 1L)
 })
 

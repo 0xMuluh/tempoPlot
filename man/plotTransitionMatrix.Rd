@@ -34,8 +34,10 @@ object.}
 community type or the dominant taxon.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling times: numeric, \code{Date} or
-a factor of visits.}
+\code{colData(x)} that contains sampling times: numeric, \code{Date},
+\code{POSIXct} or a factor of visits. Time differences, as in
+\code{max.gap}, are in days for \code{Date} and hours for
+\code{POSIXct} times.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}

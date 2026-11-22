@@ -9,6 +9,10 @@ test_that("plotTimeEffect checks its arguments", {
     expect_error(plotTimeEffect(effect, "time"), "'time.col'")
     expect_error(plotTimeEffect(effect, "t", group.by = "arm"), "'group.by'")
     expect_error(plotTimeEffect(effect, "contrast"), "numeric, Date")
+    hour <- transform(effect, t = as.POSIXct("2020-01-01", tz = "UTC") +
+        t * 3600)
+    expect_s3_class(layer_scales(plotTimeEffect(hour, "t"))$x,
+        "ScaleContinuousDatetime")
     expect_error(plotTimeEffect(effect[, -2L], "t"), "estimate")
     expect_error(plotTimeEffect(effect[, -3L], "t"), "together")
     tse <- SummarizedExperiment(assays = list(counts = matrix(1, 1L, 1L)))

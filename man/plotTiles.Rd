@@ -17,6 +17,7 @@ plotTiles(x, ...)
   features = NULL,
   top = 20,
   value = c("raw", "change", "occupancy"),
+  detection = 0,
   order.by = c("mean", "cluster"),
   level = c("subject", "group"),
   group.by = NULL,
@@ -50,7 +51,9 @@ and time point, such as differential abundance at each visit.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
 \code{colData(x)}, or of a \code{data.frame} \code{x}, that contains
-times: numeric, \code{Date} or a factor of visits.}
+times: numeric, \code{Date}, \code{POSIXct} or a factor of visits.
+Time differences, as in \code{max.gap}, are in days for \code{Date}
+and hours for \code{POSIXct} times.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -69,9 +72,13 @@ the largest mean absolute effect for a \code{data.frame}.
 
 \item{value}{\code{Character scalar}. Plots the assay values
 (\code{"raw"}), their change from the first sample of each subject
-(\code{"change"}), or presence, a value above zero
+(\code{"change"}), or presence, a value above \code{detection}
 (\code{"occupancy"}). Effects from a results table are drawn by the
 \code{data.frame} method. (Default: \code{"raw"})}
+
+\item{detection}{\code{Numeric scalar}. With \code{value =
+"occupancy"}, a feature is present in a sample when its value is above
+this. (Default: \code{0})}
 
 \item{order.by}{\code{Character scalar}. Orders features by their mean
 plotted value, largest at the top (\code{"mean"}), or by hierarchical

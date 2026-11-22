@@ -10,8 +10,10 @@
 #'   per experiment that marks the samples it contains.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
@@ -122,9 +124,6 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
 
         df <- as.data.frame(colData(x), optional = TRUE)
         df <- .order_time(df, time.col, group)
-        if (visit && is.null(max.gap)) {
-            max.gap <- 1
-        }
         df <- .break_gaps(df, time.col, group, max.gap)
         missed <- .missed_visits(df, time.col, group)
 
@@ -186,7 +185,6 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_segment
 #'   labs scale_x_discrete theme element_blank
-#' @importFrom stats setNames
 .plot_swimmer <- function(df, time.col, group, colour.by = NULL,
         missing = "break", missed = NULL, events = NULL, ...) {
     rows <- levels(df[[group]])
@@ -210,13 +208,6 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
     }
     p <- p + .events_layer(events, "markers", group, rows) +
         labs(x = time.col, y = group, colour = colour.by)
-    # Name the legends of the event scales in use.
-    mapped <- unlist(lapply(p$layers, function(l) names(l$mapping)))
-    scales <- intersect(c("fill", "linetype"), mapped)
-    if (length(scales)) {
-        p <- p + do.call(labs, as.list(setNames(rep("event",
-            length(scales)), scales)))
-    }
     if (is.factor(df[[time.col]])) {
         p <- p + scale_x_discrete(drop = FALSE)
     }
@@ -239,20 +230,17 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
 setMethod("plotSwimmer", signature = c(x = "MultiAssayExperiment"),
     function(x, time.col, group, order.by = c("first", "n"), ...) {
         order.by <- match.arg(order.by)
+        own <- intersect(names(list(...)),
+            c("colour.by", "max.gap", "missing", "events"))
+        if (length(own)) {
+            stop("'", own[1L], "' is not available for a ",
+                "MultiAssayExperiment.", call. = FALSE)
+        }
+        .require_column(x, time.col)
+        .require_column(x, group)
         cd <- colData(x)
-        for (arg in c("time.col", "group")) {
-            v <- get(arg)
-            if (!.is_one_name(v) || !v %in% names(cd)) {
-                stop("'", arg, "' must be one column name of colData(x).",
-                    call. = FALSE)
-            }
-        }
         time <- cd[[time.col]]
-        if (!(is.numeric(time) || inherits(time, "Date") ||
-                is.factor(time))) {
-            stop("'time.col' must be numeric, Date or factor.",
-                call. = FALSE)
-        }
+        .time_type(time)
         map <- as.data.frame(sampleMap(x))
         exps <- levels(factor(map$assay))
         df <- data.frame(.primary = map$primary,
