@@ -31,12 +31,6 @@
 #' @param top \code{Integer scalar}. Number of features when
 #'   \code{features} is \code{NULL}. (Default: \code{20})
 #'
-#' @param experiment,target.experiment \code{Character scalar}. For a
-#'   \code{MultiAssayExperiment}, the experiments holding the features and
-#'   the \code{target}; samples are matched by their primary names. The
-#'   target is looked up in \code{target.experiment} as for a
-#'   \code{SummarizedExperiment}, in its first assay for a feature.
-#'
 #' @param max.lag \code{Integer scalar}. Largest lag in samples, in both
 #'   directions. (Default: \code{3})
 #'
@@ -92,64 +86,6 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
             as.character(colData(x)[[group]])
         res <- .lag_correlations(mat, y, time, subject, max.lag)
         .plot_lag_heatmap(res, target, ...)
-    }
-)
-
-#' @rdname plotLagHeatmap
-#' @importClassesFrom MultiAssayExperiment MultiAssayExperiment
-#' @importFrom MultiAssayExperiment experiments sampleMap
-#' @importFrom SummarizedExperiment SummarizedExperiment colData colData<-
-#'   assay assayNames
-#' @importFrom stats setNames
-#' @importFrom methods setMethod
-#' @export
-setMethod("plotLagHeatmap", signature = c(x = "MultiAssayExperiment"),
-    function(x, target, time.col, group = NULL, experiment,
-            target.experiment, assay.type = "counts", features = NULL,
-            top = 20, max.lag = 3, ...) {
-        exps <- names(experiments(x))
-        for (arg in c("experiment", "target.experiment")) {
-            if (!.is_one_name(get(arg)) || !get(arg) %in% exps) {
-                stop("'", arg, "' must be one experiment of 'x'.",
-                    call. = FALSE)
-            }
-        }
-        e1 <- x[[experiment]]
-        e2 <- x[[target.experiment]]
-        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(e1)) {
-            stop("'assay.type' must be one of the assays of 'experiment'.",
-                call. = FALSE)
-        }
-        y <- .resolve_y(e2, target, NULL, "target")
-
-        # Match the samples of both experiments by their primary names.
-        map <- as.data.frame(sampleMap(x))
-        primary <- function(e, cols) {
-            m <- map[map$assay == e, , drop = FALSE]
-            m$primary[match(cols, m$colname)]
-        }
-        p1 <- primary(experiment, colnames(e1))
-        p2 <- primary(target.experiment, colnames(e2))
-        common <- intersect(p1, p2)
-        if (anyDuplicated(p1[p1 %in% common]) ||
-                anyDuplicated(p2[p2 %in% common])) {
-            stop("Each primary sample must have one sample in each ",
-                "experiment.", call. = FALSE)
-        }
-        if (length(common) < 3L) {
-            stop("The experiments share fewer than three samples.",
-                call. = FALSE)
-        }
-        # One SummarizedExperiment of the shared samples, with the target
-        # as a colData column.
-        mat <- as.matrix(assay(e1, assay.type))[, match(common, p1),
-            drop = FALSE]
-        colnames(mat) <- common
-        se <- SummarizedExperiment(setNames(list(mat), assay.type),
-            colData = colData(x)[common, , drop = FALSE])
-        colData(se)[[target]] <- unname(y[match(common, p2)])
-        plotLagHeatmap(se, target, time.col, group, assay.type, features,
-            top, max.lag, ...)
     }
 )
 
