@@ -145,7 +145,6 @@ importFrom(ggplot2,
   stat_summary,
   theme,
   theme_bw,
-  theme_void,
   unit,
   vars,
   ylim
@@ -185,4 +184,7 @@ importFrom(survival,
   Surv,
   survfit
 )
-importFrom(utils,modifyList)
+importFrom(utils,
+  modifyList,
+  type.convert
+)

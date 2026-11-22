@@ -29,9 +29,10 @@
 #' the data left after the previous components; they do not add up to the
 #' total \eqn{R^2} (\code{accum_r_square}). For PARAFAC, the time mode has
 #' one loading per time point; set its row names to the times, otherwise
-#' points are numbered in their order. The sign of a component is arbitrary: a component and its
-#' negative describe the same pattern. Feature and subject loadings are
-#' drawn by \code{\link[miaViz:plotLoadings]{miaViz::plotLoadings()}} and
+#' points are numbered in their order. The sign of a component is
+#' arbitrary: a component and its negative describe the same pattern.
+#' Feature and subject loadings are drawn by
+#' \code{\link[miaViz:plotLoadings]{miaViz::plotLoadings()}} and
 #' \code{\link{plotSubjectScatter}}.
 #'
 #' @return
@@ -99,23 +100,17 @@ setMethod("plotTimeLoadings", signature = c(x = "SummarizedExperiment"),
     if (is.list(obj) && !is.data.frame(obj) && "Fac" %in% names(obj) &&
             length(obj$Fac) >= 3L) {
         mat <- as.matrix(obj$Fac[[3L]])
-        time <- suppressWarnings(as.numeric(rownames(mat)))
-        if (is.null(rownames(mat)) || anyNA(time)) {
-            time <- seq_len(nrow(mat))
-        }
-        return(list(loadings = mat, time = time,
+        return(list(loadings = mat,
+            time = .numeric_rownames(mat) %||% seq_len(nrow(mat)),
             labels = paste0("Component ", seq_len(ncol(mat))),
             discrete = TRUE))
     }
     if (is.matrix(obj) || is.data.frame(obj)) {
         df <- as.data.frame(obj)
-        if ("time" %in% names(df)) {
-            time <- df$time
-            df$time <- NULL
-        } else {
-            time <- suppressWarnings(as.numeric(rownames(df)))
-        }
-        if (anyNA(time) || !all(vapply(df, is.numeric, logical(1)))) {
+        time <- df[["time"]] %||% .numeric_rownames(df)
+        df$time <- NULL
+        if (!is.numeric(time) || anyNA(time) ||
+                !all(vapply(df, is.numeric, logical(1)))) {
             stop("A loading matrix needs numeric times, as row names or ",
                 "in a column 'time', and numeric loadings.", call. = FALSE)
         }
@@ -125,6 +120,15 @@ setMethod("plotTimeLoadings", signature = c(x = "SummarizedExperiment"),
     }
     stop("'source' is not a TEMPTED result, a PARAFAC model or a loading ",
         "matrix.", call. = FALSE)
+}
+
+# Row names of m as numbers, or NULL unless all of them are numbers.
+#' @importFrom utils type.convert
+.numeric_rownames <- function(m) {
+    time <- if (!is.null(rownames(m))) {
+        type.convert(rownames(m), as.is = TRUE)
+    }
+    if (is.numeric(time)) time
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_hline
@@ -137,5 +141,7 @@ setMethod("plotTimeLoadings", signature = c(x = "SummarizedExperiment"),
     if (discrete) {
         p <- p + geom_point(size = 1)
     }
-    p + labs(x = "time", y = "loading", colour = "component")
+    p + .scale_categorical("colour") +
+        labs(x = "time", y = "loading", colour = "component") +
+        .theme_tempoPlot()
 }

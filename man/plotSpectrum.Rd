@@ -8,7 +8,7 @@
 \usage{
 plotSpectrum(x, ...)
 
-\S4method{plotSpectrum}{SummarizedExperiment}(x, y, time.col, group = NULL, assay.type = NULL, ...)
+\S4method{plotSpectrum}{SummarizedExperiment}(x, y, time.col, group = NULL, assay.type = "counts", ...)
 
 \S4method{plotSpectrum}{MultiAssayExperiment}(x, ..., experiment = 1L)
 }
@@ -32,7 +32,7 @@ form one series. (Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay to
 retrieve \code{y} from when \code{y} is a feature name.
-(Default: \code{NULL})}
+(Default: \code{"counts"})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get

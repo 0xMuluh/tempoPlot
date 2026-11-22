@@ -34,6 +34,8 @@ test_that("plotProcrustes undoes rotation, scaling and shift", {
     expect_equal(p$data$.x2, p$data$.x, tolerance = 1e-8)
     expect_match(p$labels$subtitle, "m2 = 0.000")
     expect_identical(p$labels$colour, "g")
+    expect_setequal(layer_data(p, 2L)$colour, c("#0072B2", "#E69F00"))
+    expect_identical(p$theme$legend.position, "bottom")
 })
 
 test_that("plotProcrustes agrees with vegan", {

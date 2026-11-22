@@ -99,6 +99,7 @@ setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
         geom_line(position = dodge) +
         geom_pointrange(aes(ymin = .data$lower, ymax = .data$upper),
             position = dodge, ...) +
+        .scale_categorical("colour") +
         labs(x = "lag", y = if (type == "ratio") "Ratio of D(L)" else "D(L)",
             colour = split)
     if (type == "ratio") {
@@ -107,5 +108,5 @@ setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
                 colour = "grey40") +
             scale_y_log10()
     }
-    p
+    p + .theme_tempoPlot()
 }

@@ -50,6 +50,17 @@ test_that("plotDirection selects components and passes on ...", {
     expect_equal(sort(df$.angle), c(0, 90, 270))
     expect_error(plotDirection(toy, "t", "id", "PC", ncomponents = 3),
         "'ncomponents'")
+    expect_true(all(layer_data(plotDirection(toy, "t", "id",
+        "PC"))$fill == "#0072B2"))
     p <- plotDirection(toy, "t", "id", "PC", fill = "grey40")
     expect_true(all(layer_data(p)$fill == "grey40"))
+})
+
+test_that("plotDirection skips moves across visits without a sample", {
+    # s1 is seen at visits 1, 2 and 4: its northward move skips visit 3.
+    toy$v <- factor(c(1, 2, 4, 1, 2), levels = 1:4)
+    df <- plotDirection(toy, "v", "id", "PC")$data
+    expect_equal(sort(df$.angle), c(0, 180))
+    df <- plotDirection(toy, "v", "id", "PC", max.gap = 2)$data
+    expect_equal(sort(df$.angle), c(0, 90, 180))
 })

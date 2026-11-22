@@ -27,7 +27,8 @@
 #'   \code{assay.type}. (Default: \code{NULL})
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay that holds
-#'   features named in \code{x.var} or \code{y.var}. (Default: \code{NULL})
+#'   features named in \code{x.var} or \code{y.var}.
+#'   (Default: \code{"counts"})
 #'
 #' @param origin \code{Character scalar}. Whether paths start where the
 #'   first sample lies (\code{"none"}) or at zero, by subtracting each
@@ -54,7 +55,7 @@
 #'
 #' @param lag \code{Integer scalar}. Instead of paths, draws the value of
 #'   \code{x.var}, or the first component of \code{dimred}, against its
-#'   value \code{lag} samples later in the same subject, with the identity
+#'   value \code{lag} samples later in the same path, with the identity
 #'   line. (Default: \code{NULL})
 #'
 #' @param animate \code{Logical scalar}. Reveals the paths over time with
@@ -63,7 +64,9 @@
 #'
 #' @param max.gap \code{Numeric scalar}. Breaks a path where consecutive
 #'   samples of a subject are further apart than this, in \code{time.col}
-#'   units. \code{NULL} never breaks paths. (Default: \code{NULL})
+#'   units. For visits, \code{NULL} breaks paths at visits without a
+#'   sample; otherwise \code{NULL} never breaks paths. The movement field
+#'   and lag plots pair samples within paths only. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_path]{geom_path}}.
@@ -119,79 +122,26 @@
 NULL
 
 #' @rdname plotPath
-#' @importFrom utils modifyList
-#' @importFrom SummarizedExperiment colData
 #' @importFrom ggplot2 coord_equal
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, dimred = NULL, ncomponents = 2,
-            x.var = NULL, y.var = NULL, assay.type = NULL,
+            x.var = NULL, y.var = NULL, assay.type = "counts",
             origin = c("none", "baseline"), arrows = TRUE, colour.by = NULL,
             group.by = NULL, centroids = FALSE, field = NULL, lag = NULL,
             animate = FALSE, max.gap = NULL, ...) {
         origin <- match.arg(origin)
-        for (arg in c("arrows", "centroids", "animate")) {
-            if (!(isTRUE(get(arg)) || isFALSE(get(arg)))) {
-                stop("'", arg, "' must be TRUE or FALSE.", call. = FALSE)
-            }
-        }
-        for (arg in c("field", "lag")) {
-            v <- get(arg)
-            if (!is.null(v) && !(is.numeric(v) && length(v) == 1L &&
-                    v >= 1)) {
-                stop("'", arg, "' must be NULL or a single number of at ",
-                    "least 1.", call. = FALSE)
-            }
-        }
-        if (!is.null(lag) && (centroids || !is.null(field) || animate ||
-                origin != "none")) {
-            stop("'lag' cannot be combined with 'centroids', 'field', ",
-                "'animate' or 'origin'.", call. = FALSE)
-        }
-        if (animate && !requireNamespace("gganimate", quietly = TRUE)) {
-            stop("'animate' requires the gganimate package.", call. = FALSE)
-        }
-        .check_longitudinal(x, time.col, group)
-        # Errors on character and other unsupported time types.
-        .time_type(x, time.col)
-        .check_column(x, colour.by)
-        .check_column(x, group.by)
+        .check_path_args(arrows, centroids, animate, field, lag, origin)
         if (!is.null(lag) && is.null(dimred) && !is.null(x.var)) {
             y.var <- x.var
         }
-        if (is.null(dimred) == (is.null(x.var) || is.null(y.var))) {
-            stop("Give either 'dimred' or both 'x.var' and 'y.var'.",
-                call. = FALSE)
-        }
-
-        cols <- unique(c(time.col, group, colour.by, group.by))
-        df <- as.data.frame(colData(x)[, cols, drop = FALSE],
-            optional = TRUE)
-        if (is.null(dimred)) {
-            df$.x <- unname(.resolve_y(x, x.var, assay.type, "x.var"))
-            df$.y <- unname(.resolve_y(x, y.var, assay.type, "y.var"))
-            labels <- c(x.var, y.var)
-        } else {
-            rd <- .get_reduced_dim(x, dimred, ncomponents, n = 2L)
-            df$.x <- rd[, 1L]
-            df$.y <- rd[, 2L]
-            labels <- colnames(rd)
-        }
-        df <- .order_time(df, time.col, group)
-        df <- .break_gaps(df, time.col, group, max.gap)
-        ids <- if (is.null(group)) rep("", nrow(df)) else df[[group]]
-        if (origin == "baseline") {
-            first <- function(v) ave(v, ids, FUN = function(u) u[1L])
-            df$.x <- df$.x - first(df$.x)
-            df$.y <- df$.y - first(df$.y)
-        }
-        df$.line <- interaction(ids, df$.segment, drop = TRUE)
-        df$.t <- .time_numeric(df[[time.col]])
-
+        df <- .path_table(x, time.col, group, dimred, ncomponents, x.var,
+            y.var, assay.type, colour.by, group.by, origin, max.gap)
+        labels <- attr(df, "labels")
         if (!is.null(lag)) {
-            return(.plot_lag(df, ids, labels[1L], as.integer(lag),
-                colour.by, ...))
+            return(.plot_lag(df, labels[1L], as.integer(lag), colour.by,
+                ...))
         }
         p <- .plot_path(df, labels, arrows, colour.by,
             fade = centroids || !is.null(field), ...)
@@ -211,7 +161,76 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
     }
 )
 
+# Errors on bad flags and numbers of plotPath() and on combinations that
+# lag plots do not support.
+.check_path_args <- function(arrows, centroids, animate, field, lag,
+        origin) {
+    for (arg in c("arrows", "centroids", "animate")) {
+        if (!(isTRUE(get(arg)) || isFALSE(get(arg)))) {
+            stop("'", arg, "' must be TRUE or FALSE.", call. = FALSE)
+        }
+    }
+    for (arg in c("field", "lag")) {
+        v <- get(arg)
+        if (!is.null(v) && !(is.numeric(v) && length(v) == 1L && v >= 1)) {
+            stop("'", arg, "' must be NULL or a single number of at ",
+                "least 1.", call. = FALSE)
+        }
+    }
+    if (!is.null(lag) && (centroids || !is.null(field) || animate ||
+            origin != "none")) {
+        stop("'lag' cannot be combined with 'centroids', 'field', ",
+            "'animate' or 'origin'.", call. = FALSE)
+    }
+    if (animate && !requireNamespace("gganimate", quietly = TRUE)) {
+        stop("'animate' requires the gganimate package.", call. = FALSE)
+    }
+}
+
+# Samples in path order with the columns used for colour and groups, the
+# coordinates .x and .y, the path segment .line and numeric time .t. The
+# axis labels are in attr(, "labels").
+#' @importFrom SummarizedExperiment colData
+#' @importFrom stats ave
+.path_table <- function(x, time.col, group, dimred, ncomponents, x.var,
+        y.var, assay.type, colour.by, group.by, origin, max.gap) {
+    if (.check_longitudinal(x, time.col, group) == "visit") {
+        max.gap <- max.gap %||% 1
+    }
+    .check_column(x, colour.by)
+    .check_column(x, group.by)
+    if (is.null(dimred) == (is.null(x.var) || is.null(y.var))) {
+        stop("Give either 'dimred' or both 'x.var' and 'y.var'.",
+            call. = FALSE)
+    }
+    cols <- unique(c(time.col, group, colour.by, group.by))
+    df <- as.data.frame(colData(x)[, cols, drop = FALSE], optional = TRUE)
+    if (is.null(dimred)) {
+        df$.x <- unname(.resolve_y(x, x.var, assay.type, "x.var"))
+        df$.y <- unname(.resolve_y(x, y.var, assay.type, "y.var"))
+        labels <- c(x.var, y.var)
+    } else {
+        rd <- .get_reduced_dim(x, dimred, ncomponents, n = 2L)
+        df$.x <- rd[, 1L]
+        df$.y <- rd[, 2L]
+        labels <- colnames(rd)
+    }
+    df <- .order_time(df, time.col, group)
+    df <- .break_gaps(df, time.col, group, max.gap)
+    ids <- if (is.null(group)) rep("", nrow(df)) else df[[group]]
+    if (origin == "baseline") {
+        first <- function(v) ave(v, ids, FUN = function(u) u[1L])
+        df$.x <- df$.x - first(df$.x)
+        df$.y <- df$.y - first(df$.y)
+    }
+    df$.line <- interaction(ids, df$.segment, drop = TRUE)
+    df$.t <- .time_numeric(df[[time.col]])
+    attr(df, "labels") <- labels
+    df
+}
+
 #' @importFrom ggplot2 ggplot aes .data geom_path geom_point labs arrow unit
+#' @importFrom utils modifyList
 .plot_path <- function(df, labels, arrows, colour.by, fade = FALSE, ...) {
     alpha <- if (fade) list(alpha = 0.3) else list()
     ggplot(df, aes(x = .data$.x, y = .data$.y,
@@ -220,7 +239,9 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
             arrow = if (arrows) arrow(length = unit(0.2, "cm"))),
             modifyList(alpha, list(...)))) +
         do.call(geom_point, c(list(size = 1), alpha)) +
-        labs(x = labels[1L], y = labels[2L], colour = colour.by)
+        .scale_by(df, colour.by, "colour") +
+        labs(x = labels[1L], y = labels[2L], colour = colour.by) +
+        .theme_tempoPlot()
 }
 
 # Mean path of each group.by group (or of all subjects) over time.
@@ -251,8 +272,7 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
 #' @importFrom ggplot2 geom_segment aes .data arrow unit
 #' @importFrom stats aggregate
 .field_layer <- function(df, bins) {
-    n <- nrow(df)
-    i <- which(df$.line[-1L] == df$.line[-n])
+    i <- .next_in_subject(df$.line)
     if (length(i) == 0L) {
         return(list())
     }
@@ -271,18 +291,13 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
 }
 
 # Value at each sample against the value lag samples later in the same
-# subject (ids), with the identity line.
+# path segment, with the identity line.
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_abline labs
 #'   coord_equal
-.plot_lag <- function(df, ids, label, lag, colour.by, ...) {
-    n <- nrow(df)
-    if (n <= lag) {
-        stop("No subject has more than 'lag' samples.", call. = FALSE)
-    }
-    i <- seq_len(n - lag)
-    i <- i[ids[i] == ids[i + lag]]
+.plot_lag <- function(df, label, lag, colour.by, ...) {
+    i <- .next_in_subject(df$.line, lag)
     if (length(i) == 0L) {
-        stop("No subject has more than 'lag' samples.", call. = FALSE)
+        stop("No path has more than 'lag' samples.", call. = FALSE)
     }
     pairs <- df[i, , drop = FALSE]
     pairs$.later <- df$.x[i + lag]
@@ -291,9 +306,11 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
         geom_abline(slope = 1, intercept = 0, linetype = "dashed",
             colour = "grey40") +
         geom_point(...) +
+        .scale_by(pairs, colour.by, "colour") +
         coord_equal() +
         labs(x = paste(label, "at a sample"),
             y = paste(label, lag, if (lag == 1L) "sample" else "samples",
                 "later"),
-            colour = colour.by)
+            colour = colour.by) +
+        .theme_tempoPlot()
 }

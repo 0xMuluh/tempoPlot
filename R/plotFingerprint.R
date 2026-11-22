@@ -62,12 +62,8 @@ NULL
 #' @export
 setMethod("plotFingerprint", signature = c(x = "SummarizedExperiment"),
     function(x, dissimilarity, time.col, group, time.point, ...) {
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, group)
         .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
         d <- .get_dissimilarity(x, dissimilarity)
         i <- .time_point_index(x, time.col, time.point)
         subject <- as.character(colData(x)[[group]])
@@ -83,27 +79,28 @@ setMethod("plotFingerprint", signature = c(x = "SummarizedExperiment"),
             data.frame(.subject = subject[q], own = d[q, own],
                 other = min(d[q, other]))
         }))
-        df$identified <- df$own < df$other
+        df$identified <- factor(ifelse(df$own < df$other, "yes", "no"),
+            levels = c("yes", "no"))
         .plot_fingerprint(df, dissimilarity, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_abline labs
-#'   scale_colour_manual coord_equal
+#'   coord_equal
 .plot_fingerprint <- function(df, dissimilarity, ...) {
     lim <- range(c(0, df$own, df$other))
+    hit <- df$identified == "yes"
     ggplot(df, aes(x = .data$own, y = .data$other,
             colour = .data$identified)) +
         geom_abline(slope = 1, intercept = 0, linetype = "dashed",
             colour = "grey40") +
         geom_point(...) +
-        scale_colour_manual(values = c(`TRUE` = "#2c6fbb",
-            `FALSE` = "#b2182b"), labels = c(`TRUE` = "yes",
-            `FALSE` = "no")) +
+        .scale_categorical("colour", drop = FALSE) +
         coord_equal(xlim = lim, ylim = lim) +
         labs(x = paste(dissimilarity, "to own reference sample"),
             y = paste(dissimilarity, "to nearest other subject"),
             colour = "identified",
             subtitle = sprintf("%d of %d subjects identified (%.0f%%)",
-                sum(df$identified), nrow(df), 100 * mean(df$identified)))
+                sum(hit), nrow(df), 100 * mean(hit))) +
+        .theme_tempoPlot()
 }

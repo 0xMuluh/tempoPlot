@@ -30,6 +30,8 @@ test_that("plotIndividuality splits pairs into within and between", {
     expect_identical(nrow(df), 6L)
     expect_setequal(df$dissimilarity[df$pair == "within"], c(1, 2))
     expect_setequal(df$dissimilarity[df$pair == "between"], c(5, 6, 7, 8))
+    expect_setequal(layer_data(plotIndividuality(toy, "d", "id"))$colour,
+        c("#0072B2", "#E69F00"))
 })
 
 test_that("plotIndividuality matches samples by name", {

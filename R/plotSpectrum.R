@@ -20,7 +20,7 @@
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay to
 #'   retrieve \code{y} from when \code{y} is a feature name.
-#'   (Default: \code{NULL})
+#'   (Default: \code{"counts"})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_line]{geom_line}}.
@@ -59,9 +59,9 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotSpectrum", signature = c(x = "SummarizedExperiment"),
-    function(x, y, time.col, group = NULL, assay.type = NULL, ...) {
-        .check_longitudinal(x, time.col, group)
-        if (.time_type(x, time.col) == "visit") {
+    function(x, y, time.col, group = NULL, assay.type = "counts",
+            ...) {
+        if (.check_longitudinal(x, time.col, group) == "visit") {
             stop("'time.col' must be numeric or Date.", call. = FALSE)
         }
         value <- unname(.resolve_y(x, y, assay.type))
@@ -110,6 +110,8 @@ setMethod("plotSpectrum", signature = c(x = "SummarizedExperiment"),
             colour = if (!is.null(group)) .data$.subject,
             group = .data$.subject)) +
         geom_line(...) +
+        .scale_categorical("colour") +
         labs(x = paste("frequency (cycles per", time.col, "unit)"),
-            y = paste("power of", y), colour = group)
+            y = paste("power of", y), colour = group) +
+        .theme_tempoPlot()
 }

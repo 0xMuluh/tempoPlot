@@ -41,7 +41,9 @@ test_that("plotRecurrence selects subjects and marks recurrences", {
     expect_identical(nrow(p$data), 4L)
     ld <- layer_data(p)
     # Only the diagonal and the 20-21 pair are within 1.
-    expect_identical(sum(ld$fill == "#2c6fbb"), 4L)
+    expect_identical(sum(ld$fill == "#0072B2"), 4L)
+    ld <- layer_data(plotRecurrence(toy, "d", "t", "id", threshold = 0.5))
+    expect_identical(sort(unique(ld$fill)), c("#0072B2", "grey80"))
 })
 
 test_that("plotRecurrence handles a single sample, visits and Dates", {
@@ -57,4 +59,12 @@ test_that("plotRecurrence handles a single sample, visits and Dates", {
     expect_warning(p <- plotRecurrence(one, "d", "t", "id",
         subjects = "s2"), "single sample")
     expect_identical(nrow(p$data), 1L)
+})
+
+test_that("plotRecurrence colours dissimilarities on viridis", {
+    p <- plotRecurrence(toy, "d", "t", "id")
+    ld <- layer_data(p)
+    # The diagonal is the lowest dissimilarity.
+    expect_true(all(ld$fill[p$data$dissimilarity == 0] == "#440154"))
+    expect_identical(p$theme$legend.position, "bottom")
 })
