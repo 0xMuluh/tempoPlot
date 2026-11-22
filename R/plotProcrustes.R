@@ -55,7 +55,8 @@
 #'     assay.type = "counts")
 #' tse <- mia::addMDS(tse, assay.type = "relabundance", method = "bray",
 #'     name = "PCoA")
-#' tse <- scater::runPCA(tse, assay.type = "clr", name = "PCA")
+#' tse <- scater::runPCA(tse, assay.type = "clr", ncomponents = 5,
+#'     name = "PCA")
 #' plotProcrustes(tse, dimred = "PCoA", dimred2 = "PCA",
 #'     colour.by = "StudyIdentifier")
 NULL
@@ -151,8 +152,10 @@ setMethod("plotProcrustes", signature = c(x = "MultiAssayExperiment"),
             yend = .data$.y2), arrow = arrow(length = unit(0.12, "cm")),
             alpha = 0.6) +
         geom_point(aes(x = .data$.x, y = .data$.y), ...) +
+        .scale_by(df, colour.by, "colour") +
         coord_equal() +
         labs(x = "dimension 1", y = "dimension 2", colour = colour.by,
             subtitle = sprintf("%s (points) to %s (arrows); m2 = %.3f",
-                lab1, lab2, fit$m2))
+                lab1, lab2, fit$m2)) +
+        .theme_tempoPlot()
 }

@@ -36,6 +36,15 @@ test_that("plotTimeLoadings reads PARAFAC models and matrices", {
     p <- plotTimeLoadings(toy, "mat")
     expect_equal(p$data$.time, c(1, 2))
     expect_identical(levels(p$data$.component), "a")
+    expect_identical(unique(layer_data(p, 2L)$colour), "#0072B2")
+    # Named time points are numbered in order, without a warning.
+    S4Vectors::metadata(toy)$par$Fac[[3L]] <- matrix(1:4, 2L,
+        dimnames = list(c("day1", "day2"), NULL))
+    expect_no_warning(p <- plotTimeLoadings(toy, "par"))
+    expect_equal(unique(p$data$.time), c(1, 2))
+    rownames(S4Vectors::metadata(toy)$mat) <- c("a", "b")
+    S4Vectors::metadata(toy)$mat$time <- NULL
+    expect_error(plotTimeLoadings(toy, "mat"), "numeric times")
 })
 
 test_that("plotTimeLoadings plots a real TEMPTED fit", {

@@ -33,6 +33,7 @@ test_that("plotTBI splits Bray-Curtis into losses and gains", {
     expect_equal(df$losses + df$gains,
         sum(abs(c(4, 0, 2) - c(2, 3, 2))) / sum(c(4, 0, 2, 2, 3, 2)))
     expect_identical(df$sex, "f")
+    expect_identical(layer_data(p, 2L)$colour, "#0072B2")
 })
 
 test_that("plotTBI uses presence and absence by default", {
@@ -49,4 +50,14 @@ test_that("plotTBI bray losses equal gains on relative abundances", {
     df <- suppressWarnings(plotTBI(rel, "t", "id", c(1, 2),
         method = "bray"))$data
     expect_equal(df$losses, df$gains)
+})
+
+test_that("plotTBI reads counts by default", {
+    se <- toy
+    assays(se) <- list(other = assay(se) * 0, counts = assay(se))
+    df <- suppressWarnings(plotTBI(se, "t", "id", c(1, 2)))$data
+    expect_equal(df$gains, 1 / 5)
+    assays(se) <- list(other = assay(se))
+    expect_error(suppressWarnings(plotTBI(se, "t", "id", c(1, 2))),
+        "'assay.type'")
 })

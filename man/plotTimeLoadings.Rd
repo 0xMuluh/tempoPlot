@@ -43,9 +43,10 @@ the legend gives the \eqn{R^2} of each component (\code{r_square}), of
 the data left after the previous components; they do not add up to the
 total \eqn{R^2} (\code{accum_r_square}). For PARAFAC, the time mode has
 one loading per time point; set its row names to the times, otherwise
-points are numbered in their order. The sign of a component is arbitrary: a component and its
-negative describe the same pattern. Feature and subject loadings are
-drawn by \code{\link[miaViz:plotLoadings]{miaViz::plotLoadings()}} and
+points are numbered in their order. The sign of a component is
+arbitrary: a component and its negative describe the same pattern.
+Feature and subject loadings are drawn by
+\code{\link[miaViz:plotLoadings]{miaViz::plotLoadings()}} and
 \code{\link{plotSubjectScatter}}.
 }
 \examples{

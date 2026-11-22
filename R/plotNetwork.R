@@ -176,22 +176,14 @@ setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
 
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom ggplot2 ggplot aes .data geom_segment geom_point
-#'   labs facet_wrap vars scale_colour_manual theme_void
+#'   labs facet_wrap vars theme element_blank
 #'   scale_linewidth_continuous scale_x_continuous scale_y_continuous
 #'   expansion arrow unit
-#' @importFrom stats setNames
 #' @importFrom utils modifyList
 .plot_network <- function(df, pos, split.by, diff, directed, ...) {
-    if (diff) {
-        colour <- ".change"
-        values <- setNames(c("#b2182b", "#2166ac", "grey60"),
-            levels(df$.change))
-    } else {
-        colour <- ".sign"
-        df$.sign <- factor(ifelse(df$weight < 0, "negative", "positive"),
-            levels = c("positive", "negative"))
-        values <- c(positive = "#2166ac", negative = "#b2182b")
-    }
+    colour <- if (diff) ".change" else ".sign"
+    df$.sign <- factor(ifelse(df$weight < 0, "negative", "positive"),
+        levels = c("negative", "positive"))
     loop <- df$from == df$to
     edge <- aes(x = .data$.x, y = .data$.y, xend = .data$.xend,
         yend = .data$.yend, colour = .data[[colour]],
@@ -207,7 +199,7 @@ setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
                 colour = .data[[colour]]), data = df[loop, , drop = FALSE],
             shape = 1, size = 5, stroke = 1)
     }
-    p <- p + scale_colour_manual(values = values, drop = FALSE) +
+    p <- p + .scale_categorical("colour", drop = FALSE) +
         scale_linewidth_continuous(range = c(0.3, 1.5)) +
         labs(colour = if (diff) split.by else "weight",
             linewidth = "|weight|")
@@ -224,5 +216,7 @@ setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
     # Room for node names at the edges of the panels.
     p + scale_x_continuous(expand = expansion(mult = 0.2)) +
         scale_y_continuous(expand = expansion(mult = 0.1)) +
-        theme_void()
+        .theme_tempoPlot() +
+        theme(axis.title = element_blank(), axis.text = element_blank(),
+            axis.ticks = element_blank(), panel.grid = element_blank())
 }

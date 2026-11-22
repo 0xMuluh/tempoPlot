@@ -58,11 +58,7 @@ setMethod("plotIndividuality", signature = c(x = "SummarizedExperiment"),
     function(x, dissimilarity, group, layout = c("density", "box", "violin"),
             facet.by = NULL, ...) {
         layout <- match.arg(layout)
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_column(x, group)
+        .require_column(x, group)
         .check_column(x, facet.by)
         d <- .get_dissimilarity(x, dissimilarity)
 
@@ -95,6 +91,7 @@ setMethod("plotIndividuality", signature = c(x = "SummarizedExperiment"),
         p <- ggplot(df, aes(x = .data$dissimilarity,
                 colour = .data$pair)) +
             geom_density(...) +
+            .scale_categorical("colour") +
             labs(x = dissimilarity, colour = "pair")
     } else {
         geom <- if (layout == "box") geom_boxplot else geom_violin
@@ -105,5 +102,5 @@ setMethod("plotIndividuality", signature = c(x = "SummarizedExperiment"),
     if (!is.null(facet.by)) {
         p <- p + facet_wrap(vars(.data[[facet.by]]))
     }
-    p
+    p + .theme_tempoPlot()
 }

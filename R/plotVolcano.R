@@ -133,9 +133,10 @@ setMethod("plotVolcano", signature = c(x = "data.frame"),
         geom_point(aes(colour = .data$significant), ...) +
         geom_text_repel(aes(label = .data$.label), size = 3,
             max.overlaps = Inf, min.segment.length = 0) +
-        scale_colour_manual(values = c(`FALSE` = "grey60",
-            `TRUE` = "#2c6fbb"), labels = c(`FALSE` = "no",
-            `TRUE` = "yes")) +
+        scale_colour_manual(values = c(`TRUE` = .okabe_ito[[1L]],
+            `FALSE` = "grey80"), labels = c(`TRUE` = "yes",
+            `FALSE` = "no")) +
         labs(x = effect, y = paste0("-log10(", p.col, ")"),
-            colour = paste(p.col, "<", threshold))
+            colour = paste(p.col, "<", threshold)) +
+        .theme_tempoPlot()
 }

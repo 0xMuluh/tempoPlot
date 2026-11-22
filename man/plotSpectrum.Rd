@@ -7,7 +7,7 @@
 \usage{
 plotSpectrum(x, ...)
 
-\S4method{plotSpectrum}{SummarizedExperiment}(x, y, time.col, group = NULL, assay.type = NULL, ...)
+\S4method{plotSpectrum}{SummarizedExperiment}(x, y, time.col, group = NULL, assay.type = "counts", ...)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -29,7 +29,7 @@ form one series. (Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay to
 retrieve \code{y} from when \code{y} is a feature name.
-(Default: \code{NULL})}
+(Default: \code{"counts"})}
 }
 \value{
 A \code{ggplot} object.
