@@ -19,7 +19,7 @@ feature, leaving the first state, or a clinical outcome."><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.59</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.60</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ feature, leaving the first state, or a clinical outcome."><!-- mathjax --><scrip
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot time to an event</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSurvival.R" class="external-link"><code>R/plotSurvival.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-trend/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-trend/R/plotSurvival.R" class="external-link"><code>R/plotSurvival.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-trend/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotSurvival.Rd</code></div>
     </div>
 
@@ -68,6 +68,7 @@ feature, leaving the first state, or a clinical outcome.</p>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  feature <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  detection <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  state.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -121,12 +122,18 @@ their first sample. (Default: <code>NULL</code>)</p></dd>
 <dt id="arg-feature">feature<a class="anchor" aria-label="anchor" href="#arg-feature"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the feature for
 <code>event = "arrival"</code> and <code>"loss"</code>. A feature is present when
-its value in <code>assay.type</code> is above zero. (Default: <code>NULL</code>)</p></dd>
+its value in <code>assay.type</code> is above <code>detection</code>.
+(Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-assay-type">assay.type<a class="anchor" aria-label="anchor" href="#arg-assay-type"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the assay for
 <code>feature</code>. (Default: <code>"counts"</code>)</p></dd>
+
+
+<dt id="arg-detection">detection<a class="anchor" aria-label="anchor" href="#arg-detection"></a></dt>
+<dd><p><code>Numeric scalar</code>. Specifies the value above which
+<code>feature</code> is present. (Default: <code>0</code>)</p></dd>
 
 
 <dt id="arg-state-col">state.col<a class="anchor" aria-label="anchor" href="#arg-state-col"></a></dt>

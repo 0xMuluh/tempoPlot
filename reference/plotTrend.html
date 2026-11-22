@@ -20,7 +20,7 @@ subject's first sample or to an event."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.59</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.60</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ subject's first sample or to an event."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot longitudinal trends</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-trend/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-trend/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-trend/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTrend.Rd</code></div>
     </div>
 
@@ -67,7 +67,7 @@ subject's first sample or to an event.</p>
 <span>  <span class="va">y</span>,</span>
 <span>  <span class="va">time.col</span>,</span>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
 <span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"line"</span>, <span class="st">"box"</span>, <span class="st">"violin"</span><span class="op">)</span>,</span>
 <span>  show.individuals <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  smooth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"median"</span>, <span class="st">"loess"</span><span class="op">)</span>,</span>
@@ -124,9 +124,9 @@ a factor of visits.</p></dd>
 
 
 <dt id="arg-assay-type">assay.type<a class="anchor" aria-label="anchor" href="#arg-assay-type"></a></dt>
-<dd><p><code>Character scalar</code> or <code>numeric scalar</code>.
-Specifies the assay to retrieve <code>y</code> from when <code>y</code> is a
-feature name. (Default: <code>NULL</code>)</p></dd>
+<dd><p><code>Character scalar</code>. Specifies the assay to
+retrieve <code>y</code> from when <code>y</code> is a feature name.
+(Default: <code>"counts"</code>)</p></dd>
 
 
 <dt id="arg-layout">layout<a class="anchor" aria-label="anchor" href="#arg-layout"></a></dt>
@@ -186,8 +186,8 @@ statistic over the last <code>window</code> samples of each subject:
 autocorrelation) or <code>"slope"</code> (change of <code>y</code> per
 <code>time.col</code> unit, from a least-squares line; per visit step for
 visits). Rising variance and autocorrelation are early warning signals
-of a transition. Windows count samples, also across <code>max.gap</code>
-breaks; subjects with fewer than <code>window</code> samples are dropped.
+of a transition. Windows count samples, also across breaks of the
+line; subjects with fewer than <code>window</code> samples are dropped.
 (Default: <code>"none"</code>)</p></dd>
 
 
@@ -238,9 +238,10 @@ splits boxes and violins. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
-<dd><p><code>Numeric scalar</code>. Breaks a trajectory where consecutive
-samples of a subject are further apart than this, in <code>time.col</code>
-units. <code>NULL</code> never breaks trajectories. (Default: <code>NULL</code>)</p></dd>
+<dd><p><code>Numeric scalar</code>. Breaks a subject's line where
+consecutive samples are further apart than this, in <code>time.col</code>
+units. For visits, <code>NULL</code> breaks lines at visits without a
+sample; otherwise <code>NULL</code> never breaks lines. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
