@@ -70,7 +70,7 @@
 #' Each sample covers the time from halfway to its previous sample to
 #' halfway to its next one, so the time axis keeps the spacing of the
 #' sampling times. Visits are evenly spaced. Missing values are drawn
-#' blank.
+#' grey, times without a sample blank.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -144,30 +144,9 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
             features = NULL, top = 20, order.by = c("mean", "cluster"),
             feature.col = "feature", max.gap = NULL, ...) {
         order.by <- match.arg(order.by)
-        for (arg in c("time.col", "effect", "p.col", "feature.col")) {
-            v <- get(arg)
-            if (arg == "p.col" && is.null(v)) next
-            if (!.is_one_name(v) || !v %in% names(x)) {
-                stop("'", arg, "' must be one column name of 'x'.",
-                    call. = FALSE)
-            }
-        }
-        if (!is.numeric(x[[effect]])) {
-            stop("'effect' must be a numeric column.", call. = FALSE)
-        }
-        if (!(is.numeric(threshold) && length(threshold) == 1L &&
-                threshold > 0 && threshold <= 1)) {
-            stop("'threshold' must be a single number in (0, 1].",
-                call. = FALSE)
-        }
+        type <- .check_effects(x, time.col, effect, p.col, threshold,
+            feature.col)
         time <- x[[time.col]]
-        if (!(is.numeric(time) || inherits(time, "Date") ||
-                is.factor(time))) {
-            stop("'time.col' must be numeric, Date or factor; ",
-                "convert character times to a factor.", call. = FALSE)
-        }
-        type <- if (is.factor(time)) "visit" else if (is.numeric(time))
-            "numeric" else "date"
         if (type == "visit") {
             time <- droplevels(time)
         }
@@ -201,6 +180,35 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
         p
     }
 )
+
+# Check the columns and threshold of a results table x for plotTiles() and
+# return the type of its time column: "numeric", "date" or "visit".
+.check_effects <- function(x, time.col, effect, p.col, threshold,
+        feature.col) {
+    for (arg in c("time.col", "effect", "p.col", "feature.col")) {
+        v <- get(arg)
+        if (arg == "p.col" && is.null(v)) next
+        if (!.is_one_name(v) || !v %in% names(x)) {
+            stop("'", arg, "' must be one column name of 'x'.",
+                call. = FALSE)
+        }
+    }
+    if (!is.numeric(x[[effect]])) {
+        stop("'effect' must be a numeric column.", call. = FALSE)
+    }
+    if (!(is.numeric(threshold) && length(threshold) == 1L &&
+            threshold > 0 && threshold <= 1)) {
+        stop("'threshold' must be a single number in (0, 1].",
+            call. = FALSE)
+    }
+    time <- x[[time.col]]
+    if (!(is.numeric(time) || inherits(time, "Date") || is.factor(time))) {
+        stop("'time.col' must be numeric, Date or factor; ",
+            "convert character times to a factor.", call. = FALSE)
+    }
+    if (is.factor(time)) "visit" else if (is.numeric(time)) "numeric" else
+        "date"
+}
 
 # Feature levels, bottom to top: by mean value (largest on top) or by the
 # order of a hierarchical clustering of the feature profiles.
@@ -243,21 +251,19 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_tile geom_point labs facet_wrap
-#'   vars scale_fill_gradient scale_fill_gradient2 scale_x_continuous
+#'   vars scale_x_continuous
 .plot_tiles <- function(df, time.col, assay.type, value, level, panel.col,
         levels, ...) {
-    p <- ggplot(df, aes(x = .data$.mid, y = .data$.feature)) +
-        geom_tile(aes(width = .data$.width, fill = .data$.value), ...)
     lab <- switch(value, raw = assay.type,
         change = paste(assay.type, "change"), effect = assay.type,
         occupancy = if (level == "group") "occupancy" else "present")
-    p <- p + if (value %in% c("change", "effect")) {
-        scale_fill_gradient2(low = "#b2182b", mid = "grey95",
-            high = "#2166ac", na.value = "white")
-    } else {
-        scale_fill_gradient(low = "grey95", high = "#2c6fbb",
-            na.value = "white", limits = if (value == "occupancy") c(0, 1))
-    }
+    p <- ggplot(df, aes(x = .data$.mid, y = .data$.feature)) +
+        geom_tile(aes(width = .data$.width, fill = .data$.value), ...) +
+        switch(value, raw = .scale_sequential("fill"),
+            occupancy = .scale_sequential("fill", limits = c(0, 1)),
+            .scale_diverging("fill")) +
+        labs(x = time.col, y = NULL, fill = lab) +
+        .theme_tempoPlot()
     if (!is.null(levels)) {
         p <- p + scale_x_continuous(breaks = seq_along(levels),
             labels = levels)
@@ -265,5 +271,5 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
     if (!is.null(panel.col)) {
         p <- p + facet_wrap(vars(.data$.panel))
     }
-    p + labs(x = time.col, y = NULL, fill = lab)
+    p
 }

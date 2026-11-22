@@ -130,3 +130,19 @@ test_that("plotTiles keeps the time type of results tables", {
     df <- plotTiles(res, "visit", effect = "lfc")$data
     expect_equal(df$.time[order(df$.value)], 1:3)
 })
+
+test_that("plotTiles fills changes blue below zero, red above, NA grey", {
+    # Change of b in s1 is 0, -5, -5 (the lowest); of a in s1 0, 1, 3.
+    p <- plotTiles(toy, "t", "id", value = "change")
+    fill <- ggplot_build(p)$plot$scales$get_scales("fill")
+    expect_identical(col2rgb(fill$map(c(-5, 0))),
+        col2rgb(c("#2166AC", "grey90")))
+    rgb <- col2rgb(fill$map(3))
+    expect_gt(rgb["red", 1L], rgb["blue", 1L])
+    assay(toy)[1L, 2L] <- NA
+    p <- plotTiles(toy, "t", "id")
+    ld <- layer_data(p, 1L)
+    expect_identical(ld$fill[is.na(p$data$.value)], "grey50")
+    expect_identical(ld$fill[which.max(p$data$.value)], "#FDE725")
+    expect_identical(p$theme$legend.position, "bottom")
+})

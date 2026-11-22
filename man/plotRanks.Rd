@@ -13,8 +13,10 @@ plotRanks(x, ...)
   time.col,
   group = NULL,
   assay.type = "counts",
+  features = NULL,
   top = 5,
   coord = c("cartesian", "polar"),
+  max.gap = NULL,
   ...
 )
 
@@ -40,12 +42,21 @@ abundances. To rank taxa such as phyla, agglomerate \code{x} first with
 \code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
 (Default: \code{"counts"})}
 
-\item{top}{\code{Integer scalar}. Number of features with the largest
-mean value in \code{assay.type} to draw. (Default: \code{5})}
+\item{features}{\code{Character vector}. Features to draw. If
+\code{NULL}, draws the \code{top} features with the best mean rank.
+(Default: \code{NULL})}
+
+\item{top}{\code{Integer scalar}. Number of features to draw when
+\code{features} is \code{NULL}. (Default: \code{5})}
 
 \item{coord}{\code{Character scalar}. Draws time on a straight
 (\code{"cartesian"}) or circular (\code{"polar"}) axis.
 (Default: \code{"cartesian"})}
+
+\item{max.gap}{\code{Numeric scalar}. Breaks a line where consecutive
+samples of a subject are further apart than this, in \code{time.col}
+units. For visits, \code{NULL} breaks lines at visits without a
+sample; otherwise \code{NULL} never breaks lines. (Default: \code{NULL})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get

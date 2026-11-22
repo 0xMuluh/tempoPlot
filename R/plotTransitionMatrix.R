@@ -27,6 +27,12 @@
 #'   transition takes the value of its earlier sample.
 #'   (Default: \code{NULL})
 #'
+#' @param max.gap \code{Numeric scalar}. Skips the transitions between
+#'   consecutive samples of a subject that are further apart than this, in
+#'   \code{time.col} units. For visits, \code{NULL} skips transitions
+#'   across visits without a sample; otherwise \code{NULL} counts all of
+#'   them. (Default: \code{NULL})
+#'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_tile]{geom_tile}}.
 #'
@@ -58,21 +64,13 @@ NULL
 #' @export
 setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
     function(x, state.col, time.col, group, as.relative = TRUE,
-            facet.by = NULL, ...) {
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
-        .check_column(x, state.col)
+            facet.by = NULL, max.gap = NULL, ...) {
+        .require_column(x, group)
+        type <- .check_longitudinal(x, time.col, group)
+        .require_column(x, state.col)
         .check_column(x, facet.by)
         if (!(isTRUE(as.relative) || isFALSE(as.relative))) {
             stop("'as.relative' must be TRUE or FALSE.", call. = FALSE)
-        }
-        if (is.null(state.col)) {
-            stop("'state.col' must be one column name of colData(x).",
-                call. = FALSE)
         }
         state <- colData(x)[[state.col]]
         if (!(is.factor(state) || is.character(state) ||
@@ -85,32 +83,36 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
         df <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
         df <- .order_time(df, time.col, group)
+        if (is.null(max.gap) && type == "visit") {
+            max.gap <- 1
+        }
+        df <- .break_gaps(df, time.col, group, max.gap)
         df <- .count_transitions(df, state.col, group, facet.by, as.relative)
         .plot_transition_matrix(df, state.col, facet.by, as.relative, ...)
     }
 )
 
-# Count transitions between consecutive samples of each subject. Returns
-# one row per from-to pair (and facet.by level), all pairs included, with
-# columns from, to, n and value (count or share of the from row).
+# Count transitions between consecutive samples of each subject, within a
+# gap segment from .break_gaps(). Returns one row per from-to pair (and
+# facet.by level), all pairs included, with columns from, to, n and value
+# (count or share of the from row).
 .count_transitions <- function(df, state.col, group, facet.by,
         as.relative) {
     state <- df[[state.col]]
     lv <- if (is.factor(state)) levels(state) else sort(unique(
         as.character(state[!is.na(state)])))
-    n <- nrow(df)
-    keep <- df[[group]][-1L] == df[[group]][-n] &
-        !is.na(state[-1L]) & !is.na(state[-n])
-    if (!any(keep)) {
+    i <- .next_in_subject(df[[group]])
+    i <- i[df$.segment[i] == df$.segment[i + 1L] & !is.na(state[i]) &
+        !is.na(state[i + 1L])]
+    if (length(i) == 0L) {
         stop("No subject has two consecutive samples with a state.",
             call. = FALSE)
     }
-    by <- if (is.null(facet.by)) rep("", n - 1L) else
-        as.character(df[[facet.by]][-n])
+    by <- if (is.null(facet.by)) "" else as.character(df[[facet.by]][i])
     tr <- data.frame(
-        from = factor(as.character(state[-n]), levels = lv)[keep],
-        to = factor(as.character(state[-1L]), levels = lv)[keep],
-        by = factor(by[keep]))
+        from = factor(as.character(state[i]), levels = lv),
+        to = factor(as.character(state[i + 1L]), levels = lv),
+        by = factor(by))
     tab <- as.data.frame(table(tr), responseName = "n")
     tab$value <- tab$n
     if (as.relative) {
@@ -124,21 +126,24 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_tile geom_text labs
-#'   facet_wrap vars scale_y_discrete scale_fill_gradient theme
-#'   element_text
+#'   facet_wrap vars scale_y_discrete theme element_text
 .plot_transition_matrix <- function(df, state.col, facet.by, as.relative,
         ...) {
     label <- if (as.relative) sprintf("%.2f", df$value) else df$n
     df$.label <- ifelse(df$n > 0, label, "")
+    # White labels on the dark lower half of the sequential scale.
+    light <- df$value >= mean(range(df$value, na.rm = TRUE))
+    df$.text <- ifelse(light %in% TRUE, "black", "white")
     p <- ggplot(df, aes(x = .data$to, y = .data$from)) +
         geom_tile(aes(fill = .data$value), ...) +
-        geom_text(aes(label = .data$.label), size = 3) +
+        geom_text(aes(label = .data$.label, colour = I(.data$.text)),
+            size = 3) +
         scale_y_discrete(limits = rev) +
-        scale_fill_gradient(low = "grey95", high = "#5b9bd5",
-            na.value = "white") +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        .scale_sequential("fill") +
         labs(x = paste(state.col, "after"), y = paste(state.col, "before"),
-            fill = if (as.relative) "share" else "count")
+            fill = if (as.relative) "share" else "count") +
+        .theme_tempoPlot() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
     if (!is.null(facet.by)) {
         p <- p + facet_wrap(vars(.data[[facet.by]]))
     }

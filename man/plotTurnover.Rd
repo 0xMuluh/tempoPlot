@@ -13,9 +13,11 @@ plotTurnover(x, ...)
   time.col,
   group = NULL,
   assay.type = "counts",
+  detection = 0,
   type = c("gainloss", "components"),
   level = c("subject", "group"),
   group.by = NULL,
+  max.gap = NULL,
   ...
 )
 
@@ -36,9 +38,11 @@ a factor of visits.}
 \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
 form one series. (Default: \code{NULL})}
 
-\item{assay.type}{\code{Character scalar}. Specifies the assay; a
-feature is present in a sample when its value is above zero.
+\item{assay.type}{\code{Character scalar}. Specifies the assay.
 (Default: \code{"counts"})}
+
+\item{detection}{\code{Numeric scalar}. A feature is present in a
+sample when its value is above this. (Default: \code{0})}
 
 \item{type}{\code{Character scalar}. Draws the numbers of features
 gained (up) and lost (down) (\code{"gainloss"}), or turnover as the
@@ -52,6 +56,12 @@ group at each time (\code{"group"}). (Default: \code{"subject"})}
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that groups subjects when \code{level = "group"}. If
 \code{NULL}, all subjects form one group. (Default: \code{NULL})}
+
+\item{max.gap}{\code{Numeric scalar}. Skips the intervals between
+consecutive samples of a subject that are further apart than this, in
+\code{time.col} units. For visits, \code{NULL} skips intervals across
+visits without a sample; otherwise \code{NULL} keeps all of them.
+(Default: \code{NULL})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get

@@ -1,3 +1,8 @@
+Changes in version 0.99.61 (2026-11-22)
++ Composition plots use the shared theme and palettes; "Other" is grey;
+  top features through one helper; rank lines, transitions and turnover
+  skip gaps (max.gap); presence through detection
+
 Changes in version 0.99.60 (2026-11-22)
 + Trend and design plots use the shared theme and palettes; plotTrend
   lines break at skipped visits by default; plotSurvival takes detection

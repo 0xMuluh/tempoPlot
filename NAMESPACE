@@ -129,8 +129,6 @@ importFrom(ggplot2,
   scale_colour_gradient2,
   scale_colour_manual,
   scale_colour_viridis_c,
-  scale_fill_gradient,
-  scale_fill_gradient2,
   scale_fill_manual,
   scale_linewidth_continuous,
   scale_x_continuous,
@@ -149,11 +147,7 @@ importFrom(ggplot2,
   ylim
 )
 importFrom(ggrepel,geom_text_repel)
-importFrom(grDevices,
-  colorRampPalette,
-  hcl,
-  hcl.colors
-)
+importFrom(grDevices,hcl.colors)
 importFrom(methods,
   setGeneric,
   setMethod

@@ -13,7 +13,8 @@ plotComposition(x, ...)
   x,
   time.col,
   group = NULL,
-  assay.type = NULL,
+  assay.type = "counts",
+  features = NULL,
   top = 5,
   as.relative = TRUE,
   layout = c("bar", "area", "stream"),
@@ -44,11 +45,16 @@ panel. (Default: \code{NULL})}
 \item{assay.type}{\code{Character scalar}. Specifies the assay of
 abundances. To plot taxonomic ranks, agglomerate \code{x} first with
 \code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
-(Default: \code{NULL}, the first assay)}
+(Default: \code{"counts"})}
 
-\item{top}{\code{Integer scalar}. Number of most abundant features, by
-mean proportion, to show; the rest, and a feature already named
-"Other", are summed into "Other". (Default: \code{5})}
+\item{features}{\code{Character vector}. Features to plot. If
+\code{NULL}, plots the \code{top} features with the largest mean
+plotted value: proportion, or assay value with
+\code{as.relative = FALSE}. The rest, and a feature already named
+"Other", are summed into "Other". (Default: \code{NULL})}
+
+\item{top}{\code{Integer scalar}. Number of features to plot when
+\code{features} is \code{NULL}. (Default: \code{5})}
 
 \item{as.relative}{\code{Logical scalar}. Turns the assay into
 proportions of each sample (\code{TRUE}) or stacks its values as they

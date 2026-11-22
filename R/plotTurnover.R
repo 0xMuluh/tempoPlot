@@ -15,9 +15,11 @@
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
 #'   form one series. (Default: \code{NULL})
 #'
-#' @param assay.type \code{Character scalar}. Specifies the assay; a
-#'   feature is present in a sample when its value is above zero.
+#' @param assay.type \code{Character scalar}. Specifies the assay.
 #'   (Default: \code{"counts"})
+#'
+#' @param detection \code{Numeric scalar}. A feature is present in a
+#'   sample when its value is above this. (Default: \code{0})
 #'
 #' @param type \code{Character scalar}. Draws the numbers of features
 #'   gained (up) and lost (down) (\code{"gainloss"}), or turnover as the
@@ -31,6 +33,12 @@
 #' @param group.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that groups subjects when \code{level = "group"}. If
 #'   \code{NULL}, all subjects form one group. (Default: \code{NULL})
+#'
+#' @param max.gap \code{Numeric scalar}. Skips the intervals between
+#'   consecutive samples of a subject that are further apart than this, in
+#'   \code{time.col} units. For visits, \code{NULL} skips intervals across
+#'   visits without a sample; otherwise \code{NULL} keeps all of them.
+#'   (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_rect]{geom_rect}}.
@@ -60,83 +68,48 @@
 NULL
 
 #' @rdname plotTurnover
-#' @importFrom SummarizedExperiment colData assay assayNames
-#' @importFrom stats aggregate ave
+#' @importFrom SummarizedExperiment colData
+#' @importFrom stats aggregate
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = "counts",
-            type = c("gainloss", "components"),
-            level = c("subject", "group"), group.by = NULL, ...) {
+            detection = 0, type = c("gainloss", "components"),
+            level = c("subject", "group"), group.by = NULL, max.gap = NULL,
+            ...) {
         type <- match.arg(type)
         level <- match.arg(level)
-        .check_longitudinal(x, time.col, group)
-        ttype <- .time_type(x, time.col)
+        ttype <- .check_longitudinal(x, time.col, group)
         .check_column(x, group.by)
-        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
-            stop("'assay.type' must be one of assayNames(x).",
-                call. = FALSE)
-        }
+        present <- .present(.get_assay(x, assay.type), detection)
 
         cols <- unique(c(time.col, group, group.by))
         cd <- as.data.frame(colData(x)[, cols, drop = FALSE],
             optional = TRUE)
         cd$.i <- seq_len(ncol(x))
         cd <- .order_time(cd, time.col, group)
-        n <- nrow(cd)
-        subject <- if (is.null(group)) rep("", n) else
+        if (is.null(max.gap) && ttype == "visit") {
+            max.gap <- 1
+        }
+        cd <- .break_gaps(cd, time.col, group, max.gap)
+        subject <- if (is.null(group)) rep("", nrow(cd)) else
             as.character(cd[[group]])
-        same <- which(subject[-1L] == subject[-n])
-        if (length(same) == 0L) {
-            stop("No subject has more than one sample.", call. = FALSE)
+        panel <- if (level == "subject") subject else if
+            (is.null(group.by)) rep("", nrow(cd)) else
+            as.character(cd[[group.by]])
+        # Consecutive samples of a subject, not across a gap.
+        i <- .next_in_subject(subject)
+        i <- i[cd$.segment[i] == cd$.segment[i + 1L]]
+        if (length(i) == 0L) {
+            stop("No subject has two consecutive samples.", call. = FALSE)
         }
-        present <- as.matrix(assay(x, assay.type)) > 0
-        before <- present[, cd$.i[same], drop = FALSE]
-        after <- present[, cd$.i[same + 1L], drop = FALSE]
-        gained <- colSums(!before & after, na.rm = TRUE)
-        lost <- colSums(before & !after, na.rm = TRUE)
-        total <- colSums(before | after, na.rm = TRUE)
-
-        panel <- if (level == "subject") subject[same + 1L] else if
-            (is.null(group.by)) rep("", length(same)) else
-            as.character(cd[[group.by]][same + 1L])
-        tnum <- .time_numeric(cd[[time.col]])
-        time <- tnum[same + 1L]
-        from <- tnum[same]
-        df <- if (type == "gainloss") {
-            data.frame(.panel = panel, .from = from, .time = time,
-                .part = rep(c("gained", "lost"), each = length(same)),
-                .value = c(gained, -lost))
-        } else {
-            share <- function(v) ifelse(total > 0, v / total, 0)
-            data.frame(.panel = panel, .from = from, .time = time,
-                .part = rep(c("appearance", "disappearance"),
-                    each = length(same)),
-                .value = c(share(gained), share(lost)))
-        }
+        df <- .turnover_table(present[, cd$.i, drop = FALSE], i,
+            .time_numeric(cd[[time.col]]), panel, type)
         if (level == "group") {
             df <- aggregate(cbind(.from, .value) ~ .panel + .time + .part,
                 data = df, FUN = mean)
         }
-        # Gains and appearance from zero up; losses from zero down and
-        # disappearance stacked on appearance.
-        df <- df[order(df$.panel, df$.time, df$.part), , drop = FALSE]
-        df$.ymin <- pmin(df$.value, 0)
-        df$.ymax <- pmax(df$.value, 0)
-        if (type == "components") {
-            up <- ave(df$.value, df$.panel, df$.time, FUN = function(v)
-                c(0, cumsum(v)[-length(v)]))
-            df$.ymin <- up
-            df$.ymax <- up + df$.value
-        }
-        if (ttype == "visit") {
-            df$.from <- df$.from + 0.05
-            df$.time <- df$.time - 0.05
-        }
-        if (ttype == "date") {
-            df$.from <- as.Date(df$.from, origin = "1970-01-01")
-            df$.time <- as.Date(df$.time, origin = "1970-01-01")
-        }
+        df <- .stack_turnover(df, type, ttype)
         levels <- if (ttype == "visit") levels(cd[[time.col]])
         panels <- level == "group" && !is.null(group.by) ||
             level == "subject" && !is.null(group)
@@ -144,20 +117,64 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
     }
 )
 
+# Features gained and lost between samples i and i + 1 (columns of present
+# in time order): counts, or shares of the features present in either
+# sample. One row per interval and part, with the panel of the later
+# sample.
+.turnover_table <- function(present, i, time, panel, type) {
+    before <- present[, i, drop = FALSE]
+    after <- present[, i + 1L, drop = FALSE]
+    gained <- colSums(!before & after, na.rm = TRUE)
+    lost <- colSums(before & !after, na.rm = TRUE)
+    if (type == "components") {
+        total <- colSums(before | after, na.rm = TRUE)
+        gained <- ifelse(total > 0, gained / total, 0)
+        lost <- ifelse(total > 0, lost / total, 0)
+    }
+    parts <- if (type == "gainloss") c("gained", "lost") else
+        c("appearance", "disappearance")
+    data.frame(.panel = panel[i + 1L], .from = time[i], .time = time[i + 1L],
+        .part = rep(parts, each = length(i)),
+        .value = c(gained, if (type == "gainloss") -lost else lost))
+}
+
+# Bar extents: gains and appearance from zero up; losses from zero down and
+# disappearance stacked on appearance. Visit bars leave a small space
+# between intervals; Date times are returned as Dates.
+#' @importFrom stats ave
+.stack_turnover <- function(df, type, ttype) {
+    df <- df[order(df$.panel, df$.time, df$.part), , drop = FALSE]
+    df$.ymin <- pmin(df$.value, 0)
+    df$.ymax <- pmax(df$.value, 0)
+    if (type == "components") {
+        df$.ymin <- ave(df$.value, df$.panel, df$.time, FUN = function(v)
+            c(0, cumsum(v)[-length(v)]))
+        df$.ymax <- df$.ymin + df$.value
+    }
+    if (ttype == "visit") {
+        df$.from <- df$.from + 0.05
+        df$.time <- df$.time - 0.05
+    }
+    if (ttype == "date") {
+        df$.from <- as.Date(df$.from, origin = "1970-01-01")
+        df$.time <- as.Date(df$.time, origin = "1970-01-01")
+    }
+    df
+}
+
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_rect geom_hline labs
-#'   facet_wrap vars scale_fill_manual scale_x_continuous scale_y_continuous
+#'   facet_wrap vars scale_x_continuous scale_y_continuous
 .plot_turnover <- function(df, time.col, type, panels, levels, ...) {
-    colours <- c(gained = "#2166ac", lost = "#b2182b",
-        appearance = "#2166ac", disappearance = "#b2182b")
     p <- ggplot(df, aes(xmin = .data$.from, xmax = .data$.time,
             ymin = .data$.ymin, ymax = .data$.ymax, fill = .data$.part)) +
         # A thin outline separates adjacent intervals.
         do.call(geom_rect, modifyList(
             list(colour = "white", linewidth = 0.2), list(...))) +
-        scale_fill_manual(values = colours) +
+        .scale_categorical("fill") +
         labs(x = time.col, fill = NULL,
-            y = if (type == "gainloss") "features" else "turnover")
+            y = if (type == "gainloss") "features" else "turnover") +
+        .theme_tempoPlot()
     if (type == "gainloss") {
         # Losses are drawn downwards but counted as positive numbers.
         p <- p + geom_hline(yintercept = 0, colour = "grey30") +

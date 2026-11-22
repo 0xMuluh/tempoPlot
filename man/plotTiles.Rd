@@ -119,7 +119,7 @@ panel per subject or per group of subjects.
 Each sample covers the time from halfway to its previous sample to
 halfway to its next one, so the time axis keeps the spacing of the
 sampling times. Visits are evenly spaced. Missing values are drawn
-blank.
+grey, times without a sample blank.
 }
 \examples{
 # 16 species in three bioreactors
