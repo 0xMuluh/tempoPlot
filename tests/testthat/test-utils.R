@@ -98,7 +98,33 @@ test_that(".time_type handles numeric, Date, factor and character", {
 
     x_chr <- hitchip1006
     colData(x_chr)$time <- as.character(colData(x_chr)$time)
-    expect_error(.time_type(x_chr, "time"), "factor")
+    expect_error(.time_type(x_chr, "time"), "POSIXct or factor")
+})
+
+test_that("POSIXct times are continuous time in hours", {
+    x <- hitchip1006[, 1:4]
+    x$time <- as.POSIXct("2020-01-01", tz = "UTC") + c(0, 6, 30, 31) * 3600
+    expect_identical(.check_longitudinal(x, "time"), "datetime")
+    expect_equal(diff(.time_numeric(x$time)), c(6, 24, 1))
+
+    df <- data.frame(subject = "A", time = x$time)
+    expect_identical(.break_gaps(df, "time", "subject", max.gap = 12)$.segment,
+        c(1L, 1L, 2L, 2L))
+
+    # .time_restore() inverts .time_numeric(), keeping the time zone.
+    tz <- as.POSIXct("2020-06-01 08:30", tz = "Europe/Helsinki")
+    expect_identical(.time_restore(.time_numeric(tz), tz), tz)
+    day <- as.Date("2020-06-01")
+    expect_identical(.time_restore(.time_numeric(day), day), day)
+    expect_identical(.time_restore(3, 1:2), 3)
+
+    ev <- .check_events(data.frame(start = x$time[2L]), x, "time")
+    expect_identical(ev$start, x$time[2L])
+    expect_error(.check_events(data.frame(start = 6), x, "time"),
+        "type of 'time.col'")
+    expect_error(
+        .check_events(data.frame(start = as.Date("2020-01-01")), x, "time"),
+        "type of 'time.col'")
 })
 
 test_that(".order_time uses group and time from hitchip1006", {
