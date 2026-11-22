@@ -25,6 +25,14 @@ test_that("plotSubjectScatter draws one point per subject", {
     expect_identical(p$labels$colour, "sex")
 })
 
+test_that("plotSubjectScatter uses the shared theme and colour scales", {
+    p <- plotSubjectScatter(toy, "a", "b", "id", colour.by = "sex")
+    expect_identical(layer_data(p)$colour, c("#0072B2", "#E69F00"))
+    expect_identical(p$theme$legend.position, "bottom")
+    p <- plotSubjectScatter(toy, "a", "b", "id", colour.by = "a")
+    expect_identical(layer_data(p)$colour, c("#440154", "#FDE725"))
+})
+
 test_that("plotSubjectScatter draws quadrants", {
     p <- plotSubjectScatter(toy, "a", "b", "id", quadrants = TRUE)
     expect_equal(layer_data(p, 1L)$xintercept, 1.5)
