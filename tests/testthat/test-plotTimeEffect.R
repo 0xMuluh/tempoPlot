@@ -23,7 +23,9 @@ test_that("plotTimeEffect draws estimates and intervals against zero", {
     expect_equal(sort(layer_data(p, 2L)$ymin), sort(effect$lower))
     line <- layer_data(p, 3L)
     expect_equal(sort(line$y), sort(effect$estimate))
-    expect_length(unique(line$colour), 2L)
+    expect_identical(unique(line$colour), .okabe_ito[1:2])
+    expect_identical(unique(layer_data(p, 2L)$fill), .okabe_ito[1:2])
+    expect_identical(p$theme$legend.position, "bottom")
     expect_identical(p$labels$colour, "contrast")
 
     # Without an interval or groups: one line; ... goes to the line.

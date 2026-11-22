@@ -31,6 +31,15 @@ test_that("plotCalendar counts samples per ISO week", {
     expect_identical(df$n[df$.y == "2025" & df$.x == 1L], 1L)
 })
 
+test_that("plotCalendar fills tiles on the sequential scale", {
+    p <- plotCalendar(toy, "d")
+    ld <- layer_data(p)
+    # Fewest samples darkest, most brightest (viridis).
+    expect_identical(unique(ld$fill[p$data$n == 1L]), "#440154")
+    expect_identical(unique(ld$fill[p$data$n == 2L]), "#FDE725")
+    expect_identical(p$theme$legend.position, "bottom")
+})
+
 test_that("plotCalendar passes ... to geom_tile", {
     p <- plotCalendar(toy, "d", colour = "black")
     expect_true(all(layer_data(p)$colour == "black"))

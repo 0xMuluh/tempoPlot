@@ -20,6 +20,7 @@ test_that("plotSpectrum finds the period of a sine", {
     p <- plotSpectrum(toy, "v", "t", group = "id")
     expect_setequal(p$data$.subject, c("a", "b"))
     expect_identical(p$labels$colour, "id")
+    expect_setequal(layer_data(p)$colour, c("#0072B2", "#E69F00"))
     for (s in c("a", "b")) {
         d <- p$data[p$data$.subject == s, ]
         expect_equal(d$frequency[which.max(d$power)], 0.1,
@@ -32,5 +33,14 @@ test_that("plotSpectrum gives Date frequencies per day", {
     days$t <- as.Date("2020-01-01") + round(days$t)
     days <- days[, !duplicated(days$t)]
     df <- plotSpectrum(days, "v", "t")$data
+    expect_equal(df$frequency[which.max(df$power)], 0.1, tolerance = 0.05)
+})
+
+test_that("plotSpectrum reads features from counts by default", {
+    se <- toy
+    assays(se) <- list(other = matrix(0, 1L, 120L),
+        counts = matrix(se$v, 1L))
+    rownames(se) <- "g"
+    df <- plotSpectrum(se, "g", "t")$data
     expect_equal(df$frequency[which.max(df$power)], 0.1, tolerance = 0.05)
 })

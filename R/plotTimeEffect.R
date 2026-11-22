@@ -100,5 +100,7 @@ setMethod("plotTimeEffect", signature = c(x = "data.frame"),
     ggplot(df) +
         geom_hline(yintercept = 0, colour = "grey40") +
         .fit_layers(df, time.col, group.by, ...) +
-        labs(x = time.col, y = "estimate", colour = group.by)
+        labs(x = time.col, y = "estimate", colour = group.by) +
+        .scale_by(df, group.by, c("colour", "fill")) +
+        .theme_tempoPlot()
 }

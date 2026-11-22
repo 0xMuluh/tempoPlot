@@ -134,7 +134,6 @@ importFrom(ggplot2,
   scale_fill_manual,
   scale_linewidth_continuous,
   scale_x_continuous,
-  scale_x_date,
   scale_x_discrete,
   scale_x_log10,
   scale_y_continuous,
@@ -145,7 +144,6 @@ importFrom(ggplot2,
   stat_summary,
   theme,
   theme_bw,
-  theme_void,
   unit,
   vars,
   ylim
@@ -181,4 +179,7 @@ importFrom(survival,
   Surv,
   survfit
 )
-importFrom(utils,modifyList)
+importFrom(utils,
+  modifyList,
+  type.convert
+)

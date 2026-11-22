@@ -41,7 +41,7 @@ test_that("plotLagProfile draws one line per level and leaves out ratios", {
     expect_true(any(vs$type == "ratio"))
     expect_identical(nrow(ld), nrow(est))
     expect_equal(sort(ld$y), sort(est$estimate))
-    expect_length(unique(ld$colour), 2L)
+    expect_setequal(ld$colour, c("#0072B2", "#E69F00"))
     # Levels at the same lag are shifted apart.
     at2 <- ld[abs(ld$x - 2) < 0.5, ]
     expect_length(unique(at2$x), nrow(at2))

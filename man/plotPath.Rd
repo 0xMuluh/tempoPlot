@@ -16,7 +16,7 @@ plotPath(x, ...)
   ncomponents = 2,
   x.var = NULL,
   y.var = NULL,
-  assay.type = NULL,
+  assay.type = "counts",
   origin = c("none", "baseline"),
   arrows = TRUE,
   colour.by = NULL,
@@ -58,7 +58,8 @@ two components by index or name. (Default: \code{2})}
 \code{assay.type}. (Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay that holds
-features named in \code{x.var} or \code{y.var}. (Default: \code{NULL})}
+features named in \code{x.var} or \code{y.var}.
+(Default: \code{"counts"})}
 
 \item{origin}{\code{Character scalar}. Whether paths start where the
 first sample lies (\code{"none"}) or at zero, by subtracting each
@@ -85,7 +86,7 @@ arrow. If \code{NULL}, draws no field. (Default: \code{NULL})}
 
 \item{lag}{\code{Integer scalar}. Instead of paths, draws the value of
 \code{x.var}, or the first component of \code{dimred}, against its
-value \code{lag} samples later in the same subject, with the identity
+value \code{lag} samples later in the same path, with the identity
 line. (Default: \code{NULL})}
 
 \item{animate}{\code{Logical scalar}. Reveals the paths over time with
@@ -94,7 +95,9 @@ requires gganimate. (Default: \code{FALSE})}
 
 \item{max.gap}{\code{Numeric scalar}. Breaks a path where consecutive
 samples of a subject are further apart than this, in \code{time.col}
-units. \code{NULL} never breaks paths. (Default: \code{NULL})}
+units. For visits, \code{NULL} breaks paths at visits without a
+sample; otherwise \code{NULL} never breaks paths. The movement field
+and lag plots pair samples within paths only. (Default: \code{NULL})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get

@@ -50,8 +50,10 @@ test_that("plotPath joins each subject's samples in time order", {
 
 test_that("plotPath plots two variables", {
     genus <- "Bacteroides vulgatus et rel."
+    # Features come from counts by default, not from the first assay.
+    assays(x) <- c(list(other = assay(x, "counts") * 0), as.list(assays(x)))
     p <- plotPath(x, "time", "subject", x.var = genus, y.var = "diversity",
-        assay.type = "counts", linewidth = 2)
+        linewidth = 2)
     ld <- layer_data(p, 1L)
     expect_equal(ld$x, unname(assay(x, "counts")[genus, ord]))
     expect_equal(ld$y, x$diversity[ord])
@@ -74,11 +76,25 @@ test_that("plotPath colours by a column and breaks paths at gaps", {
     p <- plotPath(x, "time", "subject", dimred = "PCA",
         colour.by = "subject")
     expect_length(unique(layer_data(p, 1L)$colour), n_subjects)
+    p <- plotPath(x, "time", "subject", dimred = "PCA", colour.by = "sex")
+    expect_setequal(layer_data(p, 1L)$colour, c("#0072B2", "#E69F00"))
 
     gaps <- unlist(tapply(x$time, x$subject, function(t) diff(sort(t))))
     p <- plotPath(x, "time", "subject", dimred = "PCA", max.gap = 0.3)
     expect_length(unique(layer_data(p, 1L)$group),
         n_subjects + sum(gaps > 0.3))
+})
+
+test_that("plotPath breaks paths at visits without a sample", {
+    x$visit <- factor(ave(x$time, x$subject, FUN = rank), levels = 1:5)
+    gap <- x[, x$visit != "3"]
+    p <- plotPath(gap, "visit", "subject", dimred = "PCA")
+    expect_length(unique(layer_data(p, 1L)$group), 2L * n_subjects)
+    # Lag pairs stay within paths: visits 1-2 and 4-5.
+    p <- plotPath(gap, "visit", "subject", x.var = "diversity", lag = 1)
+    expect_identical(nrow(p$data), 2L * n_subjects)
+    p <- plotPath(gap, "visit", "subject", dimred = "PCA", max.gap = 2)
+    expect_length(unique(layer_data(p, 1L)$group), n_subjects)
 })
 
 test_that("plotPath draws one path without group", {

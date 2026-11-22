@@ -23,6 +23,8 @@ test_that("plotDOC fades points above 1000 pairs and draws the LOWESS", {
     expect_equal(unique(layer_data(p, 1L)$alpha), 2 / 3)
     curve <- lowess(many$.overlap, many$.dissimilarity)
     expect_equal(layer_data(p, 2L)$y, curve$y[order(curve$x)])
+    expect_identical(unique(layer_data(p, 2L)$colour), .okabe_ito[1L])
+    expect_identical(p$theme$legend.position, "bottom")
     p <- .plot_doc(many[1:100, ], "o", "d", alpha = 0.5)
     expect_equal(unique(layer_data(p, 1L)$alpha), 0.5)
 })

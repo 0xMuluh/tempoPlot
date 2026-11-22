@@ -54,26 +54,18 @@ setMethod("plotGaps", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group, group.by = NULL,
             layout = c("histogram", "density", "box"), ...) {
         layout <- match.arg(layout)
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, group)
         .check_longitudinal(x, time.col, group)
         .check_column(x, group.by)
 
-        cols <- unique(c(time.col, group, group.by))
-        df <- as.data.frame(colData(x)[, cols, drop = FALSE],
-            optional = TRUE)
-        df <- .order_time(df, time.col, group)
-        n <- nrow(df)
-        same <- df[[group]][-1L] == df[[group]][-n]
-        df <- data.frame(
-            interval = diff(.time_numeric(df[[time.col]]))[same],
-            df[-1L, group.by, drop = FALSE][same, , drop = FALSE],
-            check.names = FALSE)
-        if (nrow(df) == 0L) {
+        df <- .order_time(as.data.frame(colData(x), optional = TRUE),
+            time.col, group)
+        i <- .next_in_subject(df[[group]])
+        if (length(i) == 0L) {
             stop("No subject has more than one sample.", call. = FALSE)
         }
+        df <- data.frame(interval = diff(.time_numeric(df[[time.col]]))[i],
+            df[i + 1L, group.by, drop = FALSE], check.names = FALSE)
         .plot_gaps(df, time.col, group.by, layout, ...)
     }
 )
@@ -81,18 +73,17 @@ setMethod("plotGaps", signature = c(x = "SummarizedExperiment"),
 #' @importFrom ggplot2 ggplot aes .data geom_histogram geom_density
 #'   geom_boxplot labs
 .plot_gaps <- function(df, time.col, group.by, layout, ...) {
+    by <- !is.null(group.by)
     lab <- paste("interval in", time.col)
-    if (layout == "box") {
-        return(ggplot(df, aes(x = if (is.null(group.by)) "" else
-                .data[[group.by]], y = .data$interval)) +
-            geom_boxplot(...) +
-            labs(x = group.by, y = lab))
-    }
-    p <- ggplot(df, aes(x = .data$interval)) + labs(x = lab)
-    if (layout == "histogram") {
-        return(p + geom_histogram(aes(fill = if (!is.null(group.by))
-            .data[[group.by]]), ...) + labs(fill = group.by))
-    }
-    p + geom_density(aes(colour = if (!is.null(group.by))
-        .data[[group.by]]), ...) + labs(colour = group.by)
+    p <- switch(layout,
+        box = ggplot(df, aes(x = if (by) .data[[group.by]] else "",
+            y = .data$interval)) + geom_boxplot(...) +
+            labs(x = group.by, y = lab),
+        histogram = ggplot(df, aes(x = .data$interval,
+            fill = if (by) .data[[group.by]])) + geom_histogram(...) +
+            labs(x = lab, fill = group.by),
+        density = ggplot(df, aes(x = .data$interval,
+            colour = if (by) .data[[group.by]])) + geom_density(...) +
+            labs(x = lab, colour = group.by))
+    p + .scale_by(df, group.by, c("colour", "fill")) + .theme_tempoPlot()
 }
