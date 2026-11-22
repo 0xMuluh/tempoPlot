@@ -1,9 +1,9 @@
 ---
 title: "tempoPlot: Microbiome Time Series Visualization"
 date: "`r Sys.Date()`"
-package: 
+package:
     tempoPlot
-output: 
+output:
     BiocStyle::html_document:
         fig_height: 7
         fig_width: 10
@@ -30,66 +30,108 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+# Introduction
 
-`tempoPlot` is a package in the `r BiocStyle::Biocpkg("mia")` family for
-visualizing longitudinal microbiome data. It plots data and results stored
-in `TreeSummarizedExperiment` and `MultiAssayExperiment` objects, many of
-them computed with `r BiocStyle::Biocpkg("miaTime")` and
-`r BiocStyle::Biocpkg("mia")`. All functions return `ggplot` objects.
+`tempoPlot` plots longitudinal microbiome data stored in
+`TreeSummarizedExperiment` and `MultiAssayExperiment` objects. The
+computation belongs to `r BiocStyle::Biocpkg("miaTime")` and
+`r BiocStyle::Biocpkg("mia")`: they add divergences, variograms,
+dissimilarities, states and ordinations to the object, and `tempoPlot`
+draws them. Every function returns a `ggplot` object.
 
-| Question | Functions |
+This vignette follows one analysis from the sampling design to
+ordinations and networks. Each step asks a question, computes what it
+needs with mia or miaTime, and plots the result.
+
+| Question | Function |
 |---|---|
-| When were samples taken? | `plotSwimmer()`, `plotGaps()`, `plotCalendar()` |
-| How does a value change over time? | `plotTrend()`, `plotTimeEffect()`, `plotPath()` |
-| How does the composition change? | `plotComposition()`, `plotTiles()`, `plotHorizon()`, `plotRanks()`, `plotAlluvial()`, `plotTransitionMatrix()` |
-| How fast and how much do communities change? | `plotTurnover()`, `plotTBI()`, `plotRecurrence()`, `plotIndividuality()`, `plotFingerprint()`, `plotLagProfile()` |
-| Are there states, rhythms or leads? | `plotLandscape()`, `plotSpectrum()`, `plotLagHeatmap()`, `plotSurvival()` |
-| Which features or subjects stand out? | `plotVolcano()`, `plotFeatureScatter()`, `plotStats()`, `plotSubjectScatter()`, `plotTimeLoadings()` |
-| How do ordinations and networks compare? | `plotProcrustes()`, `plotDirection()`, `plotNetwork()`, `plotDOC()` |
+| When were samples taken? | `plotSwimmer()` |
+| | `plotGaps()` |
+| | `plotCalendar()` |
+| How does a value change over time? | `plotTrend()` |
+| | `plotTimeEffect()` |
+| How does the composition change? | `plotComposition()` |
+| | `plotTiles()` |
+| | `plotHorizon()` |
+| | `plotRanks()` |
+| How fast and how much do communities change? | `plotTurnover()` |
+| | `plotTBI()` |
+| | `plotLagProfile()` |
+| | `plotRecurrence()` |
+| | `plotIndividuality()` |
+| | `plotFingerprint()` |
+| | `plotDOC()` |
+| Are there states and rhythms? | `plotTransitionMatrix()` |
+| | `plotAlluvial()` |
+| | `plotSurvival()` |
+| | `plotLandscape()` |
+| | `plotSpectrum()` |
+| | `plotLagHeatmap()` |
+| Which features or subjects stand out? | `plotStats()` |
+| | `plotVolcano()` |
+| | `plotFeatureScatter()` |
+| | `plotSubjectScatter()` |
+| | `plotTimeLoadings()` |
+| How do subjects move in ordinations and networks? | `plotPath()` |
+| | `plotDirection()` |
+| | `plotProcrustes()` |
+| | `plotNetwork()` |
 
-## Installation
+# Installation
 
 ```{r}
 #| label: install
 #| eval: false
 
+if (!requireNamespace("remotes", quietly = TRUE))
+    install.packages("remotes")
 remotes::install_github("0xMuluh/tempoPlot")
 ```
+
+# Data
+
+The workflow uses two datasets from miaTime. `hitchip1006` holds
+genus-level profiles of 1006 western adults (Lahti et al. 2014), some of
+whom were sampled up to five times. `minimalgut` holds a defined community
+of 16 species in three bioreactors, sampled three times a day for 20 days
+under the same perturbations (Shetty et al. 2022). The cohort has sparse,
+irregular sampling of many people; the bioreactors have dense sampling of
+a few units.
 
 ```{r}
 #| label: load
 
 library(tempoPlot)
-library(miaTime)
 library(mia)
+library(miaTime)
+
+data("hitchip1006", "minimalgut", package = "miaTime")
 ```
 
-The examples use three datasets from miaTime: `hitchip1006`, an adult
-cohort sampled up to five times over several years; `minimalgut`, a
-defined community of 16 species in three bioreactors sampled every few
-hours under the same perturbations; and `SilvermanAGutData`, four
-artificial guts sampled daily and hourly.
+The cohort analysis keeps the 77 subjects sampled at least twice and
+numbers each subject's samples as visits.
 
 ```{r}
-#| label: data
+#| label: data-cohort
 
-data(hitchip1006)
-tse <- hitchip1006
-# Some profiles are stored twice; keep the first copy
-tse <- tse[, !duplicated(t(assay(tse, "counts")))]
-tse <- tse[, tse$subject %in% names(which(table(tse$subject) >= 3))]
+# Eleven profiles are stored twice; keep the first copy
+tse <- hitchip1006[, !duplicated(t(assay(hitchip1006, "counts")))]
+tse <- tse[, tse$subject %in% names(which(table(tse$subject) >= 2))]
 tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
+```
 
-data(minimalgut)
+The bioreactor analysis uses relative abundances.
+
+```{r}
+#| label: data-bioreactors
+
 mg <- transformAssay(minimalgut, method = "relabundance")
 ```
 
-## Study design
+# Study design
 
-`plotSwimmer()` shows when each subject was sampled. In `hitchip1006`, the
-subjects followed longest are mostly overweight or obese, while those with
-short follow-up are mostly lean.
+**When was each subject sampled?** `plotSwimmer()` draws one lane per
+subject with a point for each sample.
 
 ```{r}
 #| label: plot-swimmer
@@ -98,24 +140,28 @@ plotSwimmer(tse, time.col = "time", group = "subject",
     colour.by = "bmi_group")
 ```
 
-`events` marks interventions as bands (with an `end`) or markers, here the
-perturbation schedule shared by the bioreactors. `missing = "show"` marks
-gaps longer than `max.gap` with dashed lines.
+The cohort mixes designs. A group of mostly lean subjects was sampled four
+or five times over a short span. Most overweight and obese subjects were
+sampled two or three times over a longer span, and three subjects were
+followed up only after 12 or more time units.
+
+The bioreactors share one schedule of perturbations. `events` draws them
+as bands (with an `end`) or lines (without one).
 
 ```{r}
 #| label: plot-swimmer-events
-#| fig-height: 4
+#| fig-height: 3
 
 events <- data.frame(
     start = c(0, 152, 432),
     end = c(24, NA, 436),
     label = c("batch", "Blautia added", "double dilution rate"))
-plotSwimmer(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+plotSwimmer(mg, time.col = "Time.hr", group = "StudyIdentifier",
     events = events)
 ```
 
-`plotGaps()` shows the intervals between consecutive samples of each
-subject, and `plotCalendar()` the samples per day for `Date` times.
+**How long are the intervals between samples?** `plotGaps()` draws the
+time between consecutive samples of each subject.
 
 ```{r}
 #| label: plot-gaps
@@ -125,14 +171,33 @@ plotGaps(tse, time.col = "time", group = "subject", group.by = "sex",
     layout = "box")
 ```
 
-## Trajectories
+Most intervals are shorter than seven time units; the outliers are the
+late follow-ups seen above. Keep these intervals in mind when choosing time
+lags or a `max.gap`.
 
-`plotTrend()` shows one value over time for each subject: a colData
-column, such as a result from miaTime, a feature or an ordination
-component. Here, the divergence of each subject from their first sample,
-computed with `addBaselineDivergence()`, by visit, the order of each
-subject's samples. A subject's line breaks at visits without a sample, and
-for numeric and `Date` times at gaps longer than `max.gap`.
+**On which days were samples taken?** `plotCalendar()` counts samples per
+day for `Date` or `POSIXct` times. The bioreactor data hold hours since
+the start of the run, not dates, so the run is placed on an arbitrary
+start date.
+
+```{r}
+#| label: plot-calendar
+#| fig-height: 3
+
+mg$date <- as.POSIXct("2020-01-06", tz = "UTC") + mg$Time.hr * 3600
+plotCalendar(mg, time.col = "date")
+```
+
+Most days have nine samples, three per bioreactor. The busiest day, 18
+days into the run, is the double-dilution perturbation, and one day late in
+the run has only three samples. The weekdays here are arbitrary; with real
+dates the same plot shows weekend and holiday gaps.
+
+# Values over time
+
+**How far does each subject move from their first sample?**
+`addBaselineDivergence()` from miaTime computes the dissimilarity of each
+sample from the subject's first one. `plotTrend()` draws it by visit.
 
 ```{r}
 #| label: plot-trend
@@ -140,41 +205,34 @@ for numeric and `Date` times at gaps longer than `max.gap`.
 tse <- addBaselineDivergence(tse, group = "subject", time.col = "time",
     assay.type = "counts")
 plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
-    layout = "box")
+    group.by = "sex", layout = "box")
 ```
 
-`baseline` expresses a value relative to each subject's first sample, and
-`smooth` adds a group summary.
+Most of the distance from the first sample is reached by the second
+visit; later visits are no further away. Visits are ranks, and visits 4 and
+5 come only from the densely sampled group, so the same visit lies at
+different times in different subjects.
+
+`plotTrend()` reads a colData column, a feature or an ordination
+component. Here acetate in each bioreactor, with the perturbations marked.
 
 ```{r}
-#| label: plot-trend-baseline
-
-plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
-    group.by = "sex", baseline = "difference", smooth = "mean")
-```
-
-`align.to` draws time relative to an event of each subject. The result is
-a ggplot, so further layers can be added, such as the range of acetate
-before Blautia hydrogenotrophica was added at 152 h. After the addition,
-acetate rose above that range.
-
-```{r}
-#| label: plot-trend-align
+#| label: plot-trend-events
 #| fig-height: 4
 
-minimalgut$added <- 152
-before <- range(minimalgut$Acetate[minimalgut$Time_hr_num < 152])
-plotTrend(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+plotTrend(mg, y = "Acetate", time.col = "Time.hr",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
-    align.to = "added") +
-    ggplot2::annotate("rect", xmin = -Inf, xmax = Inf, ymin = before[1],
-        ymax = before[2], alpha = 0.2)
+    events = events)
 ```
 
-`plotTimeEffect()` draws an effect at each time with its confidence
-interval, such as the difference in diversity between men and women at
-each visit. Each subject has one sample per visit, so a linear model per
-visit compares independent subjects.
+The three bioreactors track each other. Acetate rises after Blautia
+hydrogenotrophica is added at 152 h, peaks between about 200 and 250 h, and
+falls back towards its earlier level.
+
+**Does the difference in diversity between men and women change over
+time?** Fit the model you need, one row per time, and pass the estimates
+to `plotTimeEffect()`. Each subject has one sample per visit, so a linear
+model per visit compares independent subjects.
 
 ```{r}
 #| label: plot-time-effect
@@ -190,38 +248,47 @@ effect <- do.call(rbind, lapply(split(cd, cd$visit), function(d) {
 plotTimeEffect(effect, time.col = "visit")
 ```
 
-`plotPath()` follows subjects through an ordination or two variables;
-`centroids` adds the mean path of each group.
+Men had higher diversity than women at the first visit, with an interval
+that just excludes zero. At later visits the intervals include zero and
+widen as fewer subjects remain.
 
-```{r}
-#| label: plot-path
+# Composition over time
 
-tse <- transformAssay(tse, method = "relabundance")
-tse <- addMDS(tse, assay.type = "relabundance", method = "bray",
-    name = "PCoA")
-five <- tse[, tse$subject %in% names(which(table(tse$subject) == 5))]
-plotPath(five, time.col = "visit", group = "subject", dimred = "PCoA",
-    group.by = "sex", centroids = TRUE)
-```
-
-## Composition over time
-
-`plotComposition()` stacks the most abundant features over time, as bars,
-areas or a stream; `as.relative = FALSE` stacks absolute values such as
-relative abundance times biomass.
+**Which species dominate, and when?** `plotComposition()` stacks the most
+abundant features over time.
 
 ```{r}
 #| label: plot-composition
 #| fig-height: 4
 
-plotComposition(minimalgut, time.col = "Time_hr_num",
-    group = "StudyIdentifier", top = 8, layout = "area")
+plotComposition(mg, time.col = "Time.hr", group = "StudyIdentifier",
+    top = 8, layout = "area")
 ```
 
-`plotTiles()` draws features by time as a heatmap of values, changes,
-presence, or effects from a results table. `plotHorizon()` folds each
-feature into a short strip, and `plotRanks()` follows the rank of each
-feature.
+Bacteroides xylanisolvens makes up about half of each community. Blautia
+hydrogenotrophica appears after it is added at 152 h, and the three
+bioreactors follow similar courses.
+
+In the cohort, `level = "group"` averages the phyla of the subjects in
+each group at each visit.
+
+```{r}
+#| label: plot-composition-cohort
+#| fig-height: 4
+
+phyla <- agglomerateByRank(tse, rank = "Phylum")
+plotComposition(phyla, time.col = "visit", group = "subject",
+    level = "group", group.by = "sex")
+```
+
+Firmicutes and Bacteroidetes make up nearly all of each profile. The
+Bacteroidetes share varies between visits; later visits average fewer
+subjects, so their means are less precise.
+
+**Which species rise and fall together?** `plotTiles()` draws features by
+time as a heatmap. `value = "change"` shows the change from the first
+sample, and `order.by = "cluster"` puts features with similar courses next
+to each other.
 
 ```{r}
 #| label: plot-tiles
@@ -232,6 +299,14 @@ plotTiles(mg, time.col = "Time.hr", group = "StudyIdentifier",
     level = "group")
 ```
 
+Bacteroides xylanisolvens gains and Eubacterium siraeum loses most from
+the start of the run, and Blautia hydrogenotrophica appears after 152 h.
+The other species change less.
+
+`plotHorizon()` folds each feature into a short strip, so that many
+features fit in one figure. Each strip is centred on the feature's median;
+darker bands are further from it.
+
 ```{r}
 #| label: plot-horizon
 #| fig-height: 5
@@ -240,75 +315,208 @@ plotHorizon(mg, time.col = "Time.hr", group = "StudyIdentifier",
     assay.type = "relabundance", top = 8)
 ```
 
-States such as the dominant genus are drawn as flows between visits by
-`plotAlluvial()` and as transition shares by `plotTransitionMatrix()`.
+Blautia hydrogenotrophica stays below its median until it is added and
+above it afterwards. Bacteroides ovatus rises above its median after about
+300 h in all three bioreactors.
+
+**Does the order of the species change?** `plotRanks()` follows the rank
+of each feature.
+
+```{r}
+#| label: plot-ranks
+#| fig-height: 5
+
+plotRanks(mg, time.col = "Time.hr", group = "StudyIdentifier", top = 8)
+```
+
+Bacteroides xylanisolvens and Akkermansia muciniphila hold the top two
+ranks for most of the run; the species below them change places often.
+
+# Community change
+
+**How many species appear and disappear between samples?**
+`plotTurnover()` counts the features gained and lost between consecutive
+samples.
+
+```{r}
+#| label: plot-turnover
+#| fig-height: 4
+
+plotTurnover(mg, time.col = "Time.hr", group = "StudyIdentifier")
+```
+
+In this defined community almost every species is detected in every
+sample. At most one species is lost or gained between two samples.
+
+**Which subjects lost or gained most genera?** `plotTBI()` splits the
+change between two time points into losses and gains (Legendre 2019), here
+of genera present or absent at the first and second visit.
+
+```{r}
+#| label: plot-tbi
+#| fig-height: 5
+
+plotTBI(tse, time.col = "visit", group = "subject",
+    time.point = c("1", "2"), colour.by = "sex")
+```
+
+Points above the diagonal gained more genera than they lost; points below
+lost more. All changes are small: the genera present change little between
+the first two visits.
+
+**How does dissimilarity grow with the time between samples?**
+`addVariogram()` from miaTime computes the mean dissimilarity between
+samples of a subject at each time lag, with an interval. `plotLagProfile()`
+draws it.
+
+```{r}
+#| label: plot-lag-profile
+#| fig-height: 4
+
+tse <- transformAssay(tse, method = "hellinger")
+tse <- addVariogram(tse, time.col = "time", group = "subject",
+    assay.type = "hellinger", method = "euclidean", squared = TRUE,
+    time.lag = c(1.5, 2, 2.5, 3, 4, 6, 8, 9))
+plotLagProfile(tse)
+```
+
+Dissimilarity does not grow steadily with the lag. Samples nine time units
+apart are about as similar as samples 1.5 units apart. Each lag pools
+different subjects, so in this cohort the profile also reflects which
+subjects contribute to it.
+
+The next three plots read a dissimilarity matrix stored by
+`addDissimilarity()` from mia.
+
+```{r}
+#| label: dissimilarities
+
+tse <- addDissimilarity(tse, method = "bray", assay.type = "counts")
+mg <- addDissimilarity(mg, method = "bray", assay.type = "counts")
+```
+
+**Does a community return to earlier states?** `plotRecurrence()` draws
+the dissimilarity between every pair of samples of a subject.
+
+```{r}
+#| label: plot-recurrence
+#| fig-height: 4
+
+plotRecurrence(mg, dissimilarity = "bray", time.col = "Time.hr",
+    group = "StudyIdentifier")
+```
+
+The first samples differ from all later ones, the bright edge at time
+zero. A bright line marks a sample unlike all others. Dark areas away from
+the diagonal mark returns to an earlier state.
+
+**Are samples of the same person more alike than samples of different
+people?** `plotIndividuality()` compares the dissimilarities within
+subjects with those between subjects.
+
+```{r}
+#| label: plot-individuality
+#| fig-height: 4
+
+plotIndividuality(tse, dissimilarity = "bray", group = "subject")
+```
+
+Samples of the same subject are more similar than samples of different
+subjects. The within-subject curve peaks near 0.3, the between-subject
+curve between 0.5 and 0.65.
+
+**Can a person be recognised from an earlier sample?** `plotFingerprint()`
+asks whether each subject's second sample is closest to their own first
+sample (Franzosa et al. 2015).
+
+```{r}
+#| label: plot-fingerprint
+#| fig-height: 4
+
+plotFingerprint(tse, dissimilarity = "bray", time.col = "visit",
+    group = "subject", time.point = c("1", "2"))
+```
+
+The title gives the share identified: 30 of 77 subjects (39%). Subjects
+above the diagonal are closer to their own first sample than to anyone
+else's.
+
+**Do communities of different people follow the same dynamics?**
+`plotDOC()` draws the dissimilarity of each pair of samples against the
+overlap of their features (Bashan et al. 2016).
+
+```{r}
+#| label: plot-doc
+#| fig-height: 4
+
+tse <- transformAssay(tse, method = "relabundance")
+tse <- addDissimilarity(tse, method = "overlap",
+    assay.type = "relabundance")
+tse <- addDissimilarity(tse, method = "jsd", assay.type = "relabundance")
+plotDOC(tse, overlap = "overlap", dissimilarity = "jsd",
+    group = "subject", pairs = "between")
+```
+
+Overlap is close to one for every pair: the genera two people share carry
+almost all of the abundance of both profiles. Within that narrow range,
+dissimilarity falls as overlap approaches one. Bashan et al. read this
+negative slope as dynamics shared across people.
+
+# States and rhythms
+
+**Does the dominant genus change between visits?** `addDominant()` from
+mia stores the dominant genus of each sample, keeping the four most
+common and pooling the rest. `plotTransitionMatrix()` draws the share of
+moves from each state to the next.
 
 ```{r}
 #| label: plot-transitions
 #| fig-height: 5
 
-h <- addDominant(hitchip1006, name = "dominant", n = 4)
-plotTransitionMatrix(h, state.col = "dominant", time.col = "time",
+tse <- addDominant(tse, name = "dominant", n = 4)
+plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
     group = "subject")
 ```
+
+The diagonal dominates: most subjects keep their dominant genus from one
+sample to the next. Prevotella is the most stable state (0.86), and samples
+dominated by a genus outside the top four often move to Faecalibacterium.
+
+`plotAlluvial()` draws the same moves as flows over the first three
+visits. It needs the ggalluvial package.
 
 ```{r}
 #| label: plot-alluvial
 #| fig-height: 5
 #| eval: !expr requireNamespace("ggalluvial", quietly = TRUE)
 
-h$visit <- ave(h$time, h$subject, FUN = rank)
-h <- h[, h$visit <= 3 & h$subject %in% names(which(table(h$subject) >= 2))]
-h$visit <- factor(h$visit)
-plotAlluvial(h, state.col = "dominant", time.col = "visit",
-    group = "subject")
+plotAlluvial(tse[, tse$visit %in% c("1", "2", "3")],
+    state.col = "dominant", time.col = "visit", group = "subject")
 ```
 
-## Change and stability
+Most flows keep their colour. The grey block at visit 3 holds the subjects
+sampled only twice.
 
-`plotTurnover()` counts the features gained and lost between consecutive
-samples; `plotTBI()` splits the change between two time points into losses
-and gains (Legendre 2019), here of genera present or absent.
-
-```{r}
-#| label: plot-tbi
-#| fig-height: 5
-
-plotTBI(tse, time.col = "visit", group = "subject", time.point = c("1", "2"),
-    colour.by = "sex")
-```
-
-From a dissimilarity stored by `addDissimilarity()`, `plotRecurrence()`
-draws the dissimilarities between the samples of each subject over time,
-`plotIndividuality()` compares them with those between subjects, and
-`plotFingerprint()` asks whether each subject's later sample is closest to
-its own earlier one.
+**How long does a dominant genus last?** `plotSurvival()` draws the
+Kaplan-Meier curve of the time until the dominant genus first differs from
+the one at the first sample.
 
 ```{r}
-#| label: plot-recurrence
+#| label: plot-survival
 #| fig-height: 4
 
-mg <- addDissimilarity(mg, method = "bray", assay.type = "counts")
-plotRecurrence(mg, dissimilarity = "bray", time.col = "Time.hr",
-    group = "StudyIdentifier")
+plotSurvival(tse, time.col = "time", group = "subject",
+    event = "state.exit", state.col = "dominant", group.by = "sex")
 ```
 
-```{r}
-#| label: plot-individuality
-#| fig-height: 4
+The share of subjects with their first dominant genus falls to about a
+third within ten time units, and the curves of women and men overlap.
+Crosses mark subjects whose last sample still had the first state.
 
-tse <- addDissimilarity(tse, method = "bray", assay.type = "counts")
-plotIndividuality(tse, dissimilarity = "bray", group = "subject")
-```
-
-`plotLagProfile()` draws the variogram of `addVariogram()`: how far apart
-samples of a subject are, by the time between them.
-
-## States, rhythms and leads
-
-`plotLandscape()` draws the density of a variable or its potential; the
-abundance of Prevotella at the first sample of each subject has two wells,
-a low and a high state (Lahti et al. 2014).
+**Does a genus have alternative states?** `plotLandscape()` draws the
+density of a variable, or its potential, the negative log of the density.
+Bistability needs many people, so this step uses the first sample of all
+1006 subjects.
 
 ```{r}
 #| label: plot-landscape
@@ -322,89 +530,163 @@ plotLandscape(first, y = "Prevotella melaninogenica et rel.",
     assay.type = "log10", scale = "potential")
 ```
 
-`plotSpectrum()` finds periodic changes. Acetate in the bioreactors, which
-were fasted once a day, has peaks near one cycle per 24 h.
+The potential has two wells: a deep one near 0.2% relative abundance
+(log10 of -2.7) and a shallow one near 40% (-0.4). Most people sit in the
+low state and a minority in the high one.
+
+**Is there a daily rhythm?** `plotSpectrum()` draws the periodogram of a
+series. The bioreactors were fasted once a day.
 
 ```{r}
 #| label: plot-spectrum
 #| fig-height: 4
 
-plotSpectrum(minimalgut, y = "Acetate", time.col = "Time_hr_num",
+plotSpectrum(mg, y = "Acetate", time.col = "Time.hr",
     group = "StudyIdentifier")
 ```
 
-`plotLagHeatmap()` correlates features with a target at lags of a few
-samples.
+The peaks on either side of 0.042 cycles per hour, a period of 24 h, match
+the daily fasting. The highest power, at the lowest frequencies, is the
+slow rise and fall of acetate seen in the trend above.
+
+**Which species change before or after acetate?** `plotLagHeatmap()`
+correlates each feature with a target at lags of a few samples. Clr values
+suit correlations better than proportions.
 
 ```{r}
 #| label: plot-lag-heatmap
 #| fig-height: 5
 
-clr <- transformAssay(minimalgut, method = "clr", pseudocount = 1)
-plotLagHeatmap(clr, target = "Acetate", time.col = "Time.hr",
+mg <- transformAssay(mg, assay.type = "counts", method = "clr",
+    pseudocount = 1)
+plotLagHeatmap(mg, target = "Acetate", time.col = "Time.hr",
     group = "StudyIdentifier", assay.type = "clr")
 ```
 
-`plotSurvival()` draws the time until an event, here until the dominant
-genus of each subject first changes.
+Blautia hydrogenotrophica rises with acetate and Anaerobutyricum
+soehngenii falls with it. The correlations are about the same at every lag,
+so neither series leads; both follow the change after 152 h.
 
-```{r}
-#| label: plot-survival
-#| fig-height: 4
+# Features and subjects that stand out
 
-tse <- addDominant(tse, name = "dominant")
-plotSurvival(tse, time.col = "time", group = "subject",
-    event = "state.exit", state.col = "dominant", group.by = "sex")
-```
-
-## Features and subjects
-
-`plotFeatureScatter()` draws two statistics per feature with a fit, such as
-Taylor's law of mean and variance.
-
-```{r}
-#| label: plot-feature-scatter
-#| fig-height: 4
-
-plotFeatureScatter(first, x.stat = "mean", y.stat = "variance",
-    fit = "power")
-```
-
-`plotVolcano()` and `plotStats()` draw results per feature, such as the
-bimodality of each genus computed by miaTime.
+**Which genera are bimodal?** `addBimodality()` from miaTime stores the
+coefficient of bimodality of each feature in `rowData()`, here of clr
+values, and `plotStats()` draws the highest.
 
 ```{r}
 #| label: plot-stats
 #| fig-height: 4
 
-tse <- addBimodality(tse, assay.type = "counts")
+tse <- transformAssay(tse, assay.type = "counts", method = "clr",
+    pseudocount = 1)
+tse <- addBimodality(tse, assay.type = "clr")
 plotStats(tse, stat = "bimodality", top = 20, colour.by = "Phylum")
 ```
 
-`plotSubjectScatter()` draws two statistics per subject, or the subject
-loadings of a tensor decomposition, and `plotTimeLoadings()` its time
-loadings. Here the TEMPTED decomposition of the bioreactors (Shi et al.
-2024), if the tempted package is installed.
+The coefficient runs from 0 to 1. High values mark genera that are
+abundant in some samples and rare in others, led here by Mitsuokella
+multiacida and Megamonas hypermegale.
+
+**Which genera changed between the first and second visit?** Compute the
+change and its p-value with any test, store them in `rowData()`, and draw
+them with `plotVolcano()`. Here the mean paired difference in clr values,
+tested with a one-sample t-test.
+
+```{r}
+#| label: plot-volcano
+#| fig-height: 4
+
+pair <- tse[, tse$visit %in% c("1", "2")]
+pair <- pair[, order(pair$visit, pair$subject)]
+clr <- assay(pair, "clr")
+d <- clr[, pair$visit == "2"] - clr[, pair$visit == "1"]
+rowData(tse)$change <- rowMeans(d)
+rowData(tse)$p <- apply(d, 1, function(v) t.test(v)$p.value)
+rowData(tse)$q <- p.adjust(rowData(tse)$p, method = "fdr")
+plotVolcano(tse, effect = "change", p.col = "q")
+```
+
+No genus passes q < 0.05, the dashed line; points above it would be
+coloured and labelled. The mean changes between the first two visits are
+small relative to their variation between subjects.
+
+**Do the species follow Taylor's law over time?** `plotFeatureScatter()`
+draws two statistics per feature. Computed over the samples of each
+bioreactor, the mean and variance of the absolute abundances over time give
+the temporal Taylor's law.
+
+```{r}
+#| label: plot-feature-scatter
+#| fig-height: 4
+
+plotFeatureScatter(mg, x.stat = "mean", y.stat = "variance",
+    fit = "power", group.by = "StudyIdentifier")
+```
+
+Variance grows as a power of the mean, with slopes of 1.8 to 2.2 in the
+three bioreactors (given in the title). A slope near 2 means that each
+species fluctuates by a similar proportion of its mean.
+
+**Which subjects are diverse but unstable?** `plotSubjectScatter()` draws
+two statistics per subject, here the mean and standard deviation of
+diversity over each subject's samples.
+
+```{r}
+#| label: plot-subject-scatter
+#| fig-height: 4
+
+tse$mean <- ave(tse$diversity, tse$subject, FUN = mean)
+tse$sd <- ave(tse$diversity, tse$subject, FUN = sd)
+plotSubjectScatter(tse, x.stat = "mean", y.stat = "sd",
+    group = "subject", colour.by = "sex", quadrants = TRUE)
+```
+
+The dashed lines mark the medians. Subjects in the upper left have
+below-median diversity that varies more than in most subjects.
+
+**What are the main temporal patterns shared by the bioreactors?** A
+tensor decomposition such as TEMPTED (Shi et al. 2024) splits the data
+into subject, feature and time loadings. Store its result in `metadata()`,
+and `plotTimeLoadings()` draws the time loadings. This step needs the
+tempted package.
 
 ```{r}
 #| label: plot-time-loadings
 #| fig-height: 4
 #| eval: !expr requireNamespace("tempted", quietly = TRUE)
 
-counts <- t(assay(minimalgut, "counts"))
-metadata(minimalgut)$tempted <- tempted::tempted_all(counts,
-    timepoint = minimalgut$Time_hr_num,
-    subjectID = as.character(minimalgut$StudyIdentifier), r = 2,
-    threshold = 1, pseudo = 0.5, do_ratio = FALSE)
-plotTimeLoadings(minimalgut, source = "tempted")
+metadata(mg)$tempted <- tempted::tempted_all(t(assay(mg, "counts")),
+    timepoint = mg$Time.hr, subjectID = as.character(mg$StudyIdentifier),
+    r = 2, threshold = 1, pseudo = 0.5, do_ratio = FALSE)
+plotTimeLoadings(mg, source = "tempted")
 ```
 
-## Ordinations and networks
+The first component changes sign when Blautia hydrogenotrophica is added
+at 152 h and separates the communities before and after. The second
+component captures the change during the first 100 h of the run. The
+legend gives the variance each component explains.
 
-`plotProcrustes()` superimposes two ordinations of the same samples,
-`plotDirection()` draws the directions in which subjects move in one,
-`plotNetwork()` draws feature or sample networks, and `plotDOC()` the
-dissimilarity-overlap curve.
+# Ordinations and networks
+
+**Do subjects move in a common direction?** `addMDS()` from mia stores a
+PCoA, and `plotPath()` connects each subject's samples in it.
+`centroids = TRUE` adds the mean path of each group.
+
+```{r}
+#| label: plot-path
+
+tse <- addMDS(tse, assay.type = "relabundance", method = "bray",
+    name = "PCoA")
+plotPath(tse, time.col = "visit", group = "subject", dimred = "PCoA",
+    group.by = "sex", centroids = TRUE)
+```
+
+Each grey arrow is one step of one subject. Most steps are short next to
+the distances between subjects. The mean paths of women and men stay near
+the centre, so the cohort has no common direction of change.
+
+With many samples per subject, `plotDirection()` summarises the directions
+of the steps between consecutive samples.
 
 ```{r}
 #| label: plot-direction
@@ -416,7 +698,54 @@ plotDirection(mg, time.col = "Time.hr", group = "StudyIdentifier",
     dimred = "PCoA", facet.by = "StudyIdentifier")
 ```
 
-## Combining plots
+In all three bioreactors most steps point to the upper right or the lower
+left: the communities move back and forth along one direction.
+
+**Do two ordinations tell the same story?** `plotProcrustes()` rotates one
+ordination onto another and joins the two positions of each sample. Here
+the Bray-Curtis PCoA against the Aitchison PCoA, the Euclidean distance of
+clr values.
+
+```{r}
+#| label: plot-procrustes
+#| fig-height: 5
+
+mg <- addMDS(mg, assay.type = "clr", method = "euclidean",
+    name = "Aitchison")
+plotProcrustes(mg, dimred = "PCoA", dimred2 = "Aitchison",
+    colour.by = "StudyIdentifier")
+```
+
+The statistic m2 in the title runs from 0 for identical configurations
+to 1. Here it is 0.86: the two distances arrange these samples differently,
+so a pattern seen in one ordination should be checked in the other.
+
+**Do species associations change after a perturbation?** Compute an edge
+table, store it in `metadata()`, and draw it with `plotNetwork()`. Here
+clr correlations above 0.6 before and after Blautia hydrogenotrophica was
+added at 152 h; `diff = TRUE` marks the edges gained and lost.
+
+```{r}
+#| label: plot-network
+#| fig-height: 5
+
+window <- ifelse(mg$Time.hr < 152, "before", "after")
+edges <- do.call(rbind, lapply(c("before", "after"), function(w) {
+    r <- cor(t(assay(mg, "clr")[, window == w]))
+    i <- which(abs(r) > 0.6 & upper.tri(r), arr.ind = TRUE)
+    data.frame(from = rownames(r)[i[, 1]], to = rownames(r)[i[, 2]],
+        weight = r[i], window = w)
+}))
+metadata(mg)$correlations <- edges
+plotNetwork(mg, edges = "correlations", split.by = "window", diff = TRUE)
+```
+
+Most strong correlations of the first 152 h are absent afterwards. After
+the addition, Blautia hydrogenotrophica correlates with Faecalibacterium
+prausnitzii, and only the edge between the two Bacteroides species is
+kept.
+
+# Combining plots
 
 All functions return `ggplot` objects, so the
 `r BiocStyle::CRANpkg("patchwork")` package stacks them over a shared time
@@ -428,14 +757,20 @@ axis, here for one bioreactor.
 #| eval: !expr requireNamespace("patchwork", quietly = TRUE)
 
 library(patchwork)
-a <- minimalgut[, minimalgut$StudyIdentifier == "Bioreactor A"]
-plotTrend(a, y = "Acetate", time.col = "Time_hr_num") /
-    plotComposition(a, time.col = "Time_hr_num", top = 8, layout = "area") /
-    plotTurnover(a, time.col = "Time_hr_num") +
+a <- mg[, mg$StudyIdentifier == "Bioreactor A"]
+plotTrend(a, y = "Acetate", time.col = "Time.hr") /
+    plotComposition(a, time.col = "Time.hr", top = 8, layout = "area") /
+    plotTurnover(a, time.col = "Time.hr") +
     plot_layout(axes = "collect")
 ```
 
-## References
+# References
+
+Bashan A, et al. (2016). Universality of human microbial dynamics.
+*Nature* 534(7606):259-262.
+
+Franzosa EA, et al. (2015). Identifying personal microbiomes using
+metagenomic codes. *PNAS* 112(22):E2930-E2938.
 
 Lahti L, et al. (2014). Tipping elements in the human intestinal
 ecosystem. *Nature Communications* 5:4344.
@@ -444,13 +779,17 @@ Legendre P (2019). A temporal beta-diversity index to identify sites that
 have changed in exceptional ways in space-time surveys. *Ecology and
 Evolution* 9(6):3500-3514.
 
+Shetty SA, et al. (2022). Dynamic metabolic interactions and trophic roles
+of human gut microbes identified using a minimal microbiome exhibiting
+ecological properties. *The ISME Journal* 16:2144-2159.
+
 Shi P, et al. (2024). TEMPTED: time-informed dimensionality reduction for
 longitudinal microbiome studies. *Genome Biology* 25:317.
 
-## Session info
+# Session info
 
 <details>
-<summary>Show session info</summary>
+<summary>Session info</summary>
 
 ```{r}
 #| label: session-info

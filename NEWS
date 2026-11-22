@@ -1,3 +1,7 @@
+Changes in version 0.99.63 (2026-11-22)
++ The vignette is one analysis workflow covering all plot functions; the
+  README has an example and a function-by-question table
+
 Changes in version 0.99.62 (2026-11-22)
 + Shared helpers for visit gaps, grey and highlight levels, assay and
   presence checks, events legends and scalar checks; the package is
