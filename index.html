@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.63</span>
       </span>
     </div>
 
@@ -65,7 +65,6 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-
 <div class="section level1">
 <div class="page-header"><h1 id="tempoplot">tempoPlot<a class="anchor" aria-label="anchor" href="#tempoplot"></a>
 </h1></div>
@@ -84,13 +83,169 @@
 <span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"0xMuluh/tempoPlot"</span><span class="op">)</span></span></code></pre>
 </div>
+<div class="section level2">
+<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+</h2>
+<p>miaTime computes a longitudinal quantity and stores it in the object; tempoPlot plots it.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/0xMuluh/tempoPlot" class="external-link">tempoPlot</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Bray-Curtis dissimilarity of each sample from the previous one</span></span>
+<span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">miaTime</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/miaTime/man/getStepwiseDivergence.html" class="external-link">addStepwiseDivergence</a></span><span class="op">(</span><span class="va">minimalgut</span>,</span>
+<span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>,</span>
+<span>    assay.type <span class="op">=</span> <span class="st">"counts"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">152</span><span class="op">)</span>, end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"Blautia added"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/plotTrend.html">plotTrend</a></span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"divergence"</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>,</span>
+<span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span>
+<span>    events <span class="op">=</span> <span class="va">events</span><span class="op">)</span></span></code></pre></div>
+<p>The figure has one line per bioreactor: the dissimilarity of each sample from the previous one over the 460 h run, between about 0.1 and 1. The batch phase is shaded, and a vertical line marks the addition of Blautia hydrogenotrophica at 152 h. The first sample of each bioreactor has no previous sample and is left out.</p>
+<p>The vignette, <code><a href="articles/tempoPlot.html">vignette("tempoPlot")</a></code>, follows a full analysis of a human cohort and of the bioreactors.</p>
 </div>
-<div class="section level1">
-<h1 id="code-of-conduct">Code of conduct<a class="anchor" aria-label="anchor" href="#code-of-conduct"></a>
-</h1>
+<div class="section level2">
+<h2 id="which-function-for-which-question">Which function for which question<a class="anchor" aria-label="anchor" href="#which-function-for-which-question"></a>
+</h2>
+<table class="table">
+<thead><tr>
+<th>Question</th>
+<th>Function</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>When were samples taken?</td>
+<td><code><a href="reference/plotSwimmer.html">plotSwimmer()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotGaps.html">plotGaps()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotCalendar.html">plotCalendar()</a></code></td>
+</tr>
+<tr>
+<td>How does a value change over time?</td>
+<td><code><a href="reference/plotTrend.html">plotTrend()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotTimeEffect.html">plotTimeEffect()</a></code></td>
+</tr>
+<tr>
+<td>How does the composition change?</td>
+<td><code><a href="reference/plotComposition.html">plotComposition()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotTiles.html">plotTiles()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotHorizon.html">plotHorizon()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotRanks.html">plotRanks()</a></code></td>
+</tr>
+<tr>
+<td>How fast and how much do communities change?</td>
+<td><code><a href="reference/plotTurnover.html">plotTurnover()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotTBI.html">plotTBI()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotLagProfile.html">plotLagProfile()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotRecurrence.html">plotRecurrence()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotIndividuality.html">plotIndividuality()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotFingerprint.html">plotFingerprint()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotDOC.html">plotDOC()</a></code></td>
+</tr>
+<tr>
+<td>Are there states and rhythms?</td>
+<td><code><a href="reference/plotTransitionMatrix.html">plotTransitionMatrix()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotAlluvial.html">plotAlluvial()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotSurvival.html">plotSurvival()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotLandscape.html">plotLandscape()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotSpectrum.html">plotSpectrum()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotLagHeatmap.html">plotLagHeatmap()</a></code></td>
+</tr>
+<tr>
+<td>Which features or subjects stand out?</td>
+<td><code><a href="reference/plotStats.html">plotStats()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotVolcano.html">plotVolcano()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotFeatureScatter.html">plotFeatureScatter()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotSubjectScatter.html">plotSubjectScatter()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotTimeLoadings.html">plotTimeLoadings()</a></code></td>
+</tr>
+<tr>
+<td>How do subjects move in ordinations and networks?</td>
+<td><code><a href="reference/plotPath.html">plotPath()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotDirection.html">plotDirection()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotProcrustes.html">plotProcrustes()</a></code></td>
+</tr>
+<tr>
+<td></td>
+<td><code><a href="reference/plotNetwork.html">plotNetwork()</a></code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="code-of-conduct">Code of conduct<a class="anchor" aria-label="anchor" href="#code-of-conduct"></a>
+</h2>
 <p>Please note that the tempoPlot project is released with a <a href="https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html" class="external-link">Contributor Code of Conduct</a>. By contributing to this project, you agree to abide by its terms.</p>
 </div>
-
+</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
