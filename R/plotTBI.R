@@ -134,15 +134,3 @@ setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
             y = paste("gains from", time.point[1L], "to", time.point[2L]),
             colour = colour.by)
 }
-
-# Sample indices at each of the two values of time.col in time.point.
-#' @importFrom SummarizedExperiment colData
-.time_point_index <- function(x, time.col, time.point) {
-    time <- as.character(colData(x)[[time.col]])
-    tp <- as.character(time.point)
-    if (length(tp) != 2L || !all(tp %in% time) || tp[1L] == tp[2L]) {
-        stop("'time.point' must be two different values of 'time.col'.",
-            call. = FALSE)
-    }
-    lapply(tp, function(v) which(time == v))
-}

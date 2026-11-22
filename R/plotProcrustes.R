@@ -119,41 +119,6 @@ setMethod("plotProcrustes", signature = c(x = "MultiAssayExperiment"),
     }
 )
 
-# The ncomponents columns of a reducedDim, checked (n of them, if given)
-# and named "<dimred>:<index>".
-#' @importFrom SingleCellExperiment reducedDim reducedDimNames
-.get_reduced_dim <- function(x, dimred, ncomponents, arg = "dimred",
-        n = NULL) {
-    if (!inherits(x, "SingleCellExperiment") || !.is_one_name(dimred) ||
-            !dimred %in% reducedDimNames(x)) {
-        stop("'", arg, "' must be one of reducedDimNames().",
-            call. = FALSE)
-    }
-    rd <- as.matrix(reducedDim(x, dimred))
-    j <- .components(ncomponents, rd, n)
-    rd <- rd[, j, drop = FALSE]
-    colnames(rd) <- paste0(dimred, ":", j)
-    rd
-}
-
-# Indices of the components chosen by ncomponents, as in
-# scater::plotReducedDim(): a number n gives the first n, a vector gives
-# those components, by index or column name of m. With n, exactly n
-# components must be chosen.
-.components <- function(ncomponents, m, n = NULL) {
-    if (is.numeric(ncomponents) && length(ncomponents) == 1L &&
-            isTRUE(ncomponents >= 1)) {
-        ncomponents <- seq_len(ncomponents)
-    }
-    j <- if (is.character(ncomponents)) match(ncomponents, colnames(m)) else
-        if (is.numeric(ncomponents)) match(ncomponents, seq_len(ncol(m)))
-    if (length(j) == 0L || anyNA(j) || (!is.null(n) && length(j) != n)) {
-        stop("'ncomponents' must select ", if (!is.null(n)) paste0(n, " "),
-            "components out of ", ncol(m), ".", call. = FALSE)
-    }
-    j
-}
-
 # Symmetric Procrustes: centre, scale to unit sum of squares and rotate b
 # onto a. Returns both configurations and m2.
 .procrustes <- function(a, b) {

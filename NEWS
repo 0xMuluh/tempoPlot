@@ -8,6 +8,10 @@ Changes in version 0.99.56 (2026-11-22)
 + Fixes in plotLagProfile, plotFingerprint, plotPath, plotFeatureScatter,
   plotTimeLoadings and plotDirection
 
+Changes in version 0.99.54 (2026-11-22)
++ Shared theme and colour-blind safe palettes (Okabe-Ito, viridis, blue-red
+  diverging); plotSubjectScatter uses them
+
 Changes in version 0.99.53 (2026-11-17)
 + Added plotAccumulation
 

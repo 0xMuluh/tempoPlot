@@ -83,11 +83,7 @@ NULL
 setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
     function(x, x.stat = NULL, y.stat = NULL, group, colour.by = NULL,
             quadrants = FALSE, source = NULL, ncomponents = 2, ...) {
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_column(x, group)
+        .require_column(x, group)
         .check_column(x, colour.by)
         if (!(isTRUE(quadrants) || isFALSE(quadrants) ||
                 (is.numeric(quadrants) && length(quadrants) == 2L))) {
@@ -115,11 +111,7 @@ setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
 .subject_stats <- function(x, x.stat, y.stat, group, colour.by) {
     for (arg in c("x.stat", "y.stat")) {
         col <- get(arg)
-        if (is.null(col)) {
-            stop("'", arg, "' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_column(x, col, arg = arg)
+        .require_column(x, col, arg)
         if (!is.numeric(colData(x)[[col]])) {
             stop("'", arg, "' must be a numeric column.", call. = FALSE)
         }
@@ -197,5 +189,7 @@ setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
     }
     p + geom_point(aes(colour = if (!is.null(colour.by))
             .data[[colour.by]]), ...) +
-        labs(x = labels[[1L]], y = labels[[2L]], colour = colour.by)
+        .scale_by(df, colour.by, "colour") +
+        labs(x = labels[[1L]], y = labels[[2L]], colour = colour.by) +
+        .theme_tempoPlot()
 }
