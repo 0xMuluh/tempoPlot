@@ -8,8 +8,8 @@
 #'   and time point, such as differential abundance at each visit.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)}, or of a \code{data.frame} \code{x}, that contains
+#'   times: numeric, \code{Date} or a factor of visits.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -19,7 +19,8 @@
 #'   (Default: \code{"counts"})
 #'
 #' @param features \code{Character vector}. Features to plot. If
-#'   \code{NULL}, plots the \code{top} features with the largest mean.
+#'   \code{NULL}, plots the \code{top} features with the largest mean, or
+#'   the largest mean absolute effect for a \code{data.frame}.
 #'   (Default: \code{NULL})
 #'
 #' @param top \code{Integer scalar}. Number of features to plot when
@@ -56,6 +57,11 @@
 #' @param group.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that groups subjects when \code{level = "group"}. If
 #'   \code{NULL}, all subjects form one group. (Default: \code{NULL})
+#'
+#' @param max.gap \code{Numeric scalar}. Leaves blank the gaps between
+#'   consecutive times that are further apart than this, in \code{time.col}
+#'   units: a tile reaches at most \code{max.gap / 2} from its time.
+#'   \code{NULL} never leaves gaps. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_tile]{geom_tile}}.
@@ -112,21 +118,18 @@ setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
             features = NULL, top = 20,
             value = c("raw", "change", "occupancy"),
             order.by = c("mean", "cluster"),
-            level = c("subject", "group"), group.by = NULL, ...) {
+            level = c("subject", "group"), group.by = NULL, max.gap = NULL,
+            ...) {
         value <- match.arg(value)
         order.by <- match.arg(order.by)
         level <- match.arg(level)
         df <- .feature_table(x, time.col, group, assay.type, features, top,
             value, level, group.by)
         type <- .time_type(x, time.col)
-        time <- colData(x)[[time.col]]
         df$.feature <- factor(df$.feature,
             levels = .order_features(df, order.by))
-        df <- .add_tile_edges(df, visit = type == "visit")
-        if (type == "date") {
-            df$.mid <- as.Date(df$.mid, origin = "1970-01-01")
-        }
-        levels <- if (type == "visit") levels(time)
+        df <- .add_tile_edges(df, type, max.gap)
+        levels <- if (type == "visit") levels(colData(x)[[time.col]])
         panel.col <- if (level == "subject") group else group.by
         .plot_tiles(df, time.col, assay.type, value, level, panel.col,
             levels, ...)
@@ -139,7 +142,7 @@ setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
 setMethod("plotTiles", signature = c(x = "data.frame"),
     function(x, time.col, effect, p.col = NULL, threshold = 0.05,
             features = NULL, top = 20, order.by = c("mean", "cluster"),
-            feature.col = "feature", ...) {
+            feature.col = "feature", max.gap = NULL, ...) {
         order.by <- match.arg(order.by)
         for (arg in c("time.col", "effect", "p.col", "feature.col")) {
             v <- get(arg)
@@ -158,9 +161,15 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
                 call. = FALSE)
         }
         time <- x[[time.col]]
-        visit <- !is.numeric(time)
-        if (visit) {
-            time <- if (is.factor(time)) droplevels(time) else factor(time)
+        if (!(is.numeric(time) || inherits(time, "Date") ||
+                is.factor(time))) {
+            stop("'time.col' must be numeric, Date or factor; ",
+                "convert character times to a factor.", call. = FALSE)
+        }
+        type <- if (is.factor(time)) "visit" else if (is.numeric(time))
+            "numeric" else "date"
+        if (type == "visit") {
+            time <- droplevels(time)
         }
         # Features with the largest mean absolute effect.
         size <- tapply(abs(x[[effect]]), x[[feature.col]], mean,
@@ -180,9 +189,9 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
         }
         df$.feature <- factor(df$.feature,
             levels = .order_features(df, order.by))
-        df <- .add_tile_edges(df, visit = visit)
+        df <- .add_tile_edges(df, type, max.gap)
         p <- .plot_tiles(df, time.col, effect, "effect", "subject", NULL,
-            if (visit) levels(time), ...)
+            if (type == "visit") levels(time), ...)
         if (!is.null(p.col)) {
             p <- p + geom_point(aes(x = .data$.mid, y = .data$.feature),
                 data = df[df$.significant, , drop = FALSE], size = 1,
@@ -210,18 +219,26 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
     rownames(wide)[hclust(dist(wide))$order]
 }
 
-# Tile centre and width of each time within each panel.
-.add_tile_edges <- function(df, visit) {
+# Tile centre and width of each time within each panel, for a time type
+# from .time_type(). A tile reaches at most max.gap / 2 from its time, so
+# longer gaps stay blank. Date centres are returned as Dates.
+.add_tile_edges <- function(df, type, max.gap = NULL) {
+    .check_max_gap(max.gap)
+    half <- (max.gap %||% Inf) / 2
     edges <- lapply(split(df$.time, df$.panel), function(t) {
         t <- sort(unique(t))
-        e <- if (visit) list(lower = t - 0.5, upper = t + 0.5) else
+        e <- if (type == "visit") list(lower = t - 0.5, upper = t + 0.5) else
             .tile_edges(t)
-        data.frame(.time = t, .lower = e$lower, .upper = e$upper)
+        data.frame(.time = t, .lower = pmax(e$lower, t - half),
+            .upper = pmin(e$upper, t + half))
     })
     edges <- do.call(rbind, Map(cbind, .panel = names(edges), edges))
     df <- merge(df, edges, by = c(".panel", ".time"), sort = FALSE)
     df$.mid <- (df$.lower + df$.upper) / 2
     df$.width <- df$.upper - df$.lower
+    if (type == "date") {
+        df$.mid <- as.Date(df$.mid, origin = "1970-01-01")
+    }
     df
 }
 

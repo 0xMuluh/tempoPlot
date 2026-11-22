@@ -12,9 +12,7 @@ plotComposition(x, ...)
   time.col,
   group = NULL,
   assay.type = NULL,
-  rank = NULL,
   top = 5,
-  y = NULL,
   as.relative = TRUE,
   layout = c("bar", "area", "stream"),
   level = c("subject", "group"),
@@ -40,21 +38,13 @@ a factor of visits.}
 panel. (Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay of
-abundances. Values are turned into proportions of each sample.
+abundances. To plot taxonomic ranks, agglomerate \code{x} first with
+\code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
 (Default: \code{NULL}, the first assay)}
 
-\item{rank}{\code{Character scalar}. Specifies the column of
-\code{rowData(x)}, such as a taxonomic rank, whose levels are summed
-before plotting. (Default: \code{NULL})}
-
 \item{top}{\code{Integer scalar}. Number of most abundant features, by
-mean proportion, to show; the rest are summed into "Other".
-(Default: \code{5})}
-
-\item{y}{\code{Character scalar}. Specifies a categorical column from
-\code{colData(x)}, such as a state, to plot instead of the assay: the
-share of samples in each state at each time, one panel per
-\code{group.by} group. (Default: \code{NULL})}
+mean proportion, to show; the rest, and a feature already named
+"Other", are summed into "Other". (Default: \code{5})}
 
 \item{as.relative}{\code{Logical scalar}. Turns the assay into
 proportions of each sample (\code{TRUE}) or stacks its values as they
@@ -71,8 +61,8 @@ stacked areas (\code{"area"}) or areas stacked around zero
 group at each time (\code{"group"}). (Default: \code{"subject"})}
 
 \item{group.by}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that groups subjects when \code{level = "group"}.
-(Default: \code{NULL})}
+\code{colData(x)} that groups subjects when \code{level = "group"}. If
+\code{NULL}, all subjects form one group. (Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.
@@ -85,8 +75,20 @@ subjects.
 \examples{
 # A defined community of 16 species in three replicate bioreactors
 data("minimalgut", package = "miaTime")
-plotComposition(minimalgut, time.col = "Time_hr_num",
+tse <- minimalgut
+plotComposition(tse, time.col = "Time_hr_num",
     group = "StudyIdentifier", top = 8, layout = "area")
+
+# Biomass of each species, relative abundance times optical density,
+# as a stream
+tse <- tse[, !is.na(tse$OpticalDensity)]
+tse <- mia::transformAssay(tse, method = "relabundance")
+SummarizedExperiment::assay(tse, "biomass") <-
+    t(t(SummarizedExperiment::assay(tse, "relabundance")) *
+    tse$OpticalDensity)
+plotComposition(tse, time.col = "Time_hr_num",
+    group = "StudyIdentifier", assay.type = "biomass", top = 8,
+    as.relative = FALSE, layout = "stream")
 
 # Phyla of five subjects over their visits
 data("hitchip1006", package = "miaTime")
@@ -95,26 +97,10 @@ tse <- hitchip1006
 tse <- tse[, !duplicated(t(SummarizedExperiment::assay(tse, "counts")))]
 tse <- tse[, tse$subject \%in\% names(which(table(tse$subject) == 5))]
 tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
-plotComposition(tse, time.col = "visit", group = "subject",
-    rank = "Phylum")
+tse <- mia::agglomerateByRank(tse, rank = "Phylum")
+plotComposition(tse, time.col = "visit", group = "subject")
 
 # Mean phylum composition by sex at each visit
 plotComposition(tse, time.col = "visit", group = "subject",
-    rank = "Phylum", level = "group", group.by = "sex")
-
-# Biomass of each species, relative abundance times optical density,
-# as a stream
-mg <- minimalgut[, !is.na(minimalgut$OpticalDensity)]
-mg <- mia::transformAssay(mg, method = "relabundance")
-SummarizedExperiment::assay(mg, "biomass") <-
-    t(t(SummarizedExperiment::assay(mg, "relabundance")) *
-    mg$OpticalDensity)
-plotComposition(mg, time.col = "Time_hr_num",
-    group = "StudyIdentifier", assay.type = "biomass", top = 8,
-    as.relative = FALSE, layout = "stream")
-
-# Share of samples by dominant genus at each visit
-tse <- mia::addDominant(tse, name = "dominant", n = 4)
-plotComposition(tse, time.col = "visit", group = "subject",
-    y = "dominant")
+    level = "group", group.by = "sex")
 }

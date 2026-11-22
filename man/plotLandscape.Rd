@@ -13,6 +13,8 @@ plotLandscape(x, ...)
   assay.type = NULL,
   scale = c("density", "potential"),
   group.by = NULL,
+  bw = "nrd0",
+  adjust = 1,
   ...
 )
 }
@@ -21,8 +23,7 @@ plotLandscape(x, ...)
 object.}
 
 \item{...}{additional arguments passed to
-\code{\link[stats:density]{density}}, such as \code{bw} or
-\code{adjust}.}
+\code{\link[ggplot2:geom_line]{geom_line}}.}
 
 \item{y}{\code{Character scalar}. Specifies the variable: a column of
 \code{colData(x)}, a row of \code{assay(x, assay.type)}, or
@@ -39,6 +40,13 @@ retrieve \code{y} from when \code{y} is a feature name.
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the samples into curves.
 (Default: \code{NULL})}
+
+\item{bw}{\code{Numeric scalar} or \code{Character scalar}. Bandwidth
+of the kernel, passed to \code{\link[stats:density]{density}}.
+(Default: \code{"nrd0"})}
+
+\item{adjust}{\code{Numeric scalar}. Multiplies the bandwidth.
+(Default: \code{1})}
 }
 \value{
 A \code{ggplot} object.

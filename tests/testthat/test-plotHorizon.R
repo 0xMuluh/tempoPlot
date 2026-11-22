@@ -29,7 +29,8 @@ test_that("plotHorizon folds deviations into bands", {
     expect_equal(band(df, "a", "s1", "-3"), c(0, 0, 1))
     # A constant series has no deviation.
     expect_true(all(band(df, "b", "s1", "1") == 0))
-    expect_identical(nlevels(df$.band), 6L)
+    # Legend from the highest band to the lowest.
+    expect_identical(levels(df$.band), c("3", "2", "1", "-1", "-2", "-3"))
 })
 
 test_that("plotHorizon centres on baseline and mean", {
@@ -47,8 +48,13 @@ test_that("plotHorizon draws a strip per feature and panel", {
     # b has the larger mean, so it comes first (top).
     expect_identical(levels(p$data$.feature), c("b", "a"))
     expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomRibbon")
+    # Averaged subjects keep the order by abundance and get no empty strip.
     p <- plotHorizon(toy, "t", "id", level = "group")
-    expect_setequal(p$data$.panel, "")
+    expect_identical(levels(p$data$.feature), c("b", "a"))
+    expect_length(p$facet$params$cols, 0L)
+    toy$arm <- c("x", "x", "x", "y", "y")
+    p <- plotHorizon(toy, "t", "id", level = "group", group.by = "arm")
+    expect_length(p$facet$params$cols, 1L)
     toy$date <- as.Date("2020-01-01") + toy$t
     expect_s3_class(plotHorizon(toy, "date", "id")$data$.time, "Date")
 })

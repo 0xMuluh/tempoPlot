@@ -19,7 +19,7 @@ test_that("plotTransitionMatrix checks its arguments", {
     expect_error(plotTransitionMatrix(toy, "none", "t", "id"), "state.col")
     expect_error(plotTransitionMatrix(toy, "t", "t", "id"), "factor")
     expect_error(plotTransitionMatrix(toy, "state", "t", "id",
-        normalize = "col"))
+        as.relative = "row"), "'as.relative'")
     toy$state <- NA_character_
     expect_error(plotTransitionMatrix(toy, "state", "t", "id"),
         "consecutive")
@@ -27,7 +27,7 @@ test_that("plotTransitionMatrix checks its arguments", {
 
 test_that("plotTransitionMatrix counts transitions within subjects", {
     df <- plotTransitionMatrix(toy, "state", "t", "id",
-        normalize = "none")$data
+        as.relative = FALSE)$data
     # A->A twice (s1, s2), A->B once; B->NA and NA->A are skipped, and
     # s1's last B does not lead into s2.
     expect_identical(cell(df, "A", "A"), 2L)
@@ -36,16 +36,17 @@ test_that("plotTransitionMatrix counts transitions within subjects", {
     expect_identical(sum(df$n), 3L)
 })
 
-test_that("plotTransitionMatrix normalizes rows", {
+test_that("plotTransitionMatrix shows shares of each row", {
     df <- plotTransitionMatrix(toy, "state", "t", "id")$data
     expect_equal(cell(df, "A", "A", "value"), 2 / 3)
     expect_equal(cell(df, "A", "B", "value"), 1 / 3)
     expect_true(all(is.na(df$value[df$from == "B"])))
+    expect_identical(cell(df, "A", "A", ".label"), "0.67")
 })
 
-test_that("plotTransitionMatrix splits by group.by", {
-    p <- plotTransitionMatrix(toy, "state", "t", "id", normalize = "none",
-        group.by = "arm")
+test_that("plotTransitionMatrix splits panels by facet.by", {
+    p <- plotTransitionMatrix(toy, "state", "t", "id", as.relative = FALSE,
+        facet.by = "arm")
     df <- p$data
     expect_identical(cell(df[df$arm == "x", ], "A", "A"), 1L)
     expect_identical(cell(df[df$arm == "y", ], "A", "A"), 1L)

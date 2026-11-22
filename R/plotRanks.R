@@ -16,14 +16,12 @@
 #'   form one series. (Default: \code{NULL})
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay of
-#'   abundances. (Default: \code{"counts"})
+#'   abundances. To rank taxa such as phyla, agglomerate \code{x} first with
+#'   \code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
+#'   (Default: \code{"counts"})
 #'
 #' @param top \code{Integer scalar}. Number of features with the largest
-#'   mean abundance to draw. (Default: \code{5})
-#'
-#' @param rank \code{Character scalar}. Specifies the column of
-#'   \code{rowData(x)}, such as a taxonomic rank, whose levels are summed
-#'   before ranking. (Default: \code{NULL})
+#'   mean value in \code{assay.type} to draw. (Default: \code{5})
 #'
 #' @param coord \code{Character scalar}. Draws time on a straight
 #'   (\code{"cartesian"}) or circular (\code{"polar"}) axis.
@@ -48,24 +46,32 @@
 #' @examples
 #' # 16 species in three bioreactors
 #' data("minimalgut", package = "miaTime")
-#' plotRanks(minimalgut, time.col = "Time.hr", group = "StudyIdentifier")
+#' tse <- minimalgut
+#' plotRanks(tse, time.col = "Time.hr", group = "StudyIdentifier")
 #'
 #' # As rank clocks
-#' plotRanks(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+#' plotRanks(tse, time.col = "Time.hr", group = "StudyIdentifier",
 #'     coord = "polar")
+#'
+#' # Phyla of the subjects sampled five times
+#' data("hitchip1006", package = "miaTime")
+#' tse <- hitchip1006[, !duplicated(t(SummarizedExperiment::assay(
+#'     hitchip1006, "counts")))]
+#' tse <- tse[, tse$subject %in% names(which(table(tse$subject) == 5))]
+#' tse <- mia::agglomerateByRank(tse, rank = "Phylum")
+#' plotRanks(tse, time.col = "time", group = "subject", top = 3)
 NULL
 
 #' @rdname plotRanks
-#' @importFrom SummarizedExperiment colData assay assayNames rowData
+#' @importFrom SummarizedExperiment colData assay assayNames
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotRanks", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = "counts", top = 5,
-            rank = NULL, coord = c("cartesian", "polar"), ...) {
+            coord = c("cartesian", "polar"), ...) {
         coord <- match.arg(coord)
         .check_longitudinal(x, time.col, group)
-        type <- .time_type(x, time.col)
-        .check_column(x, rank, where = "rowData")
+        .time_type(x, time.col)
         if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
             stop("'assay.type' must be one of assayNames(x).",
                 call. = FALSE)
@@ -75,11 +81,9 @@ setMethod("plotRanks", signature = c(x = "SummarizedExperiment"),
                 call. = FALSE)
         }
         mat <- as.matrix(assay(x, assay.type))
-        if (!is.null(rank)) {
-            mat <- rowsum(mat, as.character(rowData(x)[[rank]]))
-        }
-        ranks <- apply(-mat, 2L, base::rank, ties.method = "average")
-        rownames(ranks) <- rownames(mat)
+        # matrix() keeps the dimensions when one feature is left.
+        ranks <- matrix(apply(-mat, 2L, base::rank, ties.method = "average"),
+            nrow(mat), dimnames = dimnames(mat))
         keep <- order(rowMeans(mat, na.rm = TRUE),
             decreasing = TRUE)[seq_len(min(top, nrow(mat)))]
         ranks <- ranks[keep, , drop = FALSE]
@@ -95,21 +99,20 @@ setMethod("plotRanks", signature = c(x = "SummarizedExperiment"),
             .rank = as.vector(ranks))
         df <- df[order(df$.feature, df$.panel, .time_numeric(df$.time)), ,
             drop = FALSE]
-        .plot_ranks(df, time.col, rank %||% "feature", coord,
-            !is.null(group), ...)
+        .plot_ranks(df, time.col, coord, !is.null(group), ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point labs
 #'   scale_y_reverse coord_polar facet_wrap vars
-.plot_ranks <- function(df, time.col, colour, coord, panels, ...) {
+.plot_ranks <- function(df, time.col, coord, panels, ...) {
     p <- ggplot(df, aes(x = .data$.time, y = .data$.rank,
             colour = .data$.feature,
             group = interaction(.data$.feature, .data$.panel))) +
         geom_line(...) +
         geom_point(size = 1) +
         scale_y_reverse() +
-        labs(x = time.col, y = "rank", colour = colour)
+        labs(x = time.col, y = "rank", colour = "feature")
     if (coord == "polar") {
         p <- p + coord_polar()
     }
