@@ -28,10 +28,14 @@
 #'
 #' @param feature \code{Character scalar}. Specifies the feature for
 #'   \code{event = "arrival"} and \code{"loss"}. A feature is present when
-#'   its value in \code{assay.type} is above zero. (Default: \code{NULL})
+#'   its value in \code{assay.type} is above \code{detection}.
+#'   (Default: \code{NULL})
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay for
 #'   \code{feature}. (Default: \code{"counts"})
+#'
+#' @param detection \code{Numeric scalar}. Specifies the value above which
+#'   \code{feature} is present. (Default: \code{0})
 #'
 #' @param state.col \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} with the state of each sample, for
@@ -78,7 +82,7 @@
 NULL
 
 #' @rdname plotSurvival
-#' @importFrom SummarizedExperiment colData assay assayNames
+#' @importFrom SummarizedExperiment colData
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
@@ -86,16 +90,13 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
             event = c("dropout", "arrival", "loss", "state.exit",
                 "outcome"),
             group.by = NULL, feature = NULL, assay.type = "counts",
-            state.col = NULL, event.col = NULL, ...) {
+            detection = 0, state.col = NULL, event.col = NULL, ...) {
         event <- match.arg(event)
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, group)
         .check_longitudinal(x, time.col, group)
         .check_column(x, group.by)
-        mark <- .event_marks(x, event, feature, assay.type, state.col,
-            event.col)
+        mark <- .event_marks(x, event, feature, assay.type, detection,
+            state.col, event.col)
 
         tnum <- .time_numeric(colData(x)[[time.col]])
         subject <- as.character(colData(x)[[group]])
@@ -131,38 +132,30 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
 # Function of the ordered sample indices of one subject, returning whether
 # the subject is at risk (at.risk) and at which samples the event has
 # occurred (hit, the first sample never counts).
-.event_marks <- function(x, event, feature, assay.type, state.col,
-        event.col) {
+.event_marks <- function(x, event, feature, assay.type, detection,
+        state.col, event.col) {
     if (event == "dropout") {
         return(NULL)
     }
     if (event %in% c("arrival", "loss")) {
-        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
-            stop("'assay.type' must be one of assayNames(x).",
-                call. = FALSE)
-        }
         if (!.is_one_name(feature) || !feature %in% rownames(x)) {
             stop("'feature' must be one row name of 'x'.", call. = FALSE)
         }
-        present <- assay(x, assay.type)[feature, ] > 0
+        present <- .present(.get_assay(x, assay.type)[feature, ], detection)
         # The event state: present for arrival, absent for loss.
         target <- if (event == "arrival") present else !present
         return(function(i) list(at.risk = !target[i[1L]],
             hit = c(FALSE, target[i[-1L]])))
     }
     if (event == "state.exit") {
-        .check_column(x, state.col)
-        if (is.null(state.col)) {
-            stop("'state.col' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, state.col)
         state <- as.character(colData(x)[[state.col]])
         return(function(i) list(at.risk = !is.na(state[i[1L]]),
             hit = c(FALSE, !is.na(state[i[-1L]]) &
                 state[i[-1L]] != state[i[1L]])))
     }
-    .check_column(x, event.col)
-    if (is.null(event.col) || !is.logical(colData(x)[[event.col]])) {
+    .require_column(x, event.col)
+    if (!is.logical(colData(x)[[event.col]])) {
         stop("'event.col' must be one logical column of colData(x).",
             call. = FALSE)
     }
@@ -191,7 +184,7 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
 #'   ylim
 .plot_survival <- function(df, time.col, group.by, event, ...) {
     by <- !is.null(group.by)
-    p <- ggplot(df, aes(x = .data$.time, y = .data$.surv,
+    ggplot(df, aes(x = .data$.time, y = .data$.surv,
             colour = if (by) .data$.by)) +
         geom_rect(aes(xmin = .data$.time, xmax = .data$.next,
             ymin = .data$.lower, ymax = .data$.upper,
@@ -207,6 +200,6 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
                 loss = "share before loss",
                 state.exit = "share in the first state",
                 outcome = "share without the outcome"),
-            colour = group.by, fill = group.by)
-    p
+            colour = group.by, fill = group.by) +
+        .scale_categorical(c("colour", "fill")) + .theme_tempoPlot()
 }

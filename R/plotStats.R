@@ -125,7 +125,8 @@ setMethod("plotStats", signature = c(x = "SummarizedExperiment"),
         p <- p + geom_linerange(aes(xmin = .data[[lower]],
             xmax = .data[[upper]]))
     }
-    p <- p + geom_point(...) + labs(x = stat, y = group, colour = colour.by)
+    p <- p + geom_point(...) + labs(x = stat, y = group, colour = colour.by) +
+        .scale_by(df, colour.by, "colour") + .theme_tempoPlot()
     # Labels of more than 60 rows overlap.
     if (nrow(df) > 60L) {
         p <- p + theme(axis.text.y = element_blank(),

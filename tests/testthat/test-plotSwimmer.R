@@ -63,8 +63,12 @@ test_that("plotSwimmer colours points by colour.by", {
         unique(layer_data(p, 2L)$colour),
         length(unique(x$bmi_group))
     )
+    expect_true(all(layer_data(p, 2L)$colour %in% c(.okabe_ito, "grey50")))
     p <- plotSwimmer(x, "time", "subject")
     expect_length(unique(layer_data(p, 2L)$colour), 1L)
+    expect_identical(p$theme$legend.position, "bottom")
+    p <- plotSwimmer(x, "time", "subject", colour.by = "age")
+    expect_s3_class(p$scales$get_scales("colour"), "ScaleContinuous")
 })
 
 test_that("plotSwimmer keeps subjects with a single sample", {
@@ -88,7 +92,8 @@ test_that("plotSwimmer draws visits in level order with unused levels", {
 
 test_that("plotSwimmer hides the labels of more than 60 subjects", {
     few <- x[, x$subject %in% unique(x$subject)[1:60]]
-    expect_null(plotSwimmer(few, "time", "subject")$theme$axis.text.y)
+    p <- plotSwimmer(few, "time", "subject")
+    expect_false(inherits(p$theme$axis.text.y, "element_blank"))
     many <- hitchip1006[, hitchip1006$subject %in%
         names(which(table(hitchip1006$subject) >= 2))]
     p <- plotSwimmer(many, "time", "subject")
@@ -204,6 +209,7 @@ test_that("plotSwimmer draws events on subject rows and across subjects", {
     expect_equal(band$ymin, match("217", rows) - 0.4)
     marker <- layer_data(p, length(p$layers))
     expect_equal(marker$y, match("218", rows) + 0.3)
+    expect_identical(c(band$fill, marker$fill), .okabe_ito[1:2])
 
     # Events of absent subjects are not drawn.
     p <- plotSwimmer(x, "time", "subject",

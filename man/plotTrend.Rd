@@ -12,7 +12,7 @@ plotTrend(x, ...)
   y,
   time.col,
   group = NULL,
-  assay.type = NULL,
+  assay.type = "counts",
   layout = c("line", "box", "violin"),
   show.individuals = TRUE,
   smooth = c("none", "mean", "median", "loess"),
@@ -51,9 +51,9 @@ a factor of visits.}
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects. (Default: \code{NULL})}
 
-\item{assay.type}{\code{Character scalar} or \code{numeric scalar}.
-Specifies the assay to retrieve \code{y} from when \code{y} is a
-feature name. (Default: \code{NULL})}
+\item{assay.type}{\code{Character scalar}. Specifies the assay to
+retrieve \code{y} from when \code{y} is a feature name.
+(Default: \code{"counts"})}
 
 \item{layout}{\code{Character scalar}. Specifies the plot layout:
 \code{"line"} draws one line per subject; \code{"box"} and
@@ -99,8 +99,8 @@ statistic over the last \code{window} samples of each subject:
 autocorrelation) or \code{"slope"} (change of \code{y} per
 \code{time.col} unit, from a least-squares line; per visit step for
 visits). Rising variance and autocorrelation are early warning signals
-of a transition. Windows count samples, also across \code{max.gap}
-breaks; subjects with fewer than \code{window} samples are dropped.
+of a transition. Windows count samples, also across breaks of the
+line; subjects with fewer than \code{window} samples are dropped.
 (Default: \code{"none"})}
 
 \item{window}{\code{Integer scalar}. Number of samples in the rolling
@@ -137,9 +137,10 @@ splits boxes and violins. (Default: \code{NULL})}
 \item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} to facet by. (Default: \code{NULL})}
 
-\item{max.gap}{\code{Numeric scalar}. Breaks a trajectory where consecutive
-samples of a subject are further apart than this, in \code{time.col}
-units. \code{NULL} never breaks trajectories. (Default: \code{NULL})}
+\item{max.gap}{\code{Numeric scalar}. Breaks a subject's line where
+consecutive samples are further apart than this, in \code{time.col}
+units. For visits, \code{NULL} breaks lines at visits without a
+sample; otherwise \code{NULL} never breaks lines. (Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.

@@ -37,7 +37,9 @@ test_that("plotStats ranks features by their statistic, largest at the top", {
     # Labels of more than 60 rows are hidden.
     p <- plotStats(tse, stat = "bimodality")
     expect_match(class(p$theme$axis.text.y)[1L], "element_blank")
-    expect_null(plotStats(tse, stat = "bimodality", top = 20)$theme$axis.text.y)
+    p <- plotStats(tse, stat = "bimodality", top = 20)
+    expect_false(inherits(p$theme$axis.text.y, "element_blank"))
+    expect_identical(p$theme$legend.position, "bottom")
 })
 
 test_that("plotStats keeps the largest absolute statistics", {
@@ -55,7 +57,8 @@ test_that("plotStats colours points and drops missing statistics", {
     p <- plotStats(tse, stat = "bimodality", top = 20, colour.by = "Phylum")
     phyla <- rowData(tse)$Phylum[match(names(sort(bim[order(-abs(bim))][1:20])),
         rownames(tse))]
-    expect_length(unique(layer_data(p, 1L)$colour), length(unique(phyla)))
+    expect_setequal(layer_data(p, 1L)$colour,
+        .okabe_ito[seq_along(unique(phyla))])
 
     na <- tse
     rowData(na)$bimodality[1:5] <- NA

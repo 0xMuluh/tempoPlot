@@ -131,7 +131,8 @@ plotGaps(tse, time.col = "time", group = "subject", group.by = "sex",
 column, such as a result from miaTime, a feature or an ordination
 component. Here, the divergence of each subject from their first sample,
 computed with `addBaselineDivergence()`, by visit, the order of each
-subject's samples.
+subject's samples. A subject's line breaks at visits without a sample, and
+for numeric and `Date` times at gaps longer than `max.gap`.
 
 ```{r}
 #| label: plot-trend

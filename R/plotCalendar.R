@@ -47,7 +47,7 @@ NULL
 setMethod("plotCalendar", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, unit = c("day", "week"), ...) {
         unit <- match.arg(unit)
-        .check_column(x, time.col)
+        .require_column(x, time.col)
         date <- colData(x)[[time.col]]
         if (!inherits(date, "Date")) {
             stop("'time.col' must be a Date column of colData(x).",
@@ -72,13 +72,12 @@ setMethod("plotCalendar", signature = c(x = "SummarizedExperiment"),
     }
 )
 
-#' @importFrom ggplot2 ggplot aes .data geom_tile labs scale_fill_gradient
-#'   scale_x_date
+#' @importFrom ggplot2 ggplot aes .data geom_tile labs
 #' @importFrom utils modifyList
 .plot_calendar <- function(df, unit, ...) {
     p <- ggplot(df, aes(x = .data$.x, y = .data$.y, fill = .data$n)) +
         do.call(geom_tile, modifyList(list(colour = "white"), list(...))) +
-        scale_fill_gradient(low = "#c6dbef", high = "#08519c") +
+        .scale_sequential("fill") + .theme_tempoPlot() +
         labs(fill = "samples")
     if (unit == "day") {
         p + labs(x = "week starting", y = NULL)
