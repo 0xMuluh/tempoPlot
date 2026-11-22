@@ -8,6 +8,7 @@
 <url><loc>/authors.html</loc></url>
 <url><loc>/index.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/plotAccumulation.html</loc></url>
 <url><loc>/reference/plotAlluvial.html</loc></url>
 <url><loc>/reference/plotCalendar.html</loc></url>
 <url><loc>/reference/plotComposition.html</loc></url>
@@ -26,6 +27,7 @@
 <url><loc>/reference/plotProcrustes.html</loc></url>
 <url><loc>/reference/plotRanks.html</loc></url>
 <url><loc>/reference/plotRecurrence.html</loc></url>
+<url><loc>/reference/plotReport.html</loc></url>
 <url><loc>/reference/plotSpectrum.html</loc></url>
 <url><loc>/reference/plotStats.html</loc></url>
 <url><loc>/reference/plotSubjectScatter.html</loc></url>
