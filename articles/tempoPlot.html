@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@ Visualization</h1>
             
             <h4 data-toc-skip class="date">2026-11-22</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/vignettes/tempoPlot.Rmd" class="external-link"><code>vignettes/tempoPlot.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/vignettes/tempoPlot.Rmd" class="external-link"><code>vignettes/tempoPlot.Rmd</code></a></small>
       <div class="hidden name"><code>tempoPlot.Rmd</code></div>
 
     </div>
@@ -294,10 +294,9 @@ by <code><a href="../reference/plotAlluvial.html">plotAlluvial()</a></code> and 
 </h2>
 <p><code><a href="../reference/plotTurnover.html">plotTurnover()</a></code> counts the features gained and lost
 between consecutive samples; <code><a href="../reference/plotTBI.html">plotTBI()</a></code> splits the change
-between two time points into losses and gains (Legendre 2019), here of
-genera present or absent.</p>
+between two time points into losses and gains (Legendre 2019).</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plotTBI.html">plotTBI</a></span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>, time.point <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plotTBI.html">plotTBI</a></span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, group <span class="op">=</span> <span class="st">"subject"</span>, t1 <span class="op">=</span> <span class="st">"1"</span>, t2 <span class="op">=</span> <span class="st">"2"</span>,</span>
 <span>    colour.by <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tempoPlot_files/figure-html/plot-tbi-1.png" class="r-plt" alt="" width="700"></p>
 <p>From a dissimilarity stored by <code><a href="https://microbiome.github.io/mia/reference/getDissimilarity.html" class="external-link">addDissimilarity()</a></code>,
@@ -385,7 +384,7 @@ curve.</p>
 <code class="sourceCode R"><span><span class="va">mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://microbiome.github.io/mia/reference/addMDS.html" class="external-link">addMDS</a></span><span class="op">(</span><span class="va">mg</span>, assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, method <span class="op">=</span> <span class="st">"bray"</span>,</span>
 <span>    name <span class="op">=</span> <span class="st">"PCoA"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plotDirection.html">plotDirection</a></span><span class="op">(</span><span class="va">mg</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span>
-<span>    dimred <span class="op">=</span> <span class="st">"PCoA"</span>, facet.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></code></pre></div>
+<span>    dimred <span class="op">=</span> <span class="st">"PCoA"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tempoPlot_files/figure-html/plot-direction-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level2">
@@ -454,7 +453,7 @@ Show session info
 <span><span class="co">#&gt; [13] IRanges_2.47.5                  S4Vectors_0.51.10              </span></span>
 <span><span class="co">#&gt; [15] BiocGenerics_0.59.13            generics_0.1.4                 </span></span>
 <span><span class="co">#&gt; [17] MatrixGenerics_1.25.0           matrixStats_1.5.0              </span></span>
-<span><span class="co">#&gt; [19] tempoPlot_0.99.56               knitr_1.52                     </span></span>
+<span><span class="co">#&gt; [19] tempoPlot_0.99.55               knitr_1.52                     </span></span>
 <span><span class="co">#&gt; [21] BiocStyle_2.41.0               </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>

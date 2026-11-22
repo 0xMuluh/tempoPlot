@@ -19,7 +19,7 @@ reduced dimension."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ reduced dimension."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot directions of movement in an ordination</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotDirection.R" class="external-link"><code>R/plotDirection.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotDirection.R" class="external-link"><code>R/plotDirection.R</code></a></small>
     <div class="hidden name"><code>plotDirection.Rd</code></div>
     </div>
 
@@ -65,10 +65,9 @@ reduced dimension.</p>
 <span>  <span class="va">time.col</span>,</span>
 <span>  <span class="va">group</span>,</span>
 <span>  <span class="va">dimred</span>,</span>
-<span>  ncomponents <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  ncomponents <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>  bins <span class="op">=</span> <span class="fl">16</span>,</span>
-<span>  facet.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -104,9 +103,8 @@ a factor of visits.</p></dd>
 
 
 <dt id="arg-ncomponents">ncomponents<a class="anchor" aria-label="anchor" href="#arg-ncomponents"></a></dt>
-<dd><p><code>Numeric scalar</code> or <code>vector</code>. The two
-components of <code>dimred</code>: <code>2</code> for the first two, or two
-components by index or name. (Default: <code>2</code>)</p></dd>
+<dd><p><code>Numeric</code> or <code>Character vector</code>. The two
+components of <code>dimred</code>, by index or name. (Default: <code>c(1, 2)</code>)</p></dd>
 
 
 <dt id="arg-bins">bins<a class="anchor" aria-label="anchor" href="#arg-bins"></a></dt>
@@ -114,16 +112,10 @@ components by index or name. (Default: <code>2</code>)</p></dd>
 (Default: <code>16</code>)</p></dd>
 
 
-<dt id="arg-facet-by">facet.by<a class="anchor" aria-label="anchor" href="#arg-facet-by"></a></dt>
+<dt id="arg-group-by">group.by<a class="anchor" aria-label="anchor" href="#arg-group-by"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> that splits the moves into panels. Each move takes
 the value of its earlier sample. (Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
-<dd><p><code>Numeric scalar</code>. Consecutive samples of a subject
-further apart than this, in <code>time.col</code> units, are not a move.
-<code>NULL</code> counts all. (Default: <code>NULL</code>)</p></dd>
 
 </dl></div>
     <div id="value">
@@ -134,8 +126,7 @@ further apart than this, in <code>time.col</code> units, are not a move.
     <h2>Details</h2>
     <p>Angles are measured counterclockwise from the first component (east),
 so 90 degrees points along the second component. Moves of zero length
-have no direction and are left out. The radius is on a square-root
-scale, so that the area of a sector follows its number of moves.</p>
+have no direction and are left out.</p>
     </div>
 
     <div id="ref-examples">
@@ -146,7 +137,7 @@ scale, so that the area of a sector follows its number of moves.</p>
 <span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/addMDS.html" class="external-link">addMDS</a></span><span class="op">(</span><span class="va">tse</span>, assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, method <span class="op">=</span> <span class="st">"bray"</span>,</span></span>
 <span class="r-in"><span>    name <span class="op">=</span> <span class="st">"PCoA"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plotDirection</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
-<span class="r-in"><span>    dimred <span class="op">=</span> <span class="st">"PCoA"</span>, facet.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    dimred <span class="op">=</span> <span class="st">"PCoA"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotDirection-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>

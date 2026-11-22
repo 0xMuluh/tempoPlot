@@ -19,7 +19,7 @@ such as features or colData columns."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ such as features or colData columns."><!-- mathjax --><script src="https://cdnjs
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot trajectories of subjects in two dimensions</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotPath.R" class="external-link"><code>R/plotPath.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotPath.R" class="external-link"><code>R/plotPath.R</code></a></small>
     <div class="hidden name"><code>plotPath.Rd</code></div>
     </div>
 
@@ -63,9 +63,9 @@ such as features or colData columns.</p>
 <span><span class="fu">plotPath</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">time.col</span>,</span>
-<span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">group</span>,</span>
 <span>  dimred <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ncomponents <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  ncomponents <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>  x.var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  y.var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -104,8 +104,7 @@ a factor of visits.</p></dd>
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> that identifies subjects. If <code>NULL</code>, all samples
-form one path. (Default: <code>NULL</code>)</p></dd>
+<code>colData(x)</code> that identifies subjects.</p></dd>
 
 
 <dt id="arg-dimred">dimred<a class="anchor" aria-label="anchor" href="#arg-dimred"></a></dt>
@@ -114,9 +113,9 @@ form one path. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-ncomponents">ncomponents<a class="anchor" aria-label="anchor" href="#arg-ncomponents"></a></dt>
-<dd><p><code>Numeric scalar</code> or <code>vector</code>. The two
-components of <code>dimred</code> to plot: <code>2</code> for the first two, or
-two components by index or name. (Default: <code>2</code>)</p></dd>
+<dd><p><code>Numeric</code> or <code>Character vector</code>. The two
+components of <code>dimred</code> to plot, by index or name.
+(Default: <code>c(1, 2)</code>)</p></dd>
 
 
 <dt id="arg-x-var-y-var">x.var, y.var<a class="anchor" aria-label="anchor" href="#arg-x-var-y-var"></a></dt>
@@ -192,8 +191,7 @@ units. <code>NULL</code> never breaks paths. (Default: <code>NULL</code>)</p></d
     <h2>Details</h2>
     <p>Give either <code>dimred</code> or both <code>x.var</code> and <code>y.var</code>; with
 <code>lag</code>, <code>x.var</code> alone is enough. Points near the identity line
-of a lag plot change little over <code>lag</code> samples. Ordinations and lag
-plots have equal axis scales.</p>
+of a lag plot change little over <code>lag</code> samples.</p>
     </div>
 
     <div id="ref-examples">

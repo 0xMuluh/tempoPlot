@@ -18,7 +18,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot effects against their significance</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotVolcano.R" class="external-link"><code>R/plotVolcano.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotVolcano.R" class="external-link"><code>R/plotVolcano.R</code></a></small>
     <div class="hidden name"><code>plotVolcano.Rd</code></div>
     </div>
 
@@ -58,26 +58,10 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotVolcano</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'SummarizedExperiment'</span></span>
-<span><span class="fu">plotVolcano</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">effect</span>,</span>
-<span>  <span class="va">p.col</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  label.top <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  feature.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu">plotVolcano</span><span class="op">(</span><span class="va">x</span>, <span class="va">effect</span>, <span class="va">p.col</span>, threshold <span class="op">=</span> <span class="fl">0.05</span>, label.top <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'data.frame'</span></span>
-<span><span class="fu">plotVolcano</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">effect</span>,</span>
-<span>  <span class="va">p.col</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  label.top <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  feature.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">plotVolcano</span><span class="op">(</span><span class="va">x</span>, <span class="va">effect</span>, <span class="va">p.col</span>, threshold <span class="op">=</span> <span class="fl">0.05</span>, label.top <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -87,7 +71,7 @@
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>a <code><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">SummarizedExperiment</a></code>
 object, with the results in <code>rowData(x)</code>, or a <code>data.frame</code>
-of results with one row per feature.</p></dd>
+of results with one row per feature and feature names as row names.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -114,13 +98,6 @@ this are significant. (Default: <code>0.05</code>)</p></dd>
 <dd><p><code>Integer scalar</code>. Labels this many significant
 features with the smallest p-values. (Default: <code>10</code>)</p></dd>
 
-
-<dt id="arg-feature-col">feature.col<a class="anchor" aria-label="anchor" href="#arg-feature-col"></a></dt>
-<dd><p><code>Character scalar</code>. Specifies the column of
-feature names that label the points, of <code>rowData(x)</code> or of the
-<code>data.frame</code>. If <code>NULL</code>, uses the row names.
-(Default: <code>NULL</code>)</p></dd>
-
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -141,12 +118,11 @@ marks <code>threshold</code>.</p>
 <span class="r-in"><span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">assay</a></span><span class="op">(</span><span class="va">tse</span>, <span class="st">"clr"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">male</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"male"</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    genus <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    difference <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="va">mat</span><span class="op">[</span>, <span class="va">male</span><span class="op">]</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="va">mat</span><span class="op">[</span>, <span class="op">!</span><span class="va">male</span><span class="op">]</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    p <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">mat</span>, <span class="fl">1</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">v</span><span class="op">[</span><span class="va">male</span><span class="op">]</span>, <span class="va">v</span><span class="op">[</span><span class="op">!</span><span class="va">male</span><span class="op">]</span><span class="op">)</span><span class="op">$</span><span class="va">p.value</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    p <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">mat</span>, <span class="fl">1</span>, <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">v</span><span class="op">[</span><span class="va">male</span><span class="op">]</span>, <span class="va">v</span><span class="op">[</span><span class="op">!</span><span class="va">male</span><span class="op">]</span><span class="op">)</span><span class="op">$</span><span class="va">p.value</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">q</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">p</span>, method <span class="op">=</span> <span class="st">"fdr"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotVolcano</span><span class="op">(</span><span class="va">res</span>, effect <span class="op">=</span> <span class="st">"difference"</span>, p.col <span class="op">=</span> <span class="st">"q"</span>, label.top <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>    feature.col <span class="op">=</span> <span class="st">"genus"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotVolcano</span><span class="op">(</span><span class="va">res</span>, effect <span class="op">=</span> <span class="st">"difference"</span>, p.col <span class="op">=</span> <span class="st">"q"</span>, label.top <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotVolcano-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
