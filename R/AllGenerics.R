@@ -10,6 +10,12 @@ setGeneric("plotSwimmer", signature = "x",
 setGeneric("plotTrend", signature = "x",
     function(x, ...) standardGeneric("plotTrend"))
 
+#' @rdname plotTimeEffect
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotTimeEffect", signature = "x",
+    function(x, ...) standardGeneric("plotTimeEffect"))
+
 #' @rdname plotStats
 #' @importFrom methods setGeneric
 #' @export

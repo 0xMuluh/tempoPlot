@@ -18,9 +18,10 @@ data("hitchip1006", package = "miaTime")
 
 test_that(".check_longitudinal accepts hitchip1006 and warns", {
     expect_warning(
-        .check_longitudinal(hitchip1006, "time", group = "subject"),
+        type <- .check_longitudinal(hitchip1006, "time", group = "subject"),
         "'group'"
     )
+    expect_identical(type, "numeric")
 })
 
 test_that(".check_longitudinal validates class and columns", {
@@ -44,6 +45,12 @@ test_that(".check_longitudinal errors on NA and duplicates", {
     expect_error(
         .check_longitudinal(x_na, "time", group = "subject"),
         "'time.col'"
+    )
+    x_na <- hitchip1006
+    colData(x_na)$subject[1L] <- NA
+    expect_error(
+        .check_longitudinal(x_na, "time", group = "subject"),
+        "'group' must not contain NA"
     )
 
     x_dup <- hitchip1006

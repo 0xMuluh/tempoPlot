@@ -58,7 +58,8 @@ from miaTime, and per-subject estimates such as slopes.
 }
 \details{
 Rows are ordered by the statistic, the largest at the top. Missing
-statistics are dropped.
+statistics are dropped. Above 60 rows, row labels are hidden; use
+\code{top} to keep fewer.
 }
 \examples{
 # Bimodality of each genus over all samples, computed by miaTime

@@ -34,6 +34,10 @@ test_that("plotStats ranks features by their statistic, largest at the top", {
     expect_equal(ld$x[order(ld$y)], unname(top20))
     expect_equal(nrow(layer_data(plotStats(tse, stat = "bimodality"), 1L)),
         sum(!is.na(bim)))
+    # Labels of more than 60 rows are hidden.
+    p <- plotStats(tse, stat = "bimodality")
+    expect_match(class(p$theme$axis.text.y)[1L], "element_blank")
+    expect_null(plotStats(tse, stat = "bimodality", top = 20)$theme$axis.text.y)
 })
 
 test_that("plotStats keeps the largest absolute statistics", {

@@ -30,3 +30,8 @@ test_that("plotCalendar counts samples per ISO week", {
     expect_identical(df$n[df$.y == "2024" & df$.x == 2L], 1L)
     expect_identical(df$n[df$.y == "2025" & df$.x == 1L], 1L)
 })
+
+test_that("plotCalendar passes ... to geom_tile", {
+    p <- plotCalendar(toy, "d", colour = "black")
+    expect_true(all(layer_data(p)$colour == "black"))
+})

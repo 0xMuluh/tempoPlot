@@ -46,10 +46,12 @@ against their overlap, with a smooth: the dissimilarity-overlap curve
 behave alike in different communities.
 }
 \details{
-Each pair of samples is drawn once, with a loess smooth. In Bashan et
-al. (2016), overlap is mia's \code{"overlap"} of relative abundances and
-dissimilarity is the root Jensen-Shannon divergence of the shared taxa,
-renormalised; mia's \code{"jsd"} uses all taxa.
+Each pair of samples is drawn once, with the robust LOWESS curve of
+Bashan et al. (2016); above 1000 pairs, points are drawn with
+transparency. In Bashan et al. (2016), overlap is mia's
+\code{"overlap"} of relative abundances and dissimilarity is the root
+Jensen-Shannon divergence of the shared taxa, renormalised; mia's
+\code{"jsd"} uses all taxa.
 }
 \examples{
 # Samples of four artificial guts
@@ -63,7 +65,7 @@ tse <- mia::addDissimilarity(tse, method = "overlap",
 tse <- mia::addDissimilarity(tse, method = "jsd",
     assay.type = "relabundance")
 plotDOC(tse, overlap = "overlap", dissimilarity = "jsd",
-    group = "Vessel", pairs = "between", alpha = 0.1)
+    group = "Vessel", pairs = "between")
 }
 \references{
 Bashan A, et al. (2016). Universality of human microbial dynamics.

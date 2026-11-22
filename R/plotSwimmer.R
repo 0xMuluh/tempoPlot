@@ -51,7 +51,8 @@
 #'
 #' @details
 #' Numeric and \code{Date} times are drawn on a continuous axis. Visits are
-#' drawn in level order, including levels without samples.
+#' drawn in level order, including levels without samples. Above 60
+#' subjects, subject labels are hidden.
 #'
 #' For visits, a sample is missing when a subject has no sample at a visit
 #' after its first one, including visits after its last sample (dropout).
@@ -77,20 +78,21 @@
 #'
 #' # Perturbations of three bioreactors run on the same schedule
 #' data("minimalgut", package = "miaTime")
+#' tse <- minimalgut
 #' events <- data.frame(
 #'     start = c(0, 152, 432),
 #'     end = c(24, NA, 436),
 #'     label = c("batch", "Blautia added", "double dilution rate"))
-#' plotSwimmer(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+#' plotSwimmer(tse, time.col = "Time.hr", group = "StudyIdentifier",
 #'     events = events)
 #'
 #' # Which samples have species counts, short-chain fatty acids and
 #' # optical density
-#' cd <- SummarizedExperiment::colData(minimalgut)
+#' cd <- SummarizedExperiment::colData(tse)
 #' od <- !is.na(cd$OpticalDensity)
 #' mae <- MultiAssayExperiment::MultiAssayExperiment(
 #'     experiments = list(
-#'         species = minimalgut,
+#'         species = tse,
 #'         SCFA = SummarizedExperiment::SummarizedExperiment(
 #'             t(as.matrix(cd[, c("Acetate", "Butyrate", "Propionate")]))),
 #'         density = SummarizedExperiment::SummarizedExperiment(
@@ -113,9 +115,7 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
             stop("'group' must be one column name of colData(x).",
                 call. = FALSE)
         }
-        .check_longitudinal(x, time.col, group)
-        # Errors on character and other unsupported time types.
-        visit <- .time_type(x, time.col) == "visit"
+        visit <- .check_longitudinal(x, time.col, group) == "visit"
         .check_column(x, colour.by)
         if (!visit && missing != "break" && is.null(max.gap)) {
             stop("missing = '", missing, "' requires 'max.gap' for ",
@@ -123,9 +123,7 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
         }
         events <- .check_events(events, x, time.col, group)
 
-        cols <- unique(c(time.col, group, colour.by))
-        df <- as.data.frame(colData(x)[, cols, drop = FALSE],
-            optional = TRUE)
+        df <- as.data.frame(colData(x), optional = TRUE)
         df <- .order_time(df, time.col, group)
         if (visit && is.null(max.gap)) {
             max.gap <- 1
@@ -134,8 +132,9 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
         missed <- .missed_visits(df, time.col, group)
 
         if (missing == "drop") {
-            gapped <- c(df[[group]][df$.segment > 1L], missed[[group]])
-            gapped <- unique(as.character(gapped))
+            # as.character() first: c() turns a factor into its codes.
+            gapped <- unique(c(as.character(df[[group]][df$.segment > 1L]),
+                missed[[group]]))
             if (length(gapped) == length(unique(df[[group]]))) {
                 stop("All subjects have missing samples.", call. = FALSE)
             }
@@ -182,18 +181,18 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
     res
 }
 
-# Dashed lines across the gaps between lane segments.
+# Dashed lines across the gaps between lane segments. Segments restart at
+# 1 for each subject, so a larger segment than the previous row is a gap
+# within the same subject.
 .gap_lines <- function(df, time.col, group) {
-    n <- nrow(df)
-    i <- which(df$.segment[-1L] > df$.segment[-n] &
-        df[[group]][-1L] == df[[group]][-n]) + 1L
+    i <- which(diff(df$.segment) > 0L) + 1L
     res <- df[i, c(group, time.col), drop = FALSE]
     res$.from <- df[[time.col]][i - 1L]
     res
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_segment
-#'   labs scale_x_discrete
+#'   labs scale_x_discrete theme element_blank
 #' @importFrom stats setNames
 .plot_swimmer <- function(df, time.col, group, colour.by = NULL,
         missing = "break", missed = NULL, events = NULL, ...) {
@@ -227,6 +226,11 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
     }
     if (is.factor(df[[time.col]])) {
         p <- p + scale_x_discrete(drop = FALSE)
+    }
+    # Labels of more than 60 rows overlap.
+    if (length(rows) > 60L) {
+        p <- p + theme(axis.text.y = element_blank(),
+            axis.ticks.y = element_blank())
     }
     p
 }

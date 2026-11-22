@@ -35,7 +35,8 @@
 #'
 #' @details
 #' Rows are ordered by the statistic, the largest at the top. Missing
-#' statistics are dropped.
+#' statistics are dropped. Above 60 rows, row labels are hidden; use
+#' \code{top} to keep fewer.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -116,6 +117,7 @@ setMethod("plotStats", signature = c(x = "SummarizedExperiment"),
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_linerange labs
+#'   theme element_blank
 .plot_stats <- function(df, stat, lower, upper, group, colour.by, ...) {
     p <- ggplot(df, aes(x = .data[[stat]], y = .data$.id,
         colour = if (!is.null(colour.by)) .data[[colour.by]]))
@@ -123,5 +125,11 @@ setMethod("plotStats", signature = c(x = "SummarizedExperiment"),
         p <- p + geom_linerange(aes(xmin = .data[[lower]],
             xmax = .data[[upper]]))
     }
-    p + geom_point(...) + labs(x = stat, y = group, colour = colour.by)
+    p <- p + geom_point(...) + labs(x = stat, y = group, colour = colour.by)
+    # Labels of more than 60 rows overlap.
+    if (nrow(df) > 60L) {
+        p <- p + theme(axis.text.y = element_blank(),
+            axis.ticks.y = element_blank())
+    }
+    p
 }

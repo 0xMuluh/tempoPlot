@@ -1,3 +1,13 @@
+Changes in version 0.99.57 (2026-11-22)
++ Added plotTimeEffect for effects over time (estimate and interval)
++ plotTrend: removed layout = "ridge", reference and limits; box and
+  violin layouts separate group.by groups; clear errors for fit with
+  rolling, period with events or fit tables, and align.to with NA
++ plotDOC: robust LOWESS curve as in Bashan et al. (2016)
++ plotSurvival: confidence band; dropout defined in the details
++ Subjects with NA are rejected; fixes in plotSwimmer, plotCalendar and
+  plotDOC
+
 Changes in version 0.99.56 (2026-11-22)
 + plotTBI: method = "sorensen" by default; bray needs absolute abundances
 + plotLagHeatmap: target read from assay.type; correlations within subjects

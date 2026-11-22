@@ -2,9 +2,10 @@
 # Not exported; documented here with comments only.
 
 # Check that x is longitudinal-ready for plotting.
-# Errors on bad class, missing columns, NA times and duplicated
-# subject-time pairs; warns on single-sample subjects when group is set.
-# Returns x invisibly.
+# Errors on bad class, missing columns, NA times or subjects, duplicated
+# subject-time pairs and unsupported time types; warns on single-sample
+# subjects when group is set. Returns the type from .time_type()
+# invisibly.
 #' @importFrom SummarizedExperiment colData
 .check_longitudinal <- function(x, time.col, group = NULL) {
     if (!inherits(x, "SummarizedExperiment")) {
@@ -28,6 +29,9 @@
         }
     } else {
         subject <- colData(x)[[group]]
+        if (anyNA(subject)) {
+            stop("'group' must not contain NA values.", call. = FALSE)
+        }
         if (anyDuplicated(data.frame(subject, time))) {
             stop("'group' and 'time.col' must not contain duplicated ",
                 "subject-time pairs.", call. = FALSE)
@@ -43,7 +47,7 @@
             )
         }
     }
-    invisible(x)
+    invisible(.time_type(x, time.col))
 }
 
 # Classify the time column as "numeric", "date" or "visit".
@@ -333,10 +337,10 @@
 # Sample-by-sample dissimilarity matrix stored by mia::addDissimilarity()
 # in metadata(x)[[dissimilarity]], as a full matrix in colnames(x) order.
 #' @importFrom S4Vectors metadata
-.get_dissimilarity <- function(x, dissimilarity) {
+.get_dissimilarity <- function(x, dissimilarity, arg = "dissimilarity") {
     if (!.is_one_name(dissimilarity) ||
             !dissimilarity %in% names(metadata(x))) {
-        stop("'dissimilarity' must name a matrix in metadata(x), as stored ",
+        stop("'", arg, "' must name a matrix in metadata(x), as stored ",
             "by mia::addDissimilarity().", call. = FALSE)
     }
     d <- as.matrix(metadata(x)[[dissimilarity]])

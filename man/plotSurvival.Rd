@@ -71,7 +71,14 @@ feature, leaving the first state, or a clinical outcome.
 }
 \details{
 Follow-up starts at the first sample of each subject. A subject without
-the event is censored at its last sample, marked with a cross. For
+the event is censored at its last sample, marked with a cross. The band
+is the 95\\% confidence interval of the Kaplan-Meier estimate. Events
+are only seen at sampling times, so the event time is the first sample
+at which the event is observed, an upper bound of the true time.
+
+A subject drops out when its last sample precedes the last sampling
+time of the study, the latest time in \code{x}. A subject that joins
+late and is sampled until the end is not a dropout. For
 \code{"arrival"} and \code{"loss"}, only subjects without and with the
 feature at their first sample are at risk. Times are in \code{time.col}
 units: days for \code{Date} times and visit steps for visits.
@@ -83,4 +90,9 @@ tse <- mia::addDominant(hitchip1006, name = "dominant")
 tse <- tse[, tse$subject \%in\% names(which(table(tse$subject) >= 2))]
 plotSurvival(tse, time.col = "time", group = "subject",
     event = "state.exit", state.col = "dominant", group.by = "sex")
+}
+\references{
+Kaplan EL, Meier P (1958). Nonparametric estimation from incomplete
+observations. \emph{Journal of the American Statistical Association}
+53(282):457-481.
 }

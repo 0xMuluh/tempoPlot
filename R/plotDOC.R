@@ -25,10 +25,12 @@
 #'   \code{\link[ggplot2:geom_point]{geom_point}}.
 #'
 #' @details
-#' Each pair of samples is drawn once, with a loess smooth. In Bashan et
-#' al. (2016), overlap is mia's \code{"overlap"} of relative abundances and
-#' dissimilarity is the root Jensen-Shannon divergence of the shared taxa,
-#' renormalised; mia's \code{"jsd"} uses all taxa.
+#' Each pair of samples is drawn once, with the robust LOWESS curve of
+#' Bashan et al. (2016); above 1000 pairs, points are drawn with
+#' transparency. In Bashan et al. (2016), overlap is mia's
+#' \code{"overlap"} of relative abundances and dissimilarity is the root
+#' Jensen-Shannon divergence of the shared taxa, renormalised; mia's
+#' \code{"jsd"} uses all taxa.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -51,7 +53,7 @@
 #' tse <- mia::addDissimilarity(tse, method = "jsd",
 #'     assay.type = "relabundance")
 #' plotDOC(tse, overlap = "overlap", dissimilarity = "jsd",
-#'     group = "Vessel", pairs = "between", alpha = 0.1)
+#'     group = "Vessel", pairs = "between")
 NULL
 
 #' @rdname plotDOC
@@ -66,7 +68,7 @@ setMethod("plotDOC", signature = c(x = "SummarizedExperiment"),
         if (pairs != "all" && is.null(group)) {
             stop("pairs = \"", pairs, "\" needs 'group'.", call. = FALSE)
         }
-        o <- .get_dissimilarity(x, overlap)
+        o <- .get_dissimilarity(x, overlap, "overlap")
         d <- .get_dissimilarity(x, dissimilarity)
         ij <- which(lower.tri(o), arr.ind = TRUE)
         if (pairs != "all") {
@@ -85,12 +87,17 @@ setMethod("plotDOC", signature = c(x = "SummarizedExperiment"),
     }
 )
 
-#' @importFrom ggplot2 ggplot aes .data geom_point geom_smooth labs
+#' @importFrom ggplot2 ggplot aes .data geom_point geom_line labs
+#' @importFrom stats lowess
+#' @importFrom utils modifyList
 .plot_doc <- function(df, overlap, dissimilarity, ...) {
+    n <- nrow(df)
+    alpha <- max(0.05, min(1, 1000 / n))
     p <- ggplot(df, aes(x = .data$.overlap, y = .data$.dissimilarity)) +
-        geom_point(...)
-    if (nrow(df) >= 10L) {
-        p <- p + geom_smooth(method = "loess", formula = y ~ x, se = FALSE,
+        do.call(geom_point, modifyList(list(alpha = alpha), list(...)))
+    if (n >= 10L) {
+        curve <- as.data.frame(lowess(df$.overlap, df$.dissimilarity))
+        p <- p + geom_line(aes(x = .data$x, y = .data$y), data = curve,
             colour = "#2c6fbb", linewidth = 1)
     }
     p + labs(x = overlap, y = dissimilarity)

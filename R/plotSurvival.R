@@ -46,10 +46,22 @@
 #'
 #' @details
 #' Follow-up starts at the first sample of each subject. A subject without
-#' the event is censored at its last sample, marked with a cross. For
+#' the event is censored at its last sample, marked with a cross. The band
+#' is the 95\% confidence interval of the Kaplan-Meier estimate. Events
+#' are only seen at sampling times, so the event time is the first sample
+#' at which the event is observed, an upper bound of the true time.
+#'
+#' A subject drops out when its last sample precedes the last sampling
+#' time of the study, the latest time in \code{x}. A subject that joins
+#' late and is sampled until the end is not a dropout. For
 #' \code{"arrival"} and \code{"loss"}, only subjects without and with the
 #' feature at their first sample are at risk. Times are in \code{time.col}
 #' units: days for \code{Date} times and visit steps for visits.
+#'
+#' @references
+#' Kaplan EL, Meier P (1958). Nonparametric estimation from incomplete
+#' observations. \emph{Journal of the American Statistical Association}
+#' 53(282):457-481.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -81,7 +93,6 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
                 call. = FALSE)
         }
         .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
         .check_column(x, group.by)
         mark <- .event_marks(x, event, feature, assay.type, state.col,
             event.col)
@@ -161,22 +172,31 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
 }
 
 # Kaplan-Meier estimate per .by: one row per step, with the share of
-# subjects without the event (.surv) and censoring marks (.censored).
+# subjects without the event (.surv), its confidence interval (.lower,
+# .upper) until the next step (.next) and censoring marks (.censored).
 #' @importFrom survival survfit Surv
 .kaplan_meier <- function(df) {
     res <- lapply(split(df, df$.by), function(d) {
         fit <- survfit(Surv(d$.time, d$.status) ~ 1)
-        data.frame(.by = d$.by[1L],
-            .time = c(0, fit$time), .surv = c(1, fit$surv),
-            .censored = c(0L, fit$n.censor))
+        time <- c(0, fit$time)
+        data.frame(.by = d$.by[1L], .time = time,
+            .next = c(fit$time, time[length(time)]),
+            .surv = c(1, fit$surv), .lower = c(1, fit$lower),
+            .upper = c(1, fit$upper), .censored = c(0L, fit$n.censor))
     })
     do.call(rbind, res)
 }
 
-#' @importFrom ggplot2 ggplot aes .data geom_step geom_point labs ylim
+#' @importFrom ggplot2 ggplot aes .data geom_step geom_point geom_rect labs
+#'   ylim
 .plot_survival <- function(df, time.col, group.by, event, ...) {
+    by <- !is.null(group.by)
     p <- ggplot(df, aes(x = .data$.time, y = .data$.surv,
-            colour = if (!is.null(group.by)) .data$.by)) +
+            colour = if (by) .data$.by)) +
+        geom_rect(aes(xmin = .data$.time, xmax = .data$.next,
+            ymin = .data$.lower, ymax = .data$.upper,
+            fill = if (by) .data$.by), colour = NA, alpha = 0.2,
+            na.rm = TRUE) +
         geom_step(...) +
         geom_point(data = df[df$.censored > 0L, , drop = FALSE],
             shape = 3) +
@@ -187,6 +207,6 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
                 loss = "share before loss",
                 state.exit = "share in the first state",
                 outcome = "share without the outcome"),
-            colour = group.by)
+            colour = group.by, fill = group.by)
     p
 }

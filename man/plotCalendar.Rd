@@ -37,9 +37,13 @@ Weeks start on Monday. Days and weeks without samples are left blank.
 }
 \examples{
 # Daily sampling of 20 people; study days placed on an arbitrary
-# calendar starting on 1 March
+# calendar starting on 1 March, with no samples at weekends
 data("temporalMicrobiome20", package = "miaTime")
 tse <- temporalMicrobiome20
 tse$date <- as.Date("2021-03-01") + tse$day - 1
+tse <- tse[, !format(tse$date, "\%u") \%in\% c("6", "7")]
 plotCalendar(tse, time.col = "date")
+
+# Samples per week of the year
+plotCalendar(tse, time.col = "date", unit = "week")
 }

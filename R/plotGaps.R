@@ -59,7 +59,6 @@ setMethod("plotGaps", signature = c(x = "SummarizedExperiment"),
                 call. = FALSE)
         }
         .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
         .check_column(x, group.by)
 
         cols <- unique(c(time.col, group, group.by))
@@ -83,27 +82,17 @@ setMethod("plotGaps", signature = c(x = "SummarizedExperiment"),
 #'   geom_boxplot labs
 .plot_gaps <- function(df, time.col, group.by, layout, ...) {
     lab <- paste("interval in", time.col)
-    if (is.null(group.by)) {
-        df$.by <- ""
-    } else {
-        df$.by <- df[[group.by]]
-    }
-    by <- !is.null(group.by)
     if (layout == "box") {
-        p <- ggplot(df, aes(x = .data$.by, y = .data$interval)) +
+        return(ggplot(df, aes(x = if (is.null(group.by)) "" else
+                .data[[group.by]], y = .data$interval)) +
             geom_boxplot(...) +
-            labs(x = group.by, y = lab)
-        return(p)
+            labs(x = group.by, y = lab))
     }
-    p <- ggplot(df, aes(x = .data$interval))
+    p <- ggplot(df, aes(x = .data$interval)) + labs(x = lab)
     if (layout == "histogram") {
-        p <- p + if (by) geom_histogram(aes(fill = .data$.by), ...) else
-            geom_histogram(...)
-        p <- p + labs(fill = group.by)
-    } else {
-        p <- p + if (by) geom_density(aes(colour = .data$.by), ...) else
-            geom_density(...)
-        p <- p + labs(colour = group.by)
+        return(p + geom_histogram(aes(fill = if (!is.null(group.by))
+            .data[[group.by]]), ...) + labs(fill = group.by))
     }
-    p + labs(x = lab)
+    p + geom_density(aes(colour = if (!is.null(group.by))
+        .data[[group.by]]), ...) + labs(colour = group.by)
 }
