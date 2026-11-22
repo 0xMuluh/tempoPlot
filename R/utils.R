@@ -427,3 +427,72 @@
     }
     df
 }
+
+# Assay assay.type of x as a matrix, after checking the name.
+#' @importFrom SummarizedExperiment assay assayNames
+.get_assay <- function(x, assay.type) {
+    if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
+        stop("'assay.type' must be one of assayNames(x).", call. = FALSE)
+    }
+    as.matrix(assay(x, assay.type))
+}
+
+# Error unless col is one column name of colData(x); for required
+# arguments, where .check_column() also accepts NULL.
+#' @importFrom SummarizedExperiment colData
+.require_column <- function(x, col, arg = deparse(substitute(col))) {
+    if (!(.is_one_name(col) && col %in% names(colData(x)))) {
+        stop("'", arg, "' must be one column name of colData(x).",
+            call. = FALSE)
+    }
+}
+
+# Components of reducedDim(x, dimred) as a matrix with columns named
+# "<dimred>:<component>". A single number n in ncomponents gives the
+# first n components; a vector gives those components (index or name).
+# n is the number of components needed; NULL accepts two or more.
+#' @importFrom SingleCellExperiment reducedDim
+.get_dimred <- function(x, dimred, ncomponents, n = NULL, arg = "dimred") {
+    if (is.numeric(ncomponents) && length(ncomponents) == 1L &&
+            isTRUE(ncomponents >= 1)) {
+        ncomponents <- seq_len(ncomponents)
+    }
+    labels <- paste0(dimred, ":", ncomponents)
+    hits <- lapply(labels, .match_dimred_component, x = x)
+    k <- length(hits)
+    if (!.is_one_name(dimred) || k < 2L || k != (n %||% k) ||
+            any(vapply(hits, is.null, logical(1)))) {
+        stop("'", arg, "' must be in reducedDimNames(x) and 'ncomponents' ",
+            "must give ", n %||% "at least 2", " of its components.",
+            call. = FALSE)
+    }
+    rd <- reducedDim(x, dimred)
+    out <- do.call(cbind, lapply(hits, function(h) as.numeric(rd[, h$j])))
+    colnames(out) <- labels
+    out
+}
+
+# Primary names (rows of colData(x)) of the samples of one experiment of
+# the MultiAssayExperiment x, in the column order of that experiment.
+#' @importFrom MultiAssayExperiment experiments sampleMap
+.primary_names <- function(x, experiment) {
+    map <- sampleMap(x)
+    map <- map[map$assay == experiment, , drop = FALSE]
+    map$primary[match(colnames(experiments(x)[[experiment]]), map$colname)]
+}
+
+# For ids sorted by .order_time(), the rows i whose row i + lag belongs to
+# the same subject: the pairs are (i, i + lag). NA ids never pair.
+.next_in_subject <- function(ids, lag = 1L) {
+    i <- seq_len(max(length(ids) - lag, 0L))
+    i[which(ids[i] == ids[i + lag])]
+}
+
+# Presence as mia::getPrevalence() counts it: values above detection.
+.present <- function(mat, detection = 0) {
+    if (!(is.numeric(detection) && length(detection) == 1L &&
+            !is.na(detection))) {
+        stop("'detection' must be a single number.", call. = FALSE)
+    }
+    mat > detection
+}

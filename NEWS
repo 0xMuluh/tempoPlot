@@ -7,6 +7,10 @@ Changes in version 0.99.55 (2026-11-22)
   group.by
 + Fixes in plotHorizon, plotRanks, plotLandscape and plotTurnover
 
+Changes in version 0.99.54 (2026-11-22)
++ Shared theme and colour-blind safe palettes (Okabe-Ito, viridis, blue-red
+  diverging); plotSubjectScatter uses them
+
 Changes in version 0.99.53 (2026-11-17)
 + Added plotAccumulation
 
