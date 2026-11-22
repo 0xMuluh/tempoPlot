@@ -1,3 +1,7 @@
+Changes in version 0.99.60 (2026-11-22)
++ Trend and design plots use the shared theme and palettes; plotTrend
+  lines break at skipped visits by default; plotSurvival takes detection
+
 Changes in version 0.99.59 (2026-11-22)
 + Dynamics plots use the shared theme and palettes; correlation heatmaps
   are blue below 0 and red above; paths and moves skip gaps
