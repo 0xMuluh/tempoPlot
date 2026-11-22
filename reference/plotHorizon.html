@@ -20,7 +20,7 @@ blues in a short strip."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ blues in a short strip."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot features over time as horizon strips</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotHorizon.R" class="external-link"><code>R/plotHorizon.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/plotHorizon.R" class="external-link"><code>R/plotHorizon.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotHorizon.Rd</code></div>
     </div>
 
@@ -97,8 +97,10 @@ object.</p></dd>
 
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code> or
-a factor of visits.</p></dd>
+<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code>,
+<code>POSIXct</code> or a factor of visits. Time differences, as in
+<code>max.gap</code>, are in days for <code>Date</code> and hours for
+<code>POSIXct</code> times.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>

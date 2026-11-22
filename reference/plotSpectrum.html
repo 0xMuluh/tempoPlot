@@ -19,7 +19,7 @@ rhythms."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ rhythms."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the power spectrum of a series</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSpectrum.R" class="external-link"><code>R/plotSpectrum.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/plotSpectrum.R" class="external-link"><code>R/plotSpectrum.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotSpectrum.Rd</code></div>
     </div>
 
@@ -87,8 +87,9 @@ object.</p></dd>
 
 
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
-<dd><p><code>Character scalar</code>. Specifies the numeric or
-<code>Date</code> column from <code>colData(x)</code> that contains sampling times.</p></dd>
+<dd><p><code>Character scalar</code>. Specifies the column from
+<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code>
+or <code>POSIXct</code>.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -116,11 +117,12 @@ the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
     <div id="details">
     <h2>Details</h2>
     <p>Frequencies are in cycles per <code>time.col</code> unit (per day for
-<code>Date</code> times), from one cycle over the series to half the median
-sampling rate. A linear trend is removed first. The power is normalised
-by the variance of the series. The periodogram allows uneven sampling;
-for even sampling it equals the classical periodogram. Subjects with
-fewer than four samples are left out.</p>
+<code>Date</code>, per hour for <code>POSIXct</code> times), from one cycle over
+the series to half the median sampling rate. A linear trend is removed
+first. The power is normalised by the variance of the series. The
+periodogram allows uneven sampling; for even sampling it equals the
+classical periodogram. Subjects with fewer than four samples are left
+out.</p>
     </div>
     <div id="references">
     <h2>References</h2>

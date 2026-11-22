@@ -19,7 +19,7 @@ feature, leaving the first state, or a clinical outcome."><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ feature, leaving the first state, or a clinical outcome."><!-- mathjax --><scrip
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot time to an event</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSurvival.R" class="external-link"><code>R/plotSurvival.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/plotSurvival.R" class="external-link"><code>R/plotSurvival.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotSurvival.Rd</code></div>
     </div>
 
@@ -94,8 +94,8 @@ object.</p></dd>
 
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code> or
-a factor of visits.</p></dd>
+<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code>,
+<code>POSIXct</code> or a factor of visits.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -170,7 +170,8 @@ time of the study, the latest time in <code>x</code>. A subject that joins
 late and is sampled until the end is not a dropout. For
 <code>"arrival"</code> and <code>"loss"</code>, only subjects without and with the
 feature at their first sample are at risk. Times are in <code>time.col</code>
-units: days for <code>Date</code> times and visit steps for visits.</p>
+units: days for <code>Date</code>, hours for <code>POSIXct</code> times and visit
+steps for visits.</p>
     </div>
     <div id="references">
     <h2>References</h2>

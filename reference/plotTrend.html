@@ -20,7 +20,7 @@ subject's first sample or to an event."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ subject's first sample or to an event."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot longitudinal trends</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/plotTrend.R" class="external-link"><code>R/plotTrend.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTrend.Rd</code></div>
     </div>
 
@@ -114,8 +114,10 @@ ordination component to plot: a column of <code>colData(x)</code>, a row of
 
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code> or
-a factor of visits.</p></dd>
+<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code>,
+<code>POSIXct</code> or a factor of visits. Time differences, as in
+<code>max.gap</code> and <code>period</code>, are in days for <code>Date</code> and
+hours for <code>POSIXct</code> times.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -198,10 +200,10 @@ window. (Default: <code>5</code>)</p></dd>
 
 <dt id="arg-period">period<a class="anchor" aria-label="anchor" href="#arg-period"></a></dt>
 <dd><p><code>Numeric scalar</code>. Wraps time into cycles of this
-length, in <code>time.col</code> units (days for <code>Date</code> times), to
-show daily or seasonal patterns; each cycle is drawn as its own line.
-Cycles start at time 0, which for <code>Date</code> times is 1970-01-01, a
-Thursday. Not combined with <code>events</code> or a <code>fit</code> table.
+length, in <code>time.col</code> units, to show daily or seasonal patterns;
+each cycle is drawn as its own line. Cycles start at time 0, which for
+<code>Date</code> and <code>POSIXct</code> times is 1970-01-01 (UTC), a Thursday.
+Not combined with <code>events</code> or a <code>fit</code> table.
 (Default: <code>NULL</code>)</p></dd>
 
 

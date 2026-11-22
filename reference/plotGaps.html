@@ -18,7 +18,7 @@ consecutive samples of each subject."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@ consecutive samples of each subject."><!-- mathjax --><script src="https://cdnjs
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot intervals between consecutive samples</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotGaps.R" class="external-link"><code>R/plotGaps.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/plotGaps.R" class="external-link"><code>R/plotGaps.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotGaps.Rd</code></div>
     </div>
 
@@ -89,8 +89,8 @@ object.</p></dd>
 
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code> or
-a factor of visits.</p></dd>
+<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code>,
+<code>POSIXct</code> or a factor of visits.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -122,8 +122,8 @@ the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
     </div>
     <div id="details">
     <h2>Details</h2>
-    <p>Intervals are in <code>time.col</code> units: days for <code>Date</code> times and
-visit steps for visits.</p>
+    <p>Intervals are in <code>time.col</code> units: days for <code>Date</code>, hours for
+<code>POSIXct</code> times and visit steps for visits.</p>
     </div>
 
     <div id="ref-examples">

@@ -18,7 +18,7 @@ panel per subject or per group of subjects."><!-- mathjax --><script src="https:
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.62</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@ panel per subject or per group of subjects."><!-- mathjax --><script src="https:
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot features over time as tiles</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTiles.R" class="external-link"><code>R/plotTiles.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/plotTiles.R" class="external-link"><code>R/plotTiles.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/consolidate/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTiles.Rd</code></div>
     </div>
 
@@ -66,6 +66,7 @@ panel per subject or per group of subjects.</p>
 <span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  top <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"raw"</span>, <span class="st">"change"</span>, <span class="st">"occupancy"</span><span class="op">)</span>,</span>
+<span>  detection <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  order.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"cluster"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"subject"</span>, <span class="st">"group"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -110,7 +111,9 @@ and time point, such as differential abundance at each visit.</p></dd>
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code>, or of a <code>data.frame</code> <code>x</code>, that contains
-times: numeric, <code>Date</code> or a factor of visits.</p></dd>
+times: numeric, <code>Date</code>, <code>POSIXct</code> or a factor of visits.
+Time differences, as in <code>max.gap</code>, are in days for <code>Date</code>
+and hours for <code>POSIXct</code> times.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -139,9 +142,15 @@ the largest mean absolute effect for a <code>data.frame</code>.
 <dt id="arg-value">value<a class="anchor" aria-label="anchor" href="#arg-value"></a></dt>
 <dd><p><code>Character scalar</code>. Plots the assay values
 (<code>"raw"</code>), their change from the first sample of each subject
-(<code>"change"</code>), or presence, a value above zero
+(<code>"change"</code>), or presence, a value above <code>detection</code>
 (<code>"occupancy"</code>). Effects from a results table are drawn by the
 <code>data.frame</code> method. (Default: <code>"raw"</code>)</p></dd>
+
+
+<dt id="arg-detection">detection<a class="anchor" aria-label="anchor" href="#arg-detection"></a></dt>
+<dd><p><code>Numeric scalar</code>. With <code>value =
+"occupancy"</code>, a feature is present in a sample when its value is above
+this. (Default: <code>0</code>)</p></dd>
 
 
 <dt id="arg-order-by">order.by<a class="anchor" aria-label="anchor" href="#arg-order-by"></a></dt>
