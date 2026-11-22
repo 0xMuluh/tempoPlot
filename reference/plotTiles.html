@@ -69,6 +69,7 @@ panel per subject or per group of subjects.</p>
 <span>  order.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"cluster"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"subject"</span>, <span class="st">"group"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -83,6 +84,7 @@ panel per subject or per group of subjects.</p>
 <span>  top <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  order.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"cluster"</span><span class="op">)</span>,</span>
 <span>  feature.col <span class="op">=</span> <span class="st">"feature"</span>,</span>
+<span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -104,8 +106,8 @@ and time point, such as differential abundance at each visit.</p></dd>
 
 <dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
-<code>colData(x)</code> that contains sampling times: numeric, <code>Date</code> or
-a factor of visits.</p></dd>
+<code>colData(x)</code>, or of a <code>data.frame</code> <code>x</code>, that contains
+times: numeric, <code>Date</code> or a factor of visits.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -121,7 +123,8 @@ form one series. (Default: <code>NULL</code>)</p></dd>
 
 <dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
 <dd><p><code>Character vector</code>. Features to plot. If
-<code>NULL</code>, plots the <code>top</code> features with the largest mean.
+<code>NULL</code>, plots the <code>top</code> features with the largest mean, or
+the largest mean absolute effect for a <code>data.frame</code>.
 (Default: <code>NULL</code>)</p></dd>
 
 
@@ -155,6 +158,13 @@ of subjects with the feature. (Default: <code>"subject"</code>)</p></dd>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> that groups subjects when <code>level = "group"</code>. If
 <code>NULL</code>, all subjects form one group. (Default: <code>NULL</code>)</p></dd>
+
+
+<dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
+<dd><p><code>Numeric scalar</code>. Leaves blank the gaps between
+consecutive times that are further apart than this, in <code>time.col</code>
+units: a tile reaches at most <code>max.gap / 2</code> from its time.
+<code>NULL</code> never leaves gaps. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-effect">effect<a class="anchor" aria-label="anchor" href="#arg-effect"></a></dt>

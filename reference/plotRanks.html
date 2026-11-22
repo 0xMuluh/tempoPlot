@@ -66,7 +66,6 @@ coordinates the plot becomes a rank clock.</p>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
 <span>  top <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  rank <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  coord <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cartesian"</span>, <span class="st">"polar"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -100,18 +99,14 @@ form one series. (Default: <code>NULL</code>)</p></dd>
 
 <dt id="arg-assay-type">assay.type<a class="anchor" aria-label="anchor" href="#arg-assay-type"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the assay of
-abundances. (Default: <code>"counts"</code>)</p></dd>
+abundances. To rank taxa such as phyla, agglomerate <code>x</code> first with
+<code><a href="https://microbiome.github.io/mia/reference/agglomerate-methods.html" class="external-link">mia::agglomerateByRank()</a></code>.
+(Default: <code>"counts"</code>)</p></dd>
 
 
 <dt id="arg-top">top<a class="anchor" aria-label="anchor" href="#arg-top"></a></dt>
 <dd><p><code>Integer scalar</code>. Number of features with the largest
-mean abundance to draw. (Default: <code>5</code>)</p></dd>
-
-
-<dt id="arg-rank">rank<a class="anchor" aria-label="anchor" href="#arg-rank"></a></dt>
-<dd><p><code>Character scalar</code>. Specifies the column of
-<code>rowData(x)</code>, such as a taxonomic rank, whose levels are summed
-before ranking. (Default: <code>NULL</code>)</p></dd>
+mean value in <code>assay.type</code> to draw. (Default: <code>5</code>)</p></dd>
 
 
 <dt id="arg-coord">coord<a class="anchor" aria-label="anchor" href="#arg-coord"></a></dt>
@@ -139,13 +134,23 @@ their mean rank.</p>
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># 16 species in three bioreactors</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotRanks</span><span class="op">(</span><span class="va">minimalgut</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">minimalgut</span></span></span>
+<span class="r-in"><span><span class="fu">plotRanks</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotRanks-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># As rank clocks</span></span></span>
-<span class="r-in"><span><span class="fu">plotRanks</span><span class="op">(</span><span class="va">minimalgut</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
+<span class="r-in"><span><span class="fu">plotRanks</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
 <span class="r-in"><span>    coord <span class="op">=</span> <span class="st">"polar"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotRanks-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Phyla of the subjects sampled five times</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"hitchip1006"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">hitchip1006</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">assay</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="va">hitchip1006</span>, <span class="st">"counts"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">[</span>, <span class="va">tse</span><span class="op">$</span><span class="va">subject</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">subject</span><span class="op">)</span> <span class="op">==</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/agglomerate-methods.html" class="external-link">agglomerateByRank</a></span><span class="op">(</span><span class="va">tse</span>, rank <span class="op">=</span> <span class="st">"Phylum"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotRanks</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"time"</span>, group <span class="op">=</span> <span class="st">"subject"</span>, top <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotRanks-3.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>

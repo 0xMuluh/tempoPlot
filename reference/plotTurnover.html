@@ -142,11 +142,12 @@ metrics. <em>Methods in Ecology and Evolution</em> 7(10):1146-1151.</p>
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># 16 species in three bioreactors</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotTurnover</span><span class="op">(</span><span class="va">minimalgut</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">minimalgut</span></span></span>
+<span class="r-in"><span><span class="fu">plotTurnover</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTurnover-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Turnover components, averaged over the bioreactors</span></span></span>
-<span class="r-in"><span><span class="fu">plotTurnover</span><span class="op">(</span><span class="va">minimalgut</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
+<span class="r-in"><span><span class="fu">plotTurnover</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
 <span class="r-in"><span>    type <span class="op">=</span> <span class="st">"components"</span>, level <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTurnover-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
