@@ -19,7 +19,7 @@ coordinates the plot becomes a rank clock."><!-- mathjax --><script src="https:/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.60</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ coordinates the plot becomes a rank clock."><!-- mathjax --><script src="https:/
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the ranks of features over time</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotRanks.R" class="external-link"><code>R/plotRanks.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/plotRanks.R" class="external-link"><code>R/plotRanks.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotRanks.Rd</code></div>
     </div>
 
@@ -65,8 +65,10 @@ coordinates the plot becomes a rank clock.</p>
 <span>  <span class="va">time.col</span>,</span>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  top <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  coord <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cartesian"</span>, <span class="st">"polar"</span><span class="op">)</span>,</span>
+<span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -107,15 +109,28 @@ abundances. To rank taxa such as phyla, agglomerate <code>x</code> first with
 (Default: <code>"counts"</code>)</p></dd>
 
 
+<dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
+<dd><p><code>Character vector</code>. Features to draw. If
+<code>NULL</code>, draws the <code>top</code> features with the best mean rank.
+(Default: <code>NULL</code>)</p></dd>
+
+
 <dt id="arg-top">top<a class="anchor" aria-label="anchor" href="#arg-top"></a></dt>
-<dd><p><code>Integer scalar</code>. Number of features with the largest
-mean value in <code>assay.type</code> to draw. (Default: <code>5</code>)</p></dd>
+<dd><p><code>Integer scalar</code>. Number of features to draw when
+<code>features</code> is <code>NULL</code>. (Default: <code>5</code>)</p></dd>
 
 
 <dt id="arg-coord">coord<a class="anchor" aria-label="anchor" href="#arg-coord"></a></dt>
 <dd><p><code>Character scalar</code>. Draws time on a straight
 (<code>"cartesian"</code>) or circular (<code>"polar"</code>) axis.
 (Default: <code>"cartesian"</code>)</p></dd>
+
+
+<dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
+<dd><p><code>Numeric scalar</code>. Breaks a line where consecutive
+samples of a subject are further apart than this, in <code>time.col</code>
+units. For visits, <code>NULL</code> breaks lines at visits without a
+sample; otherwise <code>NULL</code> never breaks lines. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>

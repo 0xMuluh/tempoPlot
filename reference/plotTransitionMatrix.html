@@ -19,7 +19,7 @@ state matrix."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/li
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.60</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ state matrix."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/li
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot transitions between states</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTransitionMatrix.R" class="external-link"><code>R/plotTransitionMatrix.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/plotTransitionMatrix.R" class="external-link"><code>R/plotTransitionMatrix.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTransitionMatrix.Rd</code></div>
     </div>
 
@@ -67,6 +67,7 @@ state matrix.</p>
 <span>  <span class="va">group</span>,</span>
 <span>  as.relative <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  facet.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -116,6 +117,14 @@ from each state (<code>TRUE</code>) or the counts (<code>FALSE</code>).
 <code>colData(x)</code> that splits the transitions into panels. Each
 transition takes the value of its earlier sample.
 (Default: <code>NULL</code>)</p></dd>
+
+
+<dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
+<dd><p><code>Numeric scalar</code>. Skips the transitions between
+consecutive samples of a subject that are further apart than this, in
+<code>time.col</code> units. For visits, <code>NULL</code> skips transitions
+across visits without a sample; otherwise <code>NULL</code> counts all of
+them. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>

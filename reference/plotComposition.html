@@ -19,7 +19,7 @@ subjects."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.60</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.61</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ subjects."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/m
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot composition over time</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotComposition.R" class="external-link"><code>R/plotComposition.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/plotComposition.R" class="external-link"><code>R/plotComposition.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-composition/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotComposition.Rd</code></div>
     </div>
 
@@ -64,7 +64,8 @@ subjects.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">time.col</span>,</span>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  top <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  as.relative <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bar"</span>, <span class="st">"area"</span>, <span class="st">"stream"</span><span class="op">)</span>,</span>
@@ -109,13 +110,20 @@ panel. (Default: <code>NULL</code>)</p></dd>
 <dd><p><code>Character scalar</code>. Specifies the assay of
 abundances. To plot taxonomic ranks, agglomerate <code>x</code> first with
 <code><a href="https://microbiome.github.io/mia/reference/agglomerate-methods.html" class="external-link">mia::agglomerateByRank()</a></code>.
-(Default: <code>NULL</code>, the first assay)</p></dd>
+(Default: <code>"counts"</code>)</p></dd>
+
+
+<dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
+<dd><p><code>Character vector</code>. Features to plot. If
+<code>NULL</code>, plots the <code>top</code> features with the largest mean
+plotted value: proportion, or assay value with
+<code>as.relative = FALSE</code>. The rest, and a feature already named
+"Other", are summed into "Other". (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-top">top<a class="anchor" aria-label="anchor" href="#arg-top"></a></dt>
-<dd><p><code>Integer scalar</code>. Number of most abundant features, by
-mean proportion, to show; the rest, and a feature already named
-"Other", are summed into "Other". (Default: <code>5</code>)</p></dd>
+<dd><p><code>Integer scalar</code>. Number of features to plot when
+<code>features</code> is <code>NULL</code>. (Default: <code>5</code>)</p></dd>
 
 
 <dt id="arg-as-relative">as.relative<a class="anchor" aria-label="anchor" href="#arg-as-relative"></a></dt>
