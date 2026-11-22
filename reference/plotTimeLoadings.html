@@ -20,7 +20,7 @@ time."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ time."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathj
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot temporal loadings of a tensor decomposition</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/plotTimeLoadings.R" class="external-link"><code>R/plotTimeLoadings.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotTimeLoadings.R" class="external-link"><code>R/plotTimeLoadings.R</code></a></small>
     <div class="hidden name"><code>plotTimeLoadings.Rd</code></div>
     </div>
 
@@ -89,8 +89,10 @@ as row names or in a column <code>time</code>.</p></dd>
 
 
 <dt id="arg-ncomponents">ncomponents<a class="anchor" aria-label="anchor" href="#arg-ncomponents"></a></dt>
-<dd><p><code>Integer scalar</code>. Number of components to draw,
-from the first. If <code>NULL</code>, draws all. (Default: <code>NULL</code>)</p></dd>
+<dd><p><code>Numeric scalar</code> or <code>vector</code>. The
+components to draw: the first <code>ncomponents</code>, or the components
+given by index or name. If <code>NULL</code>, draws all.
+(Default: <code>NULL</code>)</p></dd>
 
 </dl></div>
     <div id="value">
@@ -100,10 +102,11 @@ from the first. If <code>NULL</code>, draws all. (Default: <code>NULL</code>)</p
     <div id="details">
     <h2>Details</h2>
     <p>For TEMPTED, the loadings are functions evaluated on a time grid, and
-the legend gives the share of variance of each component
-(<code>r_square</code>). For PARAFAC, the time mode has one loading per time
-point; set its row names to the times, otherwise points are numbered in
-their order. The sign of a component is arbitrary: a component and its
+the legend gives the \(R^2\) of each component (<code>r_square</code>), of
+the data left after the previous components; they do not add up to the
+total \(R^2\) (<code>accum_r_square</code>). For PARAFAC, the time mode has
+one loading per time point; set its row names to the times, otherwise
+points are numbered in their order. The sign of a component is arbitrary: a component and its
 negative describe the same pattern. Feature and subject loadings are
 drawn by <code>miaViz::plotLoadings()</code> and
 <code><a href="plotSubjectScatter.html">plotSubjectScatter</a></code>.</p>
@@ -128,9 +131,9 @@ for longitudinal microbiome studies. <em>Genome Biology</em> 25:317.</p>
 <span class="r-in"><span>    <span class="fu">plotTimeLoadings</span><span class="op">(</span><span class="va">tse</span>, source <span class="op">=</span> <span class="st">"tempted"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculate the 1th Component</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Convergence reached at dif=8.87596919510545e-08, iter=2</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Convergence reached at dif=8.87596940345795e-08, iter=2</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculate the 2th Component</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Convergence reached at dif=2.19221544600143e-05, iter=6</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Convergence reached at dif=2.19221530172096e-05, iter=6</span>
 <span class="r-plt img"><img src="plotTimeLoadings-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>

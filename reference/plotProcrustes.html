@@ -20,7 +20,7 @@ ordinations agree."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ ordinations agree."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot two ordinations superimposed by Procrustes rotation</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/plotProcrustes.R" class="external-link"><code>R/plotProcrustes.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotProcrustes.R" class="external-link"><code>R/plotProcrustes.R</code></a></small>
     <div class="hidden name"><code>plotProcrustes.Rd</code></div>
     </div>
 
@@ -62,14 +62,7 @@ ordinations agree.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotProcrustes</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'SummarizedExperiment'</span></span>
-<span><span class="fu">plotProcrustes</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">dimred</span>,</span>
-<span>  dimred2 <span class="op">=</span> <span class="va">dimred</span>,</span>
-<span>  ncomponents <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  colour.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu">plotProcrustes</span><span class="op">(</span><span class="va">x</span>, <span class="va">dimred</span>, <span class="va">dimred2</span>, ncomponents <span class="op">=</span> <span class="fl">2</span>, colour.by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
 <span><span class="fu">plotProcrustes</span><span class="op">(</span></span>
@@ -106,14 +99,15 @@ object, such as a <code>TreeSummarizedExperiment</code>, or a
 
 <dt id="arg-dimred-">dimred2<a class="anchor" aria-label="anchor" href="#arg-dimred-"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the second
-<code>reducedDim</code>, of <code>x</code> or of <code>experiment2</code>.
-(Default: <code>dimred</code>)</p></dd>
+<code>reducedDim</code>, of <code>x</code> or of <code>experiment2</code>. For a
+<code>MultiAssayExperiment</code>, it defaults to <code>dimred</code>.</p></dd>
 
 
 <dt id="arg-ncomponents">ncomponents<a class="anchor" aria-label="anchor" href="#arg-ncomponents"></a></dt>
-<dd><p><code>Integer scalar</code>. Number of components of each
-ordination used in the rotation; the first two are drawn.
-(Default: <code>2</code>)</p></dd>
+<dd><p><code>Numeric scalar</code> or <code>vector</code>. The
+components of each ordination used in the rotation: the first
+<code>ncomponents</code>, or the components given by index or name. The
+first two are drawn. (Default: <code>2</code>)</p></dd>
 
 
 <dt id="arg-colour-by">colour.by<a class="anchor" aria-label="anchor" href="#arg-colour-by"></a></dt>

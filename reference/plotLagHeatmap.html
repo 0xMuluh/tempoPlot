@@ -19,7 +19,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot lagged correlations of features with a target</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a></small>
     <div class="hidden name"><code>plotLagHeatmap.Rd</code></div>
     </div>
 
@@ -158,10 +158,13 @@ target is looked up in <code>target.experiment</code> as for a
     <div id="details">
     <h2>Details</h2>
     <p>At lag \(k\), each feature at a sample is paired with the target
-\(k\) samples later in the same subject, and the Spearman correlation
-is computed over all pairs. Positive lags show features that change
-before the target, negative lags features that follow it. Lags count
-samples, so they are comparable across subjects only for even sampling.</p>
+\(k\) samples later in the same subject. Feature and target are
+centred on their mean over the pairs of each subject, so that
+differences between subjects do not drive the correlation, and the
+Spearman correlation is computed over all pairs. Positive lags show
+features that change before the target, negative lags features that
+follow it. Lags count samples, so they are comparable across subjects
+only for even sampling.</p>
     </div>
 
     <div id="ref-examples">

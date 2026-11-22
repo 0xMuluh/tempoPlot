@@ -20,7 +20,7 @@ the neutral model of occupancy and mean relative abundance."><!-- mathjax --><sc
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ the neutral model of occupancy and mean relative abundance."><!-- mathjax --><sc
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot two statistics of each feature with a fit</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/plotFeatureScatter.R" class="external-link"><code>R/plotFeatureScatter.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-dynamics/R/plotFeatureScatter.R" class="external-link"><code>R/plotFeatureScatter.R</code></a></small>
     <div class="hidden name"><code>plotFeatureScatter.Rd</code></div>
     </div>
 
@@ -118,13 +118,14 @@ computed within each group. (Default: <code>NULL</code>)</p></dd>
     </div>
     <div id="details">
     <h2>Details</h2>
-    <p>With <code>fit = "power"</code>, both axes are log10 and the legend gives the
-slope. With <code>fit = "neutral"</code>, the mean is of relative abundances
+    <p>With <code>fit = "power"</code>, both axes are log10 and the subtitle gives
+the slope. With <code>group.by</code>, each group has its own curve in its
+colour. With <code>fit = "neutral"</code>, the mean is of relative abundances
 and the curve is \(1 - F(1/N; Nmp, Nm(1-p))\), with \(F\) the beta
 distribution function, \(N\) the mean sample total, \(p\) the mean
 relative abundance and the migration rate \(m\) fitted by least
-squares. With a fit, features with a zero statistic on a log axis are
-not drawn and are left out of the fit.</p>
+squares; the subtitle gives \(m\). With a fit, features with a zero
+statistic on a log axis are not drawn and are left out of the fit.</p>
     </div>
     <div id="references">
     <h2>References</h2>
