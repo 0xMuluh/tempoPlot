@@ -54,8 +54,9 @@ test_that("plotFeatureScatter fits each group in its colour", {
     expect_true(any(p$data$.by == "x" & p$data$.feature == "a"))
     ld <- layer_data(p, 2L)
     expect_identical(nrow(ld), 200L)
-    expect_identical(sort(unique(ld$colour)),
-        sort(unique(layer_data(p, 1L)$colour)))
+    expect_identical(sort(unique(ld$colour)), c("#0072B2", "#E69F00"))
+    expect_identical(sort(unique(layer_data(p, 1L)$colour)),
+        c("#0072B2", "#E69F00"))
     expect_match(p$labels$subtitle, "^x: slope .*; y: slope ")
 })
 

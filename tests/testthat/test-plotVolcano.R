@@ -25,6 +25,8 @@ test_that("plotVolcano draws effects against -log10 p", {
     ld <- layer_data(p, 3L)
     expect_equal(ld$y, -log10(c(0.001, 0.01, 0.9, 0.04)))
     expect_identical(p$data$significant, c(TRUE, TRUE, FALSE, TRUE))
+    expect_identical(ld$colour, c("#0072B2", "#0072B2", "grey80",
+        "#0072B2"))
     expect_equal(layer_data(p, 2L)$yintercept, -log10(0.05))
 })
 

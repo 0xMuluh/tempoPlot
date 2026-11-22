@@ -71,23 +71,19 @@
 NULL
 
 #' @rdname plotTBI
-#' @importFrom SummarizedExperiment colData assay assayNames
+#' @importFrom SummarizedExperiment colData
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group, time.point, assay.type = "counts",
             method = c("sorensen", "bray"), colour.by = NULL, ...) {
         method <- match.arg(method)
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, group)
         .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
         .check_column(x, colour.by)
-        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
-            stop("'assay.type' must be one of assayNames(x).",
-                call. = FALSE)
+        mat <- .get_assay(x, assay.type)
+        if (method == "sorensen") {
+            mat <- .present(mat) + 0
         }
         i <- .time_point_index(x, time.col, time.point)
         subject <- as.character(colData(x)[[group]])
@@ -100,10 +96,6 @@ setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
         }
         i1 <- i1[match(both, subject[i1])]
         i2 <- i2[match(both, subject[i2])]
-        mat <- as.matrix(assay(x, assay.type))
-        if (method == "sorensen") {
-            mat <- (mat > 0) + 0
-        }
         y1 <- mat[, i1, drop = FALSE]
         y2 <- mat[, i2, drop = FALSE]
         a <- colSums(pmin(y1, y2), na.rm = TRUE)
@@ -129,8 +121,10 @@ setMethod("plotTBI", signature = c(x = "SummarizedExperiment"),
         geom_abline(slope = 1, intercept = 0, linetype = "dashed",
             colour = "grey40") +
         geom_point(...) +
+        .scale_by(df, colour.by, "colour") +
         coord_equal(xlim = lim, ylim = lim) +
         labs(x = paste("losses from", time.point[1L], "to", time.point[2L]),
             y = paste("gains from", time.point[1L], "to", time.point[2L]),
-            colour = colour.by)
+            colour = colour.by) +
+        .theme_tempoPlot()
 }

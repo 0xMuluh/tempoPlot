@@ -22,6 +22,12 @@ test_that("plotNetwork draws edges from metadata in panels", {
     expect_identical(nrow(df), 4L)
     expect_identical(as.character(df$.sign), c("positive", "negative",
         "positive", "positive"))
+    # Negative blue and positive orange, also when all edges are positive.
+    expect_identical(layer_data(p)$colour,
+        c("#E69F00", "#0072B2", "#E69F00", "#E69F00"))
+    pos <- toy
+    S4Vectors::metadata(pos)$e$weight <- 1
+    expect_true(all(layer_data(plotNetwork(pos, "e"))$colour == "#E69F00"))
     # The same node sits at the same place in every panel.
     a <- df[df$from == "a", ]
     expect_identical(length(unique(a$.x)), 1L)

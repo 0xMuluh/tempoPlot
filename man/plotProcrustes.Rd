@@ -71,7 +71,8 @@ tse <- mia::transformAssay(tse, method = "clr", pseudocount = 1,
     assay.type = "counts")
 tse <- mia::addMDS(tse, assay.type = "relabundance", method = "bray",
     name = "PCoA")
-tse <- scater::runPCA(tse, assay.type = "clr", name = "PCA")
+tse <- scater::runPCA(tse, assay.type = "clr", ncomponents = 5,
+    name = "PCA")
 plotProcrustes(tse, dimred = "PCoA", dimred2 = "PCA",
     colour.by = "StudyIdentifier")
 }

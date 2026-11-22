@@ -59,12 +59,8 @@ NULL
 setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
     function(x, dissimilarity, time.col, group, subjects = NULL,
             threshold = NULL, ...) {
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_longitudinal(x, time.col, group)
-        type <- .time_type(x, time.col)
+        .require_column(x, group)
+        type <- .check_longitudinal(x, time.col, group)
         d <- .get_dissimilarity(x, dissimilarity)
         if (!is.null(threshold) && !(is.numeric(threshold) &&
                 length(threshold) == 1L && is.finite(threshold))) {
@@ -110,22 +106,21 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_rect labs facet_wrap vars
-#'   scale_fill_gradient scale_fill_manual scale_x_continuous
-#'   scale_y_continuous theme
+#'   scale_fill_manual scale_x_continuous scale_y_continuous theme
 .plot_recurrence <- function(df, dissimilarity, time.col, group, threshold,
         levels, ...) {
     p <- ggplot(df, aes(xmin = .data$xmin, xmax = .data$xmax,
         ymin = .data$ymin, ymax = .data$ymax))
     if (is.null(threshold)) {
         p <- p + geom_rect(aes(fill = .data$dissimilarity), ...) +
-            scale_fill_gradient(low = "#2c6fbb", high = "grey95") +
+            .scale_sequential("fill") +
             labs(fill = dissimilarity)
     } else {
-        df$recurrent <- df$dissimilarity <= threshold
+        df$recurrent <- factor(ifelse(df$dissimilarity <= threshold, "yes",
+            "no"), levels = c("yes", "no"))
         p <- p + geom_rect(aes(fill = .data$recurrent), data = df, ...) +
-            scale_fill_manual(values = c(`TRUE` = "#2c6fbb",
-                `FALSE` = "grey95"), labels = c(`TRUE` = "yes",
-                `FALSE` = "no")) +
+            scale_fill_manual(values = c(yes = .okabe_ito[[1L]],
+                no = "grey80")) +
             labs(fill = paste(dissimilarity, "<=", threshold))
     }
     if (!is.null(levels)) {
@@ -135,6 +130,7 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
     }
     # Square panels: both axes are the same times.
     p + facet_wrap(vars(.data[[group]]), scales = "free") +
-        theme(aspect.ratio = 1) +
-        labs(x = time.col, y = time.col)
+        labs(x = time.col, y = time.col) +
+        .theme_tempoPlot() +
+        theme(aspect.ratio = 1)
 }

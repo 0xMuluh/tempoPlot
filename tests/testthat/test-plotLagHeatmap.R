@@ -67,3 +67,27 @@ test_that("plotLagHeatmap takes the target from another experiment", {
     expect_error(plotLagHeatmap(mae, "y", "none", experiment = "features",
         target.experiment = "target"), "'time.col'")
 })
+
+test_that("plotLagHeatmap draws negative blue and positive red", {
+    se <- SummarizedExperiment(assays = list(counts = rbind(b = v, c = -v)),
+        colData = colData(toy))
+    p <- plotLagHeatmap(se, "y", "t", max.lag = 0)
+    fill <- setNames(layer_data(p)$fill, as.character(p$data$.feature))
+    expect_identical(unname(fill[c("b", "c")]), c("#B2182B", "#2166AC"))
+    expect_identical(p$theme$legend.position, "bottom")
+})
+
+test_that("plotLagHeatmap gives NA without a warning for a constant feature", {
+    se <- SummarizedExperiment(assays = list(counts = rbind(b = v,
+        flat = 1)), colData = colData(toy))
+    expect_no_warning(p <- plotLagHeatmap(se, "y", "t", max.lag = 0))
+    expect_true(is.na(p$data$.r[p$data$.feature == "flat"]))
+    expect_identical(layer_data(p)$fill[p$data$.feature == "flat"],
+        "grey50")
+})
+
+test_that("plotLagHeatmap reads counts by default", {
+    se <- toy
+    assays(se) <- list(other = assay(se))
+    expect_error(plotLagHeatmap(se, "y", "t"), "'assay.type'")
+})

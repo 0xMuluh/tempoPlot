@@ -52,7 +52,8 @@ the value of its earlier sample. (Default: \code{NULL})}
 
 \item{max.gap}{\code{Numeric scalar}. Consecutive samples of a subject
 further apart than this, in \code{time.col} units, are not a move.
-\code{NULL} counts all. (Default: \code{NULL})}
+For visits, \code{NULL} skips moves across visits without a sample;
+otherwise \code{NULL} counts all. (Default: \code{NULL})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get

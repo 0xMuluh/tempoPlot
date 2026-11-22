@@ -66,8 +66,7 @@
 NULL
 
 #' @rdname plotFeatureScatter
-#' @importFrom SummarizedExperiment colData assay assayNames rowData
-#' @importFrom stats sd var
+#' @importFrom SummarizedExperiment colData
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
@@ -75,50 +74,16 @@ setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
             fit = c("none", "power", "neutral"), group.by = NULL, ...) {
         fit <- match.arg(fit)
         .check_column(x, group.by)
-        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
-            stop("'assay.type' must be one of assayNames(x).",
-                call. = FALSE)
-        }
-        computed <- c("mean", "variance", "cv", "occupancy")
-        for (arg in c("x.stat", "y.stat")) {
-            v <- get(arg)
-            if (!.is_one_name(v) || !(v %in% computed ||
-                    (v %in% names(rowData(x)) &&
-                    is.numeric(rowData(x)[[v]])))) {
-                stop("'", arg, "' must be one of ",
-                    paste(computed, collapse = ", "),
-                    " or a numeric column of rowData(x).", call. = FALSE)
-            }
-        }
-        if (fit == "neutral" && !(x.stat == "mean" &&
-                y.stat == "occupancy")) {
-            stop("fit = \"neutral\" needs x.stat = \"mean\" and ",
-                "y.stat = \"occupancy\".", call. = FALSE)
-        }
-        mat <- as.matrix(assay(x, assay.type))
-        if (fit == "neutral" && any(mat != round(mat), na.rm = TRUE)) {
-            stop("fit = \"neutral\" needs an 'assay.type' of counts.",
-                call. = FALSE)
-        }
+        mat <- .get_assay(x, assay.type)
+        .check_feature_stats(x, x.stat, y.stat, fit, mat)
         by <- if (is.null(group.by)) rep("", ncol(x)) else
             as.character(colData(x)[[group.by]])
         res <- lapply(split(seq_len(ncol(x)), by), function(i) {
             m <- mat[, i, drop = FALSE]
-            stat <- function(s) {
-                if (!s %in% computed) return(rowData(x)[[s]])
-                if (s == "mean" && fit == "neutral") {
-                    return(rowMeans(prop.table(m, 2L), na.rm = TRUE))
-                }
-                switch(s, mean = rowMeans(m, na.rm = TRUE),
-                    variance = apply(m, 1L, var, na.rm = TRUE),
-                    cv = apply(m, 1L, sd, na.rm = TRUE) /
-                        rowMeans(m, na.rm = TRUE),
-                    occupancy = rowMeans(m > 0, na.rm = TRUE))
-            }
             df <- data.frame(
                 .feature = rownames(x) %||% as.character(seq_len(nrow(x))),
-                .x = stat(x.stat),
-                .y = stat(y.stat))
+                .x = .feature_stat(x, m, x.stat, fit),
+                .y = .feature_stat(x, m, y.stat, fit))
             curve <- switch(fit, none = NULL,
                 power = .fit_power(df),
                 neutral = .fit_neutral(df, mean(colSums(m, na.rm = TRUE))))
@@ -135,6 +100,44 @@ setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
             group.by, ...)
     }
 )
+
+# Statistics computed from the assay; other names are rowData columns.
+.computed_stats <- c("mean", "variance", "cv", "occupancy")
+
+#' @importFrom SummarizedExperiment rowData
+.check_feature_stats <- function(x, x.stat, y.stat, fit, mat) {
+    for (arg in c("x.stat", "y.stat")) {
+        v <- get(arg)
+        if (!.is_one_name(v) || !(v %in% .computed_stats ||
+                (v %in% names(rowData(x)) && is.numeric(rowData(x)[[v]])))) {
+            stop("'", arg, "' must be one of ",
+                paste(.computed_stats, collapse = ", "),
+                " or a numeric column of rowData(x).", call. = FALSE)
+        }
+    }
+    if (fit == "neutral" && !(x.stat == "mean" && y.stat == "occupancy")) {
+        stop("fit = \"neutral\" needs x.stat = \"mean\" and ",
+            "y.stat = \"occupancy\".", call. = FALSE)
+    }
+    if (fit == "neutral" && any(mat != round(mat), na.rm = TRUE)) {
+        stop("fit = \"neutral\" needs an 'assay.type' of counts.",
+            call. = FALSE)
+    }
+}
+
+# Statistic s of each row of the samples m, or the rowData column s of x.
+# For the neutral model, the mean is of relative abundances.
+#' @importFrom SummarizedExperiment rowData
+#' @importFrom stats sd var
+.feature_stat <- function(x, m, s, fit) {
+    switch(s,
+        mean = rowMeans(if (fit == "neutral") prop.table(m, 2L) else m,
+            na.rm = TRUE),
+        variance = apply(m, 1L, var, na.rm = TRUE),
+        cv = apply(m, 1L, sd, na.rm = TRUE) / rowMeans(m, na.rm = TRUE),
+        occupancy = rowMeans(.present(m), na.rm = TRUE),
+        rowData(x)[[s]])
+}
 
 # Row-bind one element of each group's results, adding the group as .by.
 .bind_groups <- function(res, what) {
@@ -200,5 +203,7 @@ setMethod("plotFeatureScatter", signature = c(x = "SummarizedExperiment"),
         p <- p + scale_x_log10()
     }
     xlab <- if (fit == "neutral") "mean relative abundance" else x.stat
-    p + labs(x = xlab, y = y.stat, colour = group.by)
+    p + .scale_categorical("colour") +
+        labs(x = xlab, y = y.stat, colour = group.by) +
+        .theme_tempoPlot()
 }

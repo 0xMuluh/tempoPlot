@@ -28,6 +28,8 @@ test_that("plotFingerprint identifies subjects by their own sample", {
     expect_identical(df$.subject, c("s1", "s2", "s3"))
     expect_equal(df$own, c(1, 1, 18))
     expect_equal(df$other, c(9, 9, 2))
-    expect_identical(df$identified, c(TRUE, TRUE, FALSE))
+    expect_identical(as.character(df$identified), c("yes", "yes", "no"))
     expect_match(p$labels$subtitle, "2 of 3")
+    expect_identical(layer_data(p, 2L)$colour,
+        c("#0072B2", "#0072B2", "#E69F00"))
 })

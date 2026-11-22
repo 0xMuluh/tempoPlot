@@ -71,19 +71,14 @@
 NULL
 
 #' @rdname plotLagHeatmap
-#' @importFrom SummarizedExperiment colData assay assayNames
+#' @importFrom SummarizedExperiment colData
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
     function(x, target, time.col, group = NULL, assay.type = "counts",
             features = NULL, top = 20, max.lag = 3, ...) {
         .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
-        if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
-            stop("'assay.type' must be one of assayNames(x).",
-                call. = FALSE)
-        }
-        mat <- as.matrix(assay(x, assay.type))
+        mat <- .get_assay(x, assay.type)
         mat <- mat[.select_features(mat, features, top), , drop = FALSE]
         y <- unname(.resolve_y(x, target, assay.type, "target"))
         time <- .time_numeric(colData(x)[[time.col]])
@@ -98,7 +93,7 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
 # -max.lag to max.lag samples within each subject, after centring both
 # within subjects. Positive lags pair a feature with y later in the
 # subject.
-#' @importFrom stats cor ave
+#' @importFrom stats ave
 .lag_correlations <- function(mat, y, time, subject, max.lag) {
     if (!(is.numeric(max.lag) && length(max.lag) == 1L && max.lag >= 0)) {
         stop("'max.lag' must be a single non-negative number.",
@@ -122,8 +117,7 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
             FUN = function(u) mean(u, na.rm = TRUE))
         yb <- centre(y[b])
         r <- apply(mat[, a, drop = FALSE], 1L, function(f)
-            suppressWarnings(cor(centre(f), yb, method = "spearman",
-                use = "pairwise.complete.obs")))
+            .spearman(centre(f), yb))
         data.frame(.feature = rownames(mat), .lag = k, .r = r)
     }))
     if (is.null(res)) {
@@ -133,12 +127,23 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
     res
 }
 
-#' @importFrom ggplot2 ggplot aes .data geom_tile labs scale_fill_gradient2
+# Spearman correlation over the complete pairs; NA, without the warning of
+# cor(), when either side is constant.
+#' @importFrom stats cor
+.spearman <- function(a, b) {
+    ok <- !is.na(a) & !is.na(b)
+    if (length(unique(a[ok])) < 2L || length(unique(b[ok])) < 2L) {
+        return(NA_real_)
+    }
+    cor(a[ok], b[ok], method = "spearman")
+}
+
+#' @importFrom ggplot2 ggplot aes .data geom_tile labs
 .plot_lag_heatmap <- function(df, target, ...) {
     ggplot(df, aes(x = .data$.lag, y = .data$.feature, fill = .data$.r)) +
         geom_tile(...) +
-        scale_fill_gradient2(low = "#b2182b", mid = "grey95",
-            high = "#2166ac", limits = c(-1, 1), na.value = "white") +
+        .scale_diverging("fill", limits = c(-1, 1)) +
         labs(x = paste0("lag in samples (feature before ", target, ")"),
-            y = NULL, fill = "Spearman")
+            y = NULL, fill = "Spearman") +
+        .theme_tempoPlot()
 }

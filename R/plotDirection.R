@@ -30,7 +30,8 @@
 #'
 #' @param max.gap \code{Numeric scalar}. Consecutive samples of a subject
 #'   further apart than this, in \code{time.col} units, are not a move.
-#'   \code{NULL} counts all. (Default: \code{NULL})
+#'   For visits, \code{NULL} skips moves across visits without a sample;
+#'   otherwise \code{NULL} counts all. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_histogram]{geom_histogram}}.
@@ -63,12 +64,10 @@ NULL
 setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group, dimred, ncomponents = 2, bins = 16,
             facet.by = NULL, max.gap = NULL, ...) {
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
+        .require_column(x, group)
+        if (.check_longitudinal(x, time.col, group) == "visit") {
+            max.gap <- max.gap %||% 1
         }
-        .check_longitudinal(x, time.col, group)
-        .time_type(x, time.col)
         .check_column(x, facet.by)
         if (!(is.numeric(bins) && length(bins) == 1L && bins >= 2)) {
             stop("'bins' must be a single number of at least 2.",
@@ -82,9 +81,7 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
         df$.y <- rd[, 2L]
         df <- .order_time(df, time.col, group)
         df <- .break_gaps(df, time.col, group, max.gap)
-        n <- nrow(df)
-        line <- paste(df[[group]], df$.segment)
-        i <- which(line[-1L] == line[-n])
+        i <- .next_in_subject(paste(df[[group]], df$.segment))
         dx <- df$.x[i + 1L] - df$.x[i]
         dy <- df$.y[i + 1L] - df$.y[i]
         moves <- data.frame(
@@ -113,7 +110,7 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
         360 - w / 2] - 360
     p <- ggplot(df, aes(x = .data$.angle)) +
         do.call(geom_histogram, modifyList(list(
-            breaks = seq(-w / 2, 360 - w / 2, by = w), fill = "#2c6fbb",
+            breaks = seq(-w / 2, 360 - w / 2, by = w), fill = .okabe_ito[[1L]],
             colour = "white"), list(...))) +
         scale_x_continuous(limits = c(-w / 2, 360 - w / 2),
             breaks = c(0, 90, 180, 270),
@@ -126,5 +123,5 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
     if (!is.null(facet.by)) {
         p <- p + facet_wrap(vars(.data[[facet.by]]))
     }
-    p
+    p + .theme_tempoPlot()
 }
