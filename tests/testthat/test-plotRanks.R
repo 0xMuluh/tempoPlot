@@ -48,7 +48,8 @@ test_that("plotRanks selects by mean rank and takes features", {
 })
 
 test_that("plotRanks breaks lines at skipped visits and at max.gap", {
-    two <- cbind(toy, toy)
+    two <- toy[, rep(seq_len(ncol(toy)), 2L)]
+    colnames(two) <- paste0("s", seq_len(ncol(two)))
     two$id <- rep(c("s1", "s2"), each = 3L)
     two$v <- factor(c("v1", "v2", "v4", "v1", "v2", "v3"),
         levels = paste0("v", 1:4))
