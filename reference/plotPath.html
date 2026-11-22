@@ -19,7 +19,7 @@ such as features or colData columns."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.58</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.59</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ such as features or colData columns."><!-- mathjax --><script src="https://cdnjs
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot trajectories of subjects in two dimensions</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotPath.R" class="external-link"><code>R/plotPath.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-dynamics/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-dynamics/R/plotPath.R" class="external-link"><code>R/plotPath.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/p2-dynamics/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotPath.Rd</code></div>
     </div>
 
@@ -68,7 +68,7 @@ such as features or colData columns.</p>
 <span>  ncomponents <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  x.var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  y.var <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
 <span>  origin <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"baseline"</span><span class="op">)</span>,</span>
 <span>  arrows <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  colour.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -130,7 +130,8 @@ two components by index or name. (Default: <code>2</code>)</p></dd>
 
 <dt id="arg-assay-type">assay.type<a class="anchor" aria-label="anchor" href="#arg-assay-type"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the assay that holds
-features named in <code>x.var</code> or <code>y.var</code>. (Default: <code>NULL</code>)</p></dd>
+features named in <code>x.var</code> or <code>y.var</code>.
+(Default: <code>"counts"</code>)</p></dd>
 
 
 <dt id="arg-origin">origin<a class="anchor" aria-label="anchor" href="#arg-origin"></a></dt>
@@ -171,7 +172,7 @@ arrow. If <code>NULL</code>, draws no field. (Default: <code>NULL</code>)</p></d
 <dt id="arg-lag">lag<a class="anchor" aria-label="anchor" href="#arg-lag"></a></dt>
 <dd><p><code>Integer scalar</code>. Instead of paths, draws the value of
 <code>x.var</code>, or the first component of <code>dimred</code>, against its
-value <code>lag</code> samples later in the same subject, with the identity
+value <code>lag</code> samples later in the same path, with the identity
 line. (Default: <code>NULL</code>)</p></dd>
 
 
@@ -184,7 +185,9 @@ requires gganimate. (Default: <code>FALSE</code>)</p></dd>
 <dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>
 <dd><p><code>Numeric scalar</code>. Breaks a path where consecutive
 samples of a subject are further apart than this, in <code>time.col</code>
-units. <code>NULL</code> never breaks paths. (Default: <code>NULL</code>)</p></dd>
+units. For visits, <code>NULL</code> breaks paths at visits without a
+sample; otherwise <code>NULL</code> never breaks paths. The movement field
+and lag plots pair samples within paths only. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
