@@ -15,6 +15,10 @@ test_that("plotFeatureScatter checks its arguments", {
     expect_error(plotFeatureScatter(toy, "mean", "label"), "'y.stat'")
     expect_error(plotFeatureScatter(toy, "mean", "variance",
         fit = "neutral"), "occupancy")
+    # Relative abundances would give a flat curve at zero.
+    assay(toy, "rel") <- t(t(assay(toy)) / colSums(assay(toy)))
+    expect_error(plotFeatureScatter(toy, "mean", "occupancy",
+        assay.type = "rel", fit = "neutral"), "counts")
 })
 
 test_that("plotFeatureScatter computes statistics per group", {
@@ -34,6 +38,25 @@ test_that("plotFeatureScatter fits Taylor's law", {
     curve <- p$layers[[2L]]$data
     # Variance grows with the square of the mean: slope 2.
     expect_match(unique(curve$.label), "slope 2.00")
+    expect_identical(p$labels$subtitle, "slope 2.00")
+})
+
+test_that("plotFeatureScatter fits each group in its colour", {
+    se <- SummarizedExperiment(
+        assays = list(counts = rbind(a = c(1, 3, 0, 0),
+            b = c(10, 30, 20, 40), c = c(100, 300, 200, 400),
+            d = c(5, 6, 7, 9))),
+        colData = DataFrame(arm = c("x", "x", "y", "y")))
+    p <- plotFeatureScatter(se, "mean", "variance", fit = "power",
+        group.by = "arm")
+    # Feature a is zero in arm y, so it is not drawn there.
+    expect_false(any(p$data$.by == "y" & p$data$.feature == "a"))
+    expect_true(any(p$data$.by == "x" & p$data$.feature == "a"))
+    ld <- layer_data(p, 2L)
+    expect_identical(nrow(ld), 200L)
+    expect_identical(sort(unique(ld$colour)),
+        sort(unique(layer_data(p, 1L)$colour)))
+    expect_match(p$labels$subtitle, "^x: slope .*; y: slope ")
 })
 
 test_that("plotFeatureScatter fits the neutral model", {

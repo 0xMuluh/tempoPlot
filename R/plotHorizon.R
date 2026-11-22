@@ -110,7 +110,7 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
             df$.time <- as.Date(df$.time, origin = "1970-01-01")
         }
         levels <- if (type == "visit") levels(colData(x)[[time.col]])
-        panel <- !(level == "subject" && is.null(group))
+        panel <- !is.null(if (level == "subject") group else group.by)
         .plot_horizon(df, time.col, bands, panel, levels, ...)
     }
 )
@@ -130,8 +130,9 @@ setMethod("plotHorizon", signature = c(x = "SummarizedExperiment"),
             cbind(df, .band = -k, .y = down))
     })
     res <- do.call(rbind, res)
-    res$.band <- factor(res$.band, levels = c(-seq_len(bands),
-        seq_len(bands)))
+    # Legend from the highest band above the centre to the lowest below.
+    res$.band <- factor(res$.band, levels = c(rev(seq_len(bands)),
+        -seq_len(bands)))
     res
 }
 

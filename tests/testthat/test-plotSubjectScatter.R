@@ -25,6 +25,14 @@ test_that("plotSubjectScatter draws one point per subject", {
     expect_identical(p$labels$colour, "sex")
 })
 
+test_that("plotSubjectScatter uses the shared theme and colour scales", {
+    p <- plotSubjectScatter(toy, "a", "b", "id", colour.by = "sex")
+    expect_identical(layer_data(p)$colour, c("#0072B2", "#E69F00"))
+    expect_identical(p$theme$legend.position, "bottom")
+    p <- plotSubjectScatter(toy, "a", "b", "id", colour.by = "a")
+    expect_identical(layer_data(p)$colour, c("#440154", "#FDE725"))
+})
+
 test_that("plotSubjectScatter draws quadrants", {
     p <- plotSubjectScatter(toy, "a", "b", "id", quadrants = TRUE)
     expect_equal(layer_data(p, 1L)$xintercept, 1.5)
@@ -46,8 +54,11 @@ test_that("plotSubjectScatter draws subject loadings of a decomposition", {
         source = "tem", ncomponents = c(1, 3))
     expect_identical(as.character(p$data$.subject), c("s1", "s2", "s3"))
     expect_equal(p$data$.y, c(0.7, 0.8, 0.9))
-    expect_identical(p$labels$x, "PC1 (50%)")
-    expect_identical(p$labels$y, "PC3 (10%)")
+    expect_identical(p$labels$x, "PC1 (R\u00b2 0.50)")
+    expect_identical(p$labels$y, "PC3 (R\u00b2 0.10)")
+    q <- plotSubjectScatter(toy, group = "id", source = "tem",
+        ncomponents = c("PC1", "PC3"))
+    expect_equal(q$data$.y, p$data$.y)
     # Only subjects of x are drawn.
     p <- plotSubjectScatter(toy, group = "id", source = "par")
     expect_identical(as.character(p$data$.subject), "s2")

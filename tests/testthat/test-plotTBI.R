@@ -12,15 +12,18 @@ toy <- SummarizedExperiment(
         sex = c("f", "m", "f")))
 
 test_that("plotTBI checks its arguments", {
-    expect_error(suppressWarnings(plotTBI(toy, "t", NULL, 1, 2)),
+    expect_error(suppressWarnings(plotTBI(toy, "t", NULL, c(1, 2))),
         "'group'")
-    expect_error(suppressWarnings(plotTBI(toy, "t", "id", 1, 9)), "'t2'")
-    expect_error(suppressWarnings(plotTBI(toy, "t", "id", 1, 2,
+    expect_error(suppressWarnings(plotTBI(toy, "t", "id", c(1, 9))),
+        "'time.point'")
+    expect_error(suppressWarnings(plotTBI(toy, "t", "id", c(1, 1))),
+        "two different values")
+    expect_error(suppressWarnings(plotTBI(toy, "t", "id", c(1, 2),
         method = "jaccard")))
 })
 
 test_that("plotTBI splits Bray-Curtis into losses and gains", {
-    p <- suppressWarnings(plotTBI(toy, "t", "id", 1, 2,
+    p <- suppressWarnings(plotTBI(toy, "t", "id", c(1, 2), method = "bray",
         colour.by = "sex"))
     df <- p$data
     expect_identical(df$.subject, "s1")
@@ -32,10 +35,18 @@ test_that("plotTBI splits Bray-Curtis into losses and gains", {
     expect_identical(df$sex, "f")
 })
 
-test_that("plotTBI uses presence and absence with sorensen", {
-    df <- suppressWarnings(plotTBI(toy, "t", "id", 1, 2,
-        method = "sorensen"))$data
+test_that("plotTBI uses presence and absence by default", {
+    df <- suppressWarnings(plotTBI(toy, "t", "id", c(1, 2)))$data
     # Presence (1, 0, 1) -> (1, 1, 1): A = 2, B = 0, C = 1.
     expect_equal(df$losses, 0)
     expect_equal(df$gains, 1 / 5)
+})
+
+test_that("plotTBI bray losses equal gains on relative abundances", {
+    # B - C is the difference of the sample totals.
+    rel <- toy
+    assay(rel) <- t(t(assay(rel)) / colSums(assay(rel)))
+    df <- suppressWarnings(plotTBI(rel, "t", "id", c(1, 2),
+        method = "bray"))$data
+    expect_equal(df$losses, df$gains)
 })

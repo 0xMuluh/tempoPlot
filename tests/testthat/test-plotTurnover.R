@@ -23,7 +23,10 @@ test_that("plotTurnover checks its arguments", {
 })
 
 test_that("plotTurnover counts gains and losses", {
-    df <- plotTurnover(toy, "t", "id")$data
+    p <- plotTurnover(toy, "t", "id")
+    # Losses are drawn down but labelled as counts.
+    expect_false(any(grepl("-", layer_scales(p)$y$get_labels())))
+    df <- p$data
     expect_identical(nrow(df), 6L)
     expect_equal(value(df, "s1", 1, "gained"), 1)
     expect_equal(value(df, "s1", 1, "lost"), -1)

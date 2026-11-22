@@ -12,14 +12,15 @@
 #'   a factor of visits.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that identifies subjects.
+#'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
+#'   form one path. (Default: \code{NULL})
 #'
 #' @param dimred \code{Character scalar}. Specifies the
 #'   \code{reducedDim(x)} to plot. (Default: \code{NULL})
 #'
-#' @param ncomponents \code{Numeric} or \code{Character vector}. The two
-#'   components of \code{dimred} to plot, by index or name.
-#'   (Default: \code{c(1, 2)})
+#' @param ncomponents \code{Numeric scalar} or \code{vector}. The two
+#'   components of \code{dimred} to plot: \code{2} for the first two, or
+#'   two components by index or name. (Default: \code{2})
 #'
 #' @param x.var,y.var \code{Character scalar}. Variables to plot instead of
 #'   \code{dimred}: a column of \code{colData(x)} or a feature of
@@ -70,7 +71,8 @@
 #' @details
 #' Give either \code{dimred} or both \code{x.var} and \code{y.var}; with
 #' \code{lag}, \code{x.var} alone is enough. Points near the identity line
-#' of a lag plot change little over \code{lag} samples.
+#' of a lag plot change little over \code{lag} samples. Ordinations and lag
+#' plots have equal axis scales.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -119,11 +121,11 @@ NULL
 #' @rdname plotPath
 #' @importFrom utils modifyList
 #' @importFrom SummarizedExperiment colData
-#' @importFrom SingleCellExperiment reducedDim
+#' @importFrom ggplot2 coord_equal
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
-    function(x, time.col, group, dimred = NULL, ncomponents = c(1, 2),
+    function(x, time.col, group = NULL, dimred = NULL, ncomponents = 2,
             x.var = NULL, y.var = NULL, assay.type = NULL,
             origin = c("none", "baseline"), arrows = TRUE, colour.by = NULL,
             group.by = NULL, centroids = FALSE, field = NULL, lag = NULL,
@@ -171,39 +173,36 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
             df$.y <- unname(.resolve_y(x, y.var, assay.type, "y.var"))
             labels <- c(x.var, y.var)
         } else {
-            labels <- paste0(dimred, ":", ncomponents)
-            hits <- lapply(labels, .match_dimred_component, x = x)
-            if (length(labels) != 2L || any(vapply(hits, is.null,
-                    logical(1)))) {
-                stop("'dimred' must be in reducedDimNames(x) and ",
-                    "'ncomponents' must give two of its components.",
-                    call. = FALSE)
-            }
-            rd <- reducedDim(x, dimred)
-            df$.x <- as.numeric(rd[, hits[[1L]]$j])
-            df$.y <- as.numeric(rd[, hits[[2L]]$j])
+            rd <- .get_reduced_dim(x, dimred, ncomponents, n = 2L)
+            df$.x <- rd[, 1L]
+            df$.y <- rd[, 2L]
+            labels <- colnames(rd)
         }
         df <- .order_time(df, time.col, group)
         df <- .break_gaps(df, time.col, group, max.gap)
+        ids <- if (is.null(group)) rep("", nrow(df)) else df[[group]]
         if (origin == "baseline") {
-            first <- function(v) ave(v, df[[group]], FUN = function(u) u[1L])
+            first <- function(v) ave(v, ids, FUN = function(u) u[1L])
             df$.x <- df$.x - first(df$.x)
             df$.y <- df$.y - first(df$.y)
         }
-        df$.line <- interaction(df[[group]], df$.segment, drop = TRUE)
+        df$.line <- interaction(ids, df$.segment, drop = TRUE)
         df$.t <- .time_numeric(df[[time.col]])
 
         if (!is.null(lag)) {
-            return(.plot_lag(df, group, labels[1L], as.integer(lag),
+            return(.plot_lag(df, ids, labels[1L], as.integer(lag),
                 colour.by, ...))
         }
         p <- .plot_path(df, labels, arrows, colour.by,
             fade = centroids || !is.null(field), ...)
+        if (!is.null(dimred)) {
+            p <- p + coord_equal()
+        }
         if (!is.null(field)) {
             p <- p + .field_layer(df, as.integer(field))
         }
         if (centroids) {
-            p <- p + .centroid_layer(df, time.col, group.by, arrows)
+            p <- p + .centroid_layer(df, group.by, arrows)
         }
         if (animate) {
             p <- p + gganimate::transition_reveal(.data$.t)
@@ -227,12 +226,12 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
 # Mean path of each group.by group (or of all subjects) over time.
 #' @importFrom ggplot2 geom_path aes .data arrow unit
 #' @importFrom stats aggregate
-.centroid_layer <- function(df, time.col, group.by, arrows) {
+.centroid_layer <- function(df, group.by, arrows) {
     by <- if (is.null(group.by)) rep("", nrow(df)) else
         as.character(df[[group.by]])
     cen <- aggregate(cbind(.x, .y) ~ .by + .t,
-        data = data.frame(.x = df$.x, .y = df$.y, .by = by,
-            .t = .time_numeric(df[[time.col]])), FUN = mean)
+        data = data.frame(.x = df$.x, .y = df$.y, .by = by, .t = df$.t),
+        FUN = mean)
     cen <- cen[order(cen$.by, cen$.t), , drop = FALSE]
     if (is.null(group.by)) {
         return(geom_path(aes(x = .data$.x, y = .data$.y, group = .data$.by),
@@ -272,15 +271,16 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
 }
 
 # Value at each sample against the value lag samples later in the same
-# subject, with the identity line.
+# subject (ids), with the identity line.
 #' @importFrom ggplot2 ggplot aes .data geom_point geom_abline labs
-.plot_lag <- function(df, group, label, lag, colour.by, ...) {
+#'   coord_equal
+.plot_lag <- function(df, ids, label, lag, colour.by, ...) {
     n <- nrow(df)
     if (n <= lag) {
         stop("No subject has more than 'lag' samples.", call. = FALSE)
     }
     i <- seq_len(n - lag)
-    i <- i[df[[group]][i] == df[[group]][i + lag]]
+    i <- i[ids[i] == ids[i + lag]]
     if (length(i) == 0L) {
         stop("No subject has more than 'lag' samples.", call. = FALSE)
     }
@@ -291,6 +291,7 @@ setMethod("plotPath", signature = c(x = "SummarizedExperiment"),
         geom_abline(slope = 1, intercept = 0, linetype = "dashed",
             colour = "grey40") +
         geom_point(...) +
+        coord_equal() +
         labs(x = paste(label, "at a sample"),
             y = paste(label, lag, if (lag == 1L) "sample" else "samples",
                 "later"),

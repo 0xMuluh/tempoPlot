@@ -86,18 +86,23 @@
     if (is.factor(time)) as.integer(time) else as.numeric(time)
 }
 
-# Add integer column .segment, increasing within each subject when the
-# gap to the previous sample exceeds max.gap. Distance is numeric
-# difference, days for Date, or level steps for visit factors.
-# max.gap = NULL keeps one segment per subject.
-#' @importFrom stats ave
-.break_gaps <- function(df, time.col, group = NULL, max.gap = NULL) {
+# Error unless max.gap is NULL or a single positive number.
+.check_max_gap <- function(max.gap) {
     if (!is.null(max.gap) &&
             !(is.numeric(max.gap) && length(max.gap) == 1L &&
                 is.finite(max.gap) && max.gap > 0)) {
         stop("'max.gap' must be NULL or a single positive number.",
             call. = FALSE)
     }
+}
+
+# Add integer column .segment, increasing within each subject when the
+# gap to the previous sample exceeds max.gap. Distance is numeric
+# difference, days for Date, or level steps for visit factors.
+# max.gap = NULL keeps one segment per subject.
+#' @importFrom stats ave
+.break_gaps <- function(df, time.col, group = NULL, max.gap = NULL) {
+    .check_max_gap(max.gap)
 
     n <- nrow(df)
     if (n == 0L || is.null(max.gap)) {
@@ -419,8 +424,101 @@
         .time = rep(time, each = length(features)),
         .value = as.vector(mat))
     if (level == "group") {
+        # A factor keeps the selection order through aggregate().
+        df$.feature <- factor(df$.feature, levels = features)
         df <- aggregate(.value ~ .feature + .panel + .time, data = df,
             FUN = mean, na.action = na.pass)
     }
     df
+}
+
+# Assay assay.type of x as a matrix, after checking the name.
+#' @importFrom SummarizedExperiment assay assayNames
+.get_assay <- function(x, assay.type) {
+    if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
+        stop("'assay.type' must be one of assayNames(x).", call. = FALSE)
+    }
+    as.matrix(assay(x, assay.type))
+}
+
+# Error unless col is one column name of colData(x); for required
+# arguments, where .check_column() also accepts NULL.
+#' @importFrom SummarizedExperiment colData
+.require_column <- function(x, col, arg = deparse(substitute(col))) {
+    if (!(.is_one_name(col) && col %in% names(colData(x)))) {
+        stop("'", arg, "' must be one column name of colData(x).",
+            call. = FALSE)
+    }
+}
+
+# Primary names (rows of colData(x)) of the samples of one experiment of
+# the MultiAssayExperiment x, in the column order of that experiment.
+#' @importFrom MultiAssayExperiment experiments sampleMap
+.primary_names <- function(x, experiment) {
+    map <- sampleMap(x)
+    map <- map[map$assay == experiment, , drop = FALSE]
+    map$primary[match(colnames(experiments(x)[[experiment]]), map$colname)]
+}
+
+# For ids sorted by .order_time(), the rows i whose row i + lag belongs to
+# the same subject: the pairs are (i, i + lag). NA ids never pair.
+.next_in_subject <- function(ids, lag = 1L) {
+    i <- seq_len(max(length(ids) - lag, 0L))
+    i[which(ids[i] == ids[i + lag])]
+}
+
+# Presence as mia::getPrevalence() counts it: values above detection.
+.present <- function(mat, detection = 0) {
+    if (!(is.numeric(detection) && length(detection) == 1L &&
+            !is.na(detection))) {
+        stop("'detection' must be a single number.", call. = FALSE)
+    }
+    mat > detection
+}
+
+# The ncomponents columns of a reducedDim, checked (n of them, if given)
+# and named "<dimred>:<index>".
+#' @importFrom SingleCellExperiment reducedDim reducedDimNames
+.get_reduced_dim <- function(x, dimred, ncomponents, arg = "dimred",
+        n = NULL) {
+    if (!inherits(x, "SingleCellExperiment") || !.is_one_name(dimred) ||
+            !dimred %in% reducedDimNames(x)) {
+        stop("'", arg, "' must be one of reducedDimNames().",
+            call. = FALSE)
+    }
+    rd <- as.matrix(reducedDim(x, dimred))
+    j <- .components(ncomponents, rd, n)
+    rd <- rd[, j, drop = FALSE]
+    colnames(rd) <- paste0(dimred, ":", j)
+    rd
+}
+
+# Indices of the components chosen by ncomponents, as in
+# scater::plotReducedDim(): a number n gives the first n, a vector gives
+# those components, by index or column name of m. With n, exactly n
+# components must be chosen.
+.components <- function(ncomponents, m, n = NULL) {
+    if (is.numeric(ncomponents) && length(ncomponents) == 1L &&
+            isTRUE(ncomponents >= 1)) {
+        ncomponents <- seq_len(ncomponents)
+    }
+    j <- if (is.character(ncomponents)) match(ncomponents, colnames(m)) else
+        if (is.numeric(ncomponents)) match(ncomponents, seq_len(ncol(m)))
+    if (length(j) == 0L || anyNA(j) || (!is.null(n) && length(j) != n)) {
+        stop("'ncomponents' must select ", if (!is.null(n)) paste0(n, " "),
+            "components out of ", ncol(m), ".", call. = FALSE)
+    }
+    j
+}
+
+# Sample indices at each of the two values of time.col in time.point.
+#' @importFrom SummarizedExperiment colData
+.time_point_index <- function(x, time.col, time.point) {
+    time <- as.character(colData(x)[[time.col]])
+    tp <- as.character(time.point)
+    if (length(tp) != 2L || !all(tp %in% time) || tp[1L] == tp[2L]) {
+        stop("'time.point' must be two different values of 'time.col'.",
+            call. = FALSE)
+    }
+    lapply(tp, function(v) which(time == v))
 }

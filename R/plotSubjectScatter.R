@@ -32,8 +32,9 @@
 #'   matrix of subjects by components with subjects as row names.
 #'   (Default: \code{NULL})
 #'
-#' @param ncomponents \code{Integer vector} of length 2. The components of
-#'   \code{source} on the x and y axes. (Default: \code{c(1, 2)})
+#' @param ncomponents \code{Numeric scalar} or \code{vector}. The two
+#'   components of \code{source} on the x and y axes: \code{2} for the
+#'   first two, or two components by index or name. (Default: \code{2})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_point]{geom_point}}.
@@ -81,12 +82,8 @@ NULL
 #' @export
 setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
     function(x, x.stat = NULL, y.stat = NULL, group, colour.by = NULL,
-            quadrants = FALSE, source = NULL, ncomponents = c(1, 2), ...) {
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_column(x, group)
+            quadrants = FALSE, source = NULL, ncomponents = 2, ...) {
+        .require_column(x, group)
         .check_column(x, colour.by)
         if (!(isTRUE(quadrants) || isFALSE(quadrants) ||
                 (is.numeric(quadrants) && length(quadrants) == 2L))) {
@@ -114,11 +111,7 @@ setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
 .subject_stats <- function(x, x.stat, y.stat, group, colour.by) {
     for (arg in c("x.stat", "y.stat")) {
         col <- get(arg)
-        if (is.null(col)) {
-            stop("'", arg, "' must be one column name of colData(x).",
-                call. = FALSE)
-        }
-        .check_column(x, col, arg = arg)
+        .require_column(x, col, arg)
         if (!is.numeric(colData(x)[[col]])) {
             stop("'", arg, "' must be a numeric column.", call. = FALSE)
         }
@@ -162,11 +155,7 @@ setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
         stop("The subject loadings of 'source' need subjects as row ",
             "names.", call. = FALSE)
     }
-    if (!(is.numeric(ncomponents) && length(ncomponents) == 2L &&
-            all(ncomponents >= 1 & ncomponents <= ncol(mat)))) {
-        stop("'ncomponents' must be two components between 1 and ",
-            ncol(mat), ".", call. = FALSE)
-    }
+    j <- .components(ncomponents, mat, n = 2L)
     cols <- unique(c(group, colour.by))
     cd <- unique(as.data.frame(colData(x)[, cols, drop = FALSE],
         optional = TRUE))
@@ -182,9 +171,9 @@ setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
     cd <- cd[!is.na(i), , drop = FALSE]
     i <- i[!is.na(i)]
     cd$.subject <- cd[[group]]
-    cd$.x <- mat[i, ncomponents[[1L]]]
-    cd$.y <- mat[i, ncomponents[[2L]]]
-    attr(cd, "labels") <- .component_labels(obj, mat)[ncomponents]
+    cd$.x <- mat[i, j[1L]]
+    cd$.y <- mat[i, j[2L]]
+    attr(cd, "labels") <- .component_labels(obj, mat)[j]
     cd
 }
 
@@ -200,5 +189,7 @@ setMethod("plotSubjectScatter", signature = c(x = "SummarizedExperiment"),
     }
     p + geom_point(aes(colour = if (!is.null(colour.by))
             .data[[colour.by]]), ...) +
-        labs(x = labels[[1L]], y = labels[[2L]], colour = colour.by)
+        .scale_by(df, colour.by, "colour") +
+        labs(x = labels[[1L]], y = labels[[2L]], colour = colour.by) +
+        .theme_tempoPlot()
 }

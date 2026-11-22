@@ -12,7 +12,7 @@ plotIndividuality(x, ...)
   dissimilarity,
   group,
   layout = c("density", "box", "violin"),
-  group.by = NULL,
+  facet.by = NULL,
   ...
 )
 }
@@ -36,7 +36,7 @@ sample by sample dissimilarity in \code{metadata(x)}, as stored by
 (\code{"density"}), box plots (\code{"box"}) or violins
 (\code{"violin"}). (Default: \code{"density"})}
 
-\item{group.by}{\code{Character scalar}. Specifies the column from
+\item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the pairs into panels. Only pairs of
 samples from the same group are kept. (Default: \code{NULL})}
 }
@@ -50,7 +50,9 @@ The further apart the two distributions, the more individual the
 communities.
 }
 \details{
-Each pair of samples is counted once.
+Each pair of samples is counted once. A subject with \eqn{k} samples
+gives \eqn{k(k-1)/2} within-subject pairs, so subjects sampled often
+weigh most in the within distribution.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -61,5 +63,5 @@ plotIndividuality(tse, dissimilarity = "bray", group = "subject")
 
 # By sex
 plotIndividuality(tse, dissimilarity = "bray", group = "subject",
-    layout = "box", group.by = "sex")
+    layout = "box", facet.by = "sex")
 }

@@ -10,10 +10,6 @@
 #' @param name \code{Character scalar}. Specifies the entry of
 #'   \code{metadata(x)} holding the variogram. (Default: \code{"variogram"})
 #'
-#' @param colour.by \code{Character scalar}. Specifies the column of the
-#'   variogram that colours the estimates, such as the \code{split.by}
-#'   variable of \code{addVariogram()}. (Default: \code{NULL})
-#'
 #' @param type \code{Character scalar}. Draws the dissimilarity at each lag
 #'   (\code{"dissimilarity"}) or, for a variogram computed with
 #'   \code{split.by}, the ratio between its levels (\code{"ratio"}), on a
@@ -23,9 +19,12 @@
 #'   \code{\link[ggplot2:geom_linerange]{geom_pointrange}}.
 #'
 #' @details
-#' Lags the design does not support (missing estimates) are dropped. With
-#' \code{split.by}, the estimates of the levels are slightly shifted apart
-#' at each lag.
+#' The variogram is a table with the columns \code{lag}, \code{estimate},
+#' \code{lower} and \code{upper}, and optionally \code{type} and, between
+#' \code{lag} and \code{type}, the \code{split.by} column. Lags the design
+#' does not support (missing estimates) are dropped. With \code{split.by},
+#' each level or comparison is drawn in its own colour, slightly shifted
+#' apart at each lag.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -47,7 +46,7 @@
 #' tse <- miaTime::addVariogram(tse, time.col = "time", group = "subject",
 #'     assay.type = "hellinger", method = "euclidean", squared = TRUE,
 #'     time.lag = c(2, 6, 8), split.by = "sex", name = "variogram_sex")
-#' plotLagProfile(tse, name = "variogram_sex", colour.by = "sex")
+#' plotLagProfile(tse, name = "variogram_sex")
 #'
 #' # Their ratio
 #' plotLagProfile(tse, name = "variogram_sex", type = "ratio")
@@ -58,8 +57,8 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
-    function(x, name = "variogram", colour.by = NULL,
-            type = c("dissimilarity", "ratio"), ...) {
+    function(x, name = "variogram", type = c("dissimilarity", "ratio"),
+            ...) {
         type <- match.arg(type)
         if (!.is_one_name(name) || is.null(metadata(x)[[name]])) {
             stop("'name' must be an entry of metadata(x); compute it with ",
@@ -69,11 +68,6 @@ setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
         if (!all(c("lag", "estimate", "lower", "upper") %in% names(df))) {
             stop("metadata(x)$", name, " must have the columns lag, ",
                 "estimate, lower and upper.", call. = FALSE)
-        }
-        if (!is.null(colour.by) && !(.is_one_name(colour.by) &&
-                colour.by %in% names(df))) {
-            stop("'colour.by' must be NULL or one column of metadata(x)$",
-                name, ".", call. = FALSE)
         }
         if ("type" %in% names(df)) {
             df <- df[df$type == type, , drop = FALSE]
@@ -86,33 +80,27 @@ setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
                 if (type == "ratio") "; compute it with 'split.by'", ".",
                 call. = FALSE)
         }
-
         # The split.by column sits between lag and type; its ratio rows
-        # name the levels, such as "male / female".
-        ylab <- "D(L)"
-        if (type == "ratio") {
-            split <- setdiff(names(df)[seq_len(match("type", names(df)))],
-                c("lag", "type"))
-            ylab <- paste("Ratio of D(L)", if (length(split) == 1L)
-                paste0("(", unique(df[[split]])[1L], ")"))
-        }
-        .plot_lag_profile(df, colour.by, type, ylab, ...)
+        # name the comparisons, such as "male / female".
+        split <- setdiff(names(df)[seq_len(match("type", names(df), 0L))],
+            c("lag", "type"))
+        .plot_lag_profile(df, if (length(split) == 1L) split, type, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_pointrange labs
 #'   position_dodge geom_hline scale_y_log10
-.plot_lag_profile <- function(df, colour.by, type = "dissimilarity",
-        ylab = "D(L)", ...) {
-    # Groups at the same lag are shifted apart so their intervals show.
+.plot_lag_profile <- function(df, split, type = "dissimilarity", ...) {
+    # Levels at the same lag are shifted apart so their intervals show.
     dodge <- position_dodge(width = 0.02 * diff(range(df$lag)))
     p <- ggplot(df, aes(x = .data$lag, y = .data$estimate,
-            colour = if (!is.null(colour.by)) .data[[colour.by]],
-            group = if (!is.null(colour.by)) .data[[colour.by]] else 1L)) +
+            colour = if (!is.null(split)) .data[[split]],
+            group = if (!is.null(split)) .data[[split]] else 1L)) +
         geom_line(position = dodge) +
         geom_pointrange(aes(ymin = .data$lower, ymax = .data$upper),
             position = dodge, ...) +
-        labs(x = "lag", y = ylab, colour = colour.by)
+        labs(x = "lag", y = if (type == "ratio") "Ratio of D(L)" else "D(L)",
+            colour = split)
     if (type == "ratio") {
         # A ratio of 1 means the same dissimilarity in both levels.
         p <- p + geom_hline(yintercept = 1, linetype = "dashed",

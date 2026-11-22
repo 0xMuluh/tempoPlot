@@ -42,12 +42,11 @@ them computed with `r BiocStyle::Biocpkg("miaTime")` and
 |---|---|
 | When were samples taken? | `plotSwimmer()`, `plotGaps()`, `plotCalendar()` |
 | How does a value change over time? | `plotTrend()`, `plotTimeEffect()`, `plotPath()` |
-| How does the composition change? | `plotComposition()`, `plotTiles()`, `plotHorizon()`, `plotRanks()`, `plotAccumulation()`, `plotAlluvial()`, `plotTransitionMatrix()` |
+| How does the composition change? | `plotComposition()`, `plotTiles()`, `plotHorizon()`, `plotRanks()`, `plotAlluvial()`, `plotTransitionMatrix()` |
 | How fast and how much do communities change? | `plotTurnover()`, `plotTBI()`, `plotRecurrence()`, `plotIndividuality()`, `plotFingerprint()`, `plotLagProfile()` |
 | Are there states, rhythms or leads? | `plotLandscape()`, `plotSpectrum()`, `plotLagHeatmap()`, `plotSurvival()` |
 | Which features or subjects stand out? | `plotVolcano()`, `plotFeatureScatter()`, `plotStats()`, `plotSubjectScatter()`, `plotTimeLoadings()` |
 | How do ordinations and networks compare? | `plotProcrustes()`, `plotDirection()`, `plotNetwork()`, `plotDOC()` |
-| All of it for one subject or a cohort | `plotReport()` |
 
 ## Installation
 
@@ -252,17 +251,29 @@ plotTransitionMatrix(h, state.col = "dominant", time.col = "time",
     group = "subject")
 ```
 
+```{r}
+#| label: plot-alluvial
+#| fig-height: 5
+#| eval: !expr requireNamespace("ggalluvial", quietly = TRUE)
+
+h$visit <- ave(h$time, h$subject, FUN = rank)
+h <- h[, h$visit <= 3 & h$subject %in% names(which(table(h$subject) >= 2))]
+h$visit <- factor(h$visit)
+plotAlluvial(h, state.col = "dominant", time.col = "visit",
+    group = "subject")
+```
+
 ## Change and stability
 
 `plotTurnover()` counts the features gained and lost between consecutive
 samples; `plotTBI()` splits the change between two time points into losses
-and gains (Legendre 2019).
+and gains (Legendre 2019), here of genera present or absent.
 
 ```{r}
 #| label: plot-tbi
 #| fig-height: 5
 
-plotTBI(tse, time.col = "visit", group = "subject", t1 = "1", t2 = "2",
+plotTBI(tse, time.col = "visit", group = "subject", time.point = c("1", "2"),
     colour.by = "sex")
 ```
 
@@ -401,21 +412,26 @@ dissimilarity-overlap curve.
 mg <- addMDS(mg, assay.type = "relabundance", method = "bray",
     name = "PCoA")
 plotDirection(mg, time.col = "Time.hr", group = "StudyIdentifier",
-    dimred = "PCoA", group.by = "StudyIdentifier")
+    dimred = "PCoA", facet.by = "StudyIdentifier")
 ```
 
-## Reports
+## Combining plots
 
-`plotReport()` stacks panels for one subject, a cohort or an intervention.
+All functions return `ggplot` objects, so the
+`r BiocStyle::CRANpkg("patchwork")` package stacks them over a shared time
+axis, here for one bioreactor.
 
 ```{r}
-#| label: plot-report
-#| fig-height: 8
+#| label: combine-plots
+#| fig-height: 7
 #| eval: !expr requireNamespace("patchwork", quietly = TRUE)
 
-plotReport(minimalgut, time.col = "Time_hr_num",
-    group = "StudyIdentifier", y = c("Acetate", "Butyrate"),
-    subject = "Bioreactor A", top = 8)
+library(patchwork)
+a <- minimalgut[, minimalgut$StudyIdentifier == "Bioreactor A"]
+plotTrend(a, y = "Acetate", time.col = "Time_hr_num") /
+    plotComposition(a, time.col = "Time_hr_num", top = 8, layout = "area") /
+    plotTurnover(a, time.col = "Time_hr_num") +
+    plot_layout(axes = "collect")
 ```
 
 ## References

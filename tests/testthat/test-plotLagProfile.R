@@ -19,7 +19,6 @@ test_that("plotLagProfile checks its arguments", {
     bad <- tse
     metadata(bad)$variogram <- v[, c("lag", "estimate")]
     expect_error(plotLagProfile(bad), "lower and upper")
-    expect_error(plotLagProfile(tse, colour.by = "sex"), "'colour.by'")
 })
 
 test_that("plotLagProfile draws supported estimates with intervals", {
@@ -34,8 +33,9 @@ test_that("plotLagProfile draws supported estimates with intervals", {
     expect_true(all(ld$size == 2))
 })
 
-test_that("plotLagProfile colours levels and leaves out ratios", {
-    p <- plotLagProfile(tse, name = "by_sex", colour.by = "sex")
+test_that("plotLagProfile draws one line per level and leaves out ratios", {
+    p <- plotLagProfile(tse, name = "by_sex")
+    expect_length(unique(layer_data(p, 1L)$group), 2L)
     ld <- layer_data(p, 2L)
     est <- vs[vs$type == "dissimilarity" & !is.na(vs$estimate), ]
     expect_true(any(vs$type == "ratio"))
@@ -58,10 +58,17 @@ test_that("plotLagProfile draws ratios between split.by levels", {
     S4Vectors::metadata(toy)$v <- vg
     p <- plotLagProfile(toy, "v", type = "ratio")
     expect_equal(p$data$estimate, c(1.5, 0.5))
-    expect_identical(p$labels$y, "Ratio of D(L) (male / female)")
+    expect_identical(p$labels$y, "Ratio of D(L)")
     expect_s3_class(p$scales$get_scales("y")$trans, "transform")
-    p <- plotLagProfile(toy, "v", colour.by = "sex")
+    p <- plotLagProfile(toy, "v")
     expect_identical(nrow(p$data), 4L)
+    # Two comparisons with the first level are two lines.
+    three <- rbind(vg, transform(vg[vg$type == "ratio", ],
+        sex = "other / female"))
+    S4Vectors::metadata(toy)$v3 <- three
+    p <- plotLagProfile(toy, "v3", type = "ratio")
+    expect_length(unique(layer_data(p, 1L)$group), 2L)
+    expect_identical(p$labels$colour, "sex")
     S4Vectors::metadata(toy)$w <- vg[vg$type == "dissimilarity", -3L]
     expect_error(plotLagProfile(toy, "w", type = "ratio"), "split.by")
 })

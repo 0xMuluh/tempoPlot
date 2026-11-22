@@ -65,10 +65,11 @@ disappearance; their sum is the total turnover of Hallett et al. (2016).
 \examples{
 # 16 species in three bioreactors
 data("minimalgut", package = "miaTime")
-plotTurnover(minimalgut, time.col = "Time.hr", group = "StudyIdentifier")
+tse <- minimalgut
+plotTurnover(tse, time.col = "Time.hr", group = "StudyIdentifier")
 
 # Turnover components, averaged over the bioreactors
-plotTurnover(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+plotTurnover(tse, time.col = "Time.hr", group = "StudyIdentifier",
     type = "components", level = "group")
 }
 \references{

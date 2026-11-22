@@ -10,9 +10,9 @@ plotPath(x, ...)
 \S4method{plotPath}{SummarizedExperiment}(
   x,
   time.col,
-  group,
+  group = NULL,
   dimred = NULL,
-  ncomponents = c(1, 2),
+  ncomponents = 2,
   x.var = NULL,
   y.var = NULL,
   assay.type = NULL,
@@ -40,14 +40,15 @@ object.}
 a factor of visits.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that identifies subjects.}
+\code{colData(x)} that identifies subjects. If \code{NULL}, all samples
+form one path. (Default: \code{NULL})}
 
 \item{dimred}{\code{Character scalar}. Specifies the
 \code{reducedDim(x)} to plot. (Default: \code{NULL})}
 
-\item{ncomponents}{\code{Numeric} or \code{Character vector}. The two
-components of \code{dimred} to plot, by index or name.
-(Default: \code{c(1, 2)})}
+\item{ncomponents}{\code{Numeric scalar} or \code{vector}. The two
+components of \code{dimred} to plot: \code{2} for the first two, or
+two components by index or name. (Default: \code{2})}
 
 \item{x.var, y.var}{\code{Character scalar}. Variables to plot instead of
 \code{dimred}: a column of \code{colData(x)} or a feature of
@@ -103,7 +104,8 @@ such as features or colData columns.
 \details{
 Give either \code{dimred} or both \code{x.var} and \code{y.var}; with
 \code{lag}, \code{x.var} alone is enough. Points near the identity line
-of a lag plot change little over \code{lag} samples.
+of a lag plot change little over \code{lag} samples. Ordinations and lag
+plots have equal axis scales.
 }
 \examples{
 data("hitchip1006", package = "miaTime")

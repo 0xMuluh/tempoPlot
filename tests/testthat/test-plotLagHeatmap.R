@@ -25,8 +25,28 @@ test_that("plotLagHeatmap finds the lag of a shifted feature", {
 
 test_that("plotLagHeatmap pairs samples within subjects only", {
     toy$id <- rep(c("s1", "s2"), each = 10)
+    # The last sample of s1 has no later sample in s1; pairing it with the
+    # first sample of s2 would add an outlier.
+    assay(toy)["a", 10] <- -100
     df <- plotLagHeatmap(toy, "y", "t", group = "id", max.lag = 1)$data
-    expect_equal(df$.r[df$.feature == "b" & df$.lag == 0], 1)
+    expect_equal(df$.r[df$.feature == "a" & df$.lag == 1], 1)
+})
+
+test_that("plotLagHeatmap correlates within subjects", {
+    # Within each subject a falls as y rises, but s2 is higher in both.
+    se <- SummarizedExperiment(
+        assays = list(counts = rbind(a = c(-v[1:10], 10 - v[11:20]))),
+        colData = DataFrame(t = rep(1:10, 2), y = c(v[1:10], 10 + v[11:20]),
+            id = rep(c("s1", "s2"), each = 10)))
+    df <- plotLagHeatmap(se, "y", "t", group = "id", max.lag = 0)$data
+    expect_equal(df$.r, -1)
+})
+
+test_that("plotLagHeatmap reads a feature target from assay.type", {
+    se <- toy
+    assay(se, "alt") <- rbind(a = rev(v), b = rev(v))
+    df <- plotLagHeatmap(se, "b", "t", assay.type = "alt", max.lag = 0)$data
+    expect_equal(df$.r, c(1, 1))
 })
 
 test_that("plotLagHeatmap takes the target from another experiment", {

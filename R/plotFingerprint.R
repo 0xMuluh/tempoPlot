@@ -19,9 +19,9 @@
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
 #'
-#' @param reference.time,query.time Values of \code{time.col}: the samples
-#'   to identify from (\code{reference.time}) and the samples to identify
-#'   (\code{query.time}).
+#' @param time.point \code{Vector} of two values of \code{time.col}: the
+#'   reference time, whose samples subjects are identified from, and the
+#'   query time, whose samples are identified.
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_point]{geom_point}}.
@@ -31,6 +31,8 @@
 #' of its query sample to its own reference sample (x) and to the nearest
 #' reference sample of another subject (y). Points above the 1:1 line are
 #' identified. The subtitle gives the share of subjects identified.
+#' Franzosa et al. (2015) identified people by metagenomic codes; this plot
+#' applies the same idea to the nearest sample on a dissimilarity.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -51,7 +53,7 @@
 #' tse <- tse[, tse$visit %in% c("1", "2")]
 #' tse <- mia::addDissimilarity(tse, method = "bray", assay.type = "counts")
 #' plotFingerprint(tse, dissimilarity = "bray", time.col = "visit",
-#'     group = "subject", reference.time = "1", query.time = "2")
+#'     group = "subject", time.point = c("1", "2"))
 NULL
 
 #' @rdname plotFingerprint
@@ -59,8 +61,7 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotFingerprint", signature = c(x = "SummarizedExperiment"),
-    function(x, dissimilarity, time.col, group, reference.time, query.time,
-            ...) {
+    function(x, dissimilarity, time.col, group, time.point, ...) {
         if (is.null(group)) {
             stop("'group' must be one column name of colData(x).",
                 call. = FALSE)
@@ -68,21 +69,13 @@ setMethod("plotFingerprint", signature = c(x = "SummarizedExperiment"),
         .check_longitudinal(x, time.col, group)
         .time_type(x, time.col)
         d <- .get_dissimilarity(x, dissimilarity)
-        time <- as.character(colData(x)[[time.col]])
-        for (arg in c("reference.time", "query.time")) {
-            v <- get(arg)
-            if (length(v) != 1L || !as.character(v) %in% time) {
-                stop("'", arg, "' must be one value of 'time.col'.",
-                    call. = FALSE)
-            }
-        }
+        i <- .time_point_index(x, time.col, time.point)
         subject <- as.character(colData(x)[[group]])
-        ref <- which(time == as.character(reference.time))
-        qry <- which(time == as.character(query.time))
-        qry <- qry[subject[qry] %in% subject[ref]]
+        ref <- i[[1L]]
+        qry <- i[[2L]][subject[i[[2L]]] %in% subject[ref]]
         if (length(qry) == 0L || length(unique(subject[ref])) < 2L) {
             stop("Subjects need samples at both times, and at least two ",
-                "subjects at 'reference.time'.", call. = FALSE)
+                "subjects at the reference time.", call. = FALSE)
         }
         df <- do.call(rbind, lapply(qry, function(q) {
             own <- ref[subject[ref] == subject[q]]

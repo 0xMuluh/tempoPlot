@@ -7,13 +7,7 @@
 \usage{
 plotLagProfile(x, ...)
 
-\S4method{plotLagProfile}{SummarizedExperiment}(
-  x,
-  name = "variogram",
-  colour.by = NULL,
-  type = c("dissimilarity", "ratio"),
-  ...
-)
+\S4method{plotLagProfile}{SummarizedExperiment}(x, name = "variogram", type = c("dissimilarity", "ratio"), ...)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -24,10 +18,6 @@ object.}
 
 \item{name}{\code{Character scalar}. Specifies the entry of
 \code{metadata(x)} holding the variogram. (Default: \code{"variogram"})}
-
-\item{colour.by}{\code{Character scalar}. Specifies the column of the
-variogram that colours the estimates, such as the \code{split.by}
-variable of \code{addVariogram()}. (Default: \code{NULL})}
 
 \item{type}{\code{Character scalar}. Draws the dissimilarity at each lag
 (\code{"dissimilarity"}) or, for a variogram computed with
@@ -43,9 +33,12 @@ apart at each time lag: the variogram \eqn{D(L)} with its confidence
 interval, as stored by \code{miaTime::addVariogram()}.
 }
 \details{
-Lags the design does not support (missing estimates) are dropped. With
-\code{split.by}, the estimates of the levels are slightly shifted apart
-at each lag.
+The variogram is a table with the columns \code{lag}, \code{estimate},
+\code{lower} and \code{upper}, and optionally \code{type} and, between
+\code{lag} and \code{type}, the \code{split.by} column. Lags the design
+does not support (missing estimates) are dropped. With \code{split.by},
+each level or comparison is drawn in its own colour, slightly shifted
+apart at each lag.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -62,7 +55,7 @@ plotLagProfile(tse)
 tse <- miaTime::addVariogram(tse, time.col = "time", group = "subject",
     assay.type = "hellinger", method = "euclidean", squared = TRUE,
     time.lag = c(2, 6, 8), split.by = "sex", name = "variogram_sex")
-plotLagProfile(tse, name = "variogram_sex", colour.by = "sex")
+plotLagProfile(tse, name = "variogram_sex")
 
 # Their ratio
 plotLagProfile(tse, name = "variogram_sex", type = "ratio")

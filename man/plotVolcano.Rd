@@ -8,14 +8,30 @@
 \usage{
 plotVolcano(x, ...)
 
-\S4method{plotVolcano}{SummarizedExperiment}(x, effect, p.col, threshold = 0.05, label.top = 10, ...)
+\S4method{plotVolcano}{SummarizedExperiment}(
+  x,
+  effect,
+  p.col,
+  threshold = 0.05,
+  label.top = 10,
+  feature.col = NULL,
+  ...
+)
 
-\S4method{plotVolcano}{data.frame}(x, effect, p.col, threshold = 0.05, label.top = 10, ...)
+\S4method{plotVolcano}{data.frame}(
+  x,
+  effect,
+  p.col,
+  threshold = 0.05,
+  label.top = 10,
+  feature.col = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
 object, with the results in \code{rowData(x)}, or a \code{data.frame}
-of results with one row per feature and feature names as row names.}
+of results with one row per feature.}
 
 \item{...}{additional arguments passed to
 \code{\link[ggplot2:geom_point]{geom_point}}.}
@@ -31,6 +47,11 @@ this are significant. (Default: \code{0.05})}
 
 \item{label.top}{\code{Integer scalar}. Labels this many significant
 features with the smallest p-values. (Default: \code{10})}
+
+\item{feature.col}{\code{Character scalar}. Specifies the column of
+feature names that label the points, of \code{rowData(x)} or of the
+\code{data.frame}. If \code{NULL}, uses the row names.
+(Default: \code{NULL})}
 }
 \value{
 A \code{ggplot} object.
@@ -51,9 +72,10 @@ tse <- mia::transformAssay(tse, method = "clr", pseudocount = 1)
 mat <- SummarizedExperiment::assay(tse, "clr")
 male <- tse$sex == "male"
 res <- data.frame(
+    genus = rownames(tse),
     difference = rowMeans(mat[, male]) - rowMeans(mat[, !male]),
-    p = apply(mat, 1, function(v) wilcox.test(v[male], v[!male])$p.value),
-    row.names = rownames(tse))
+    p = apply(mat, 1, function(v) wilcox.test(v[male], v[!male])$p.value))
 res$q <- p.adjust(res$p, method = "fdr")
-plotVolcano(res, effect = "difference", p.col = "q", label.top = 5)
+plotVolcano(res, effect = "difference", p.col = "q", label.top = 5,
+    feature.col = "genus")
 }
