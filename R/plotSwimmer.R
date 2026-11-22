@@ -111,10 +111,7 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
             missing = c("break", "show", "drop"), events = NULL, ...) {
         order.by <- match.arg(order.by)
         missing <- match.arg(missing)
-        if (is.null(group)) {
-            stop("'group' must be one column name of colData(x).",
-                call. = FALSE)
-        }
+        .require_column(x, group)
         visit <- .check_longitudinal(x, time.col, group) == "visit"
         .check_column(x, colour.by)
         if (!visit && missing != "break" && is.null(max.gap)) {
@@ -135,15 +132,15 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
             # as.character() first: c() turns a factor into its codes.
             gapped <- unique(c(as.character(df[[group]][df$.segment > 1L]),
                 missed[[group]]))
-            if (length(gapped) == length(unique(df[[group]]))) {
+            keep <- !as.character(df[[group]]) %in% gapped
+            if (!any(keep)) {
                 stop("All subjects have missing samples.", call. = FALSE)
             }
             if (length(gapped)) {
                 message("Removed ", length(gapped),
                     " subjects with missing samples.")
             }
-            df <- df[!as.character(df[[group]]) %in% gapped, , drop = FALSE]
-            missed <- NULL
+            df <- df[keep, , drop = FALSE]
         }
 
         # Rows are grouped by subject, so each run is one subject.
@@ -154,12 +151,8 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
             n = -runs$lengths)
         df[[group]] <- factor(df[[group]],
             levels = rev(runs$values[order(key)]))
-        if (missing != "show") {
-            missed <- NULL
-        }
-
-        .plot_swimmer(df, time.col, group, colour.by, missing, missed,
-            events, ...)
+        .plot_swimmer(df, time.col, group, colour.by, missing,
+            if (missing == "show") missed, events, ...)
     }
 )
 
@@ -227,6 +220,9 @@ setMethod("plotSwimmer", signature = c(x = "SummarizedExperiment"),
     if (is.factor(df[[time.col]])) {
         p <- p + scale_x_discrete(drop = FALSE)
     }
+    # Event fills are categorical whatever colour.by is.
+    p <- p + .scale_by(df, colour.by, "colour") +
+        .scale_categorical("fill") + .theme_tempoPlot()
     # Labels of more than 60 rows overlap.
     if (length(rows) > 60L) {
         p <- p + theme(axis.text.y = element_blank(),

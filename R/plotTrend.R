@@ -19,9 +19,9 @@
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. (Default: \code{NULL})
 #'
-#' @param assay.type \code{Character scalar} or \code{numeric scalar}.
-#'   Specifies the assay to retrieve \code{y} from when \code{y} is a
-#'   feature name. (Default: \code{NULL})
+#' @param assay.type \code{Character scalar}. Specifies the assay to
+#'   retrieve \code{y} from when \code{y} is a feature name.
+#'   (Default: \code{"counts"})
 #'
 #' @param layout \code{Character scalar}. Specifies the plot layout:
 #'   \code{"line"} draws one line per subject; \code{"box"} and
@@ -67,8 +67,8 @@
 #'   autocorrelation) or \code{"slope"} (change of \code{y} per
 #'   \code{time.col} unit, from a least-squares line; per visit step for
 #'   visits). Rising variance and autocorrelation are early warning signals
-#'   of a transition. Windows count samples, also across \code{max.gap}
-#'   breaks; subjects with fewer than \code{window} samples are dropped.
+#'   of a transition. Windows count samples, also across breaks of the
+#'   line; subjects with fewer than \code{window} samples are dropped.
 #'   (Default: \code{"none"})
 #'
 #' @param window \code{Integer scalar}. Number of samples in the rolling
@@ -105,9 +105,10 @@
 #' @param facet.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} to facet by. (Default: \code{NULL})
 #'
-#' @param max.gap \code{Numeric scalar}. Breaks a trajectory where consecutive
-#'   samples of a subject are further apart than this, in \code{time.col}
-#'   units. \code{NULL} never breaks trajectories. (Default: \code{NULL})
+#' @param max.gap \code{Numeric scalar}. Breaks a subject's line where
+#'   consecutive samples are further apart than this, in \code{time.col}
+#'   units. For visits, \code{NULL} breaks lines at visits without a
+#'   sample; otherwise \code{NULL} never breaks lines. (Default: \code{NULL})
 #'
 #' @param ... additional arguments passed to the main layer
 #'   (\code{\link[ggplot2:geom_line]{geom_line}} for \code{layout = "line"},
@@ -218,13 +219,11 @@
 NULL
 
 #' @rdname plotTrend
-#' @importFrom SummarizedExperiment colData
-#' @importFrom stats ave median
-#' @importFrom ggplot2 geom_vline
+#' @importFrom ggplot2 labs
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
-    function(x, y, time.col, group = NULL, assay.type = NULL,
+    function(x, y, time.col, group = NULL, assay.type = "counts",
             layout = c("line", "box", "violin"), show.individuals = TRUE,
             smooth = c("none", "mean", "median", "loess"), band = NULL,
             fit = NULL,
@@ -236,138 +235,19 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         smooth <- match.arg(smooth)
         baseline <- match.arg(baseline)
         rolling <- match.arg(rolling)
-        if (!(is.numeric(window) && length(window) == 1L && window >= 2)) {
-            stop("'window' must be a single number of at least 2.",
-                call. = FALSE)
-        }
-        if (!is.null(period) && !(is.numeric(period) &&
-                length(period) == 1L && period > 0)) {
-            stop("'period' must be NULL or a single positive number.",
-                call. = FALSE)
-        }
-        if (!is.null(band) && !(is.numeric(band) && length(band) == 2L &&
-                all(band >= 0 & band <= 1) && band[1L] < band[2L])) {
-            stop("'band' must be NULL or two increasing probabilities.",
-                call. = FALSE)
-        }
-        if (!(isTRUE(show.individuals) || isFALSE(show.individuals))) {
-            stop("'show.individuals' must be TRUE or FALSE.", call. = FALSE)
-        }
         type <- .check_longitudinal(x, time.col, group)
-        if (!is.null(period) && type == "visit") {
-            stop("'period' needs numeric or Date times.", call. = FALSE)
-        }
         .check_column(x, group.by)
         .check_column(x, facet.by)
-        .check_column(x, align.to)
-        if (!is.null(align.to)) {
-            event <- colData(x)[[align.to]]
-            if (type == "visit" || !(is.numeric(event) && type == "numeric" ||
-                    inherits(event, "Date") && type == "date")) {
-                stop("'align.to' must be a column with the type of ",
-                    "'time.col', which must be numeric or Date.",
-                    call. = FALSE)
-            }
-            if (anyNA(event)) {
-                stop("'align.to' must not contain NA values; remove the ",
-                    "subjects without the event.", call. = FALSE)
-            }
+        x <- .align_time(x, time.col, group, align.to)
+        events <- .check_events(events, x, time.col)
+        .check_trend_args(x, time.col, group, type, show.individuals, band,
+            fit, baseline, rolling, window, period, events)
+        if (is.null(max.gap) && type == "visit") {
+            max.gap <- 1
         }
-        if (!is.null(events) && !is.null(align.to)) {
-            # Times are relative to the event, so only check the columns.
-            if (!is.data.frame(events) || !"start" %in% names(events)) {
-                stop("'events' must be a data.frame with a column 'start'.",
-                    call. = FALSE)
-            }
-            events <- as.data.frame(events)
-        } else {
-            events <- .check_events(events, x, time.col)
-        }
-        if (any(group %in% names(events))) {
-            stop("'events' apply to all subjects; use 'align.to' for an ",
-                "event time per subject.", call. = FALSE)
-        }
-        if (is.character(fit)) {
-            .check_column(x, fit)
-            if (!is.numeric(colData(x)[[fit]])) {
-                stop("'fit' must be a numeric column of colData(x).",
-                    call. = FALSE)
-            }
-        } else if (!is.null(fit)) {
-            fit <- as.data.frame(fit)
-            if (!all(c(time.col, "estimate") %in% names(fit))) {
-                stop("'fit' must be a colData column or a table with the ",
-                    "columns '", time.col, "' and estimate.", call. = FALSE)
-            }
-        }
-        if (!is.null(fit) && (baseline != "none" || rolling != "none")) {
-            stop("'fit' cannot be combined with 'baseline' or 'rolling'.",
-                call. = FALSE)
-        }
-        if (!is.null(period) && (!is.null(events) || is.data.frame(fit))) {
-            stop("'period' cannot be combined with 'events' or a 'fit' ",
-                "table.", call. = FALSE)
-        }
+        df <- .trend_data(x, y, time.col, group, assay.type, baseline,
+            rolling, window, period, max.gap)
 
-        df <- as.data.frame(colData(x), optional = TRUE)
-        df$.y <- unname(.resolve_y(x, y, assay.type))
-        df <- .order_time(df, time.col, group)
-        df <- .break_gaps(df, time.col, group, max.gap)
-        ids <- if (is.null(group)) rep(1L, nrow(df)) else df[[group]]
-        if (!is.null(align.to)) {
-            event <- as.numeric(df[[align.to]])
-            if (any(tapply(event, ids, function(e)
-                    length(unique(e)) > 1L))) {
-                stop("'align.to' must be constant within each subject.",
-                    call. = FALSE)
-            }
-            df[[time.col]] <- as.numeric(df[[time.col]]) - event
-        }
-        if (baseline != "none") {
-            first <- ave(df$.y, ids, FUN = function(v) v[1L])
-            if (baseline != "difference" && any(first <= 0, na.rm = TRUE)) {
-                stop("'baseline' ratios need positive first values; use ",
-                    "\"difference\".", call. = FALSE)
-            }
-            df$.y <- switch(baseline, difference = df$.y - first,
-                fold = df$.y / first, log2fold = log2(df$.y / first))
-        }
-        if (rolling != "none") {
-            tnum <- .time_numeric(df[[time.col]])
-            y.raw <- df$.y
-            df$.y <- ave(as.numeric(seq_along(y.raw)), ids, FUN = function(i) {
-                i <- as.integer(i)
-                .rolling(y.raw[i], rolling, as.integer(window), tnum[i])
-            })
-            # The first window - 1 samples of each subject have no value.
-            keep <- !is.na(df$.y)
-            if (!any(keep)) {
-                stop("No subject has 'window' samples for 'rolling'.",
-                    call. = FALSE)
-            }
-            df <- df[keep, , drop = FALSE]
-            ids <- ids[keep]
-        }
-        cycle <- 0L
-        if (!is.null(period)) {
-            t <- as.numeric(df[[time.col]])
-            cycle <- floor(t / period)
-            df[[time.col]] <- t %% period
-        }
-        df$.line <- interaction(ids, df$.segment, cycle, drop = TRUE)
-        if ((smooth %in% c("mean", "median") || !is.null(band)) &&
-                !is.factor(df[[time.col]]) &&
-                median(table(df[[time.col]])) < 2) {
-            warning("Most times have a single sample, so 'smooth' and ",
-                "'band' summarise single samples; use smooth = \"loess\" ",
-                "or a factor of visits.", call. = FALSE)
-        }
-
-        xlab <- if (is.null(align.to)) time.col else
-            paste(time.col, "since", align.to)
-        if (!is.null(period)) {
-            xlab <- paste(xlab, "modulo", period)
-        }
         ylab <- switch(baseline, none = y,
             difference = paste("Change in", y),
             fold = paste("Fold change in", y),
@@ -376,24 +256,135 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             ylab <- paste0("Rolling ", rolling, " of ", ylab, " (", window,
                 " samples)")
         }
-        p <- .plot_trend(df, time.col, ylab, layout, show.individuals,
-            smooth, band, fit, group.by, facet.by, xlab, events, ...)
-        if (!is.null(align.to)) {
-            p <- p + geom_vline(xintercept = 0, linetype = "dashed",
-                colour = "grey40")
-        }
-        p
+        xlab <- paste0(time.col, if (!is.null(align.to))
+            paste(" since", align.to), if (!is.null(period))
+            paste(" modulo", period))
+        .plot_trend(df, time.col, layout, show.individuals, smooth, band,
+            fit, group.by, facet.by, events, !is.null(align.to), ...) +
+            labs(x = xlab, y = ylab)
     }
 )
 
+# Errors on the arguments of plotTrend that its helpers do not check, and
+# on the combinations it cannot draw.
+#' @importFrom SummarizedExperiment colData
+.check_trend_args <- function(x, time.col, group, type, show.individuals,
+        band, fit, baseline, rolling, window, period, events) {
+    if (!(isTRUE(show.individuals) || isFALSE(show.individuals))) {
+        stop("'show.individuals' must be TRUE or FALSE.", call. = FALSE)
+    }
+    if (!is.null(band) && !(is.numeric(band) && length(band) == 2L &&
+            all(band >= 0 & band <= 1) && band[1L] < band[2L])) {
+        stop("'band' must be NULL or two increasing probabilities.",
+            call. = FALSE)
+    }
+    if (!(is.null(fit) ||
+            .is_one_name(fit) && is.numeric(colData(x)[[fit]]) ||
+            is.data.frame(fit) &&
+                all(c(time.col, "estimate") %in% names(fit)))) {
+        stop("'fit' must be a numeric column of colData(x) or a data.frame ",
+            "with the columns '", time.col, "' and estimate.", call. = FALSE)
+    }
+    if (!is.null(fit) && (baseline != "none" || rolling != "none")) {
+        stop("'fit' cannot be combined with 'baseline' or 'rolling'.",
+            call. = FALSE)
+    }
+    if (!(is.numeric(window) && length(window) == 1L && window >= 2)) {
+        stop("'window' must be a single number of at least 2.",
+            call. = FALSE)
+    }
+    if (!is.null(period) && !(is.numeric(period) && length(period) == 1L &&
+            period > 0 && type != "visit" && is.null(events) &&
+            !is.data.frame(fit))) {
+        stop("'period' must be NULL or a single positive number, for ",
+            "numeric or Date times, without 'events' or a 'fit' table.",
+            call. = FALSE)
+    }
+    if (any(group %in% names(events))) {
+        stop("'events' apply to all subjects; use 'align.to' for an ",
+            "event time per subject.", call. = FALSE)
+    }
+}
+
+# x with time.col made relative to the event time in the align.to column,
+# which must have the type of time.col and be constant within subjects.
+#' @importFrom SummarizedExperiment colData
+.align_time <- function(x, time.col, group, align.to) {
+    .check_column(x, align.to)
+    if (is.null(align.to)) {
+        return(x)
+    }
+    time <- colData(x)[[time.col]]
+    event <- colData(x)[[align.to]]
+    if (!(is.numeric(event) && is.numeric(time) ||
+            inherits(event, "Date") && inherits(time, "Date"))) {
+        stop("'align.to' must be a column with the type of 'time.col', ",
+            "which must be numeric or Date.", call. = FALSE)
+    }
+    if (anyNA(event)) {
+        stop("'align.to' must not contain NA values; remove the ",
+            "subjects without the event.", call. = FALSE)
+    }
+    subject <- if (is.null(group)) "" else colData(x)[[group]]
+    if (anyDuplicated(unique(data.frame(subject, event))$subject)) {
+        stop("'align.to' must be constant within each subject.",
+            call. = FALSE)
+    }
+    x[[time.col]] <- as.numeric(time) - as.numeric(event)
+    x
+}
+
+# colData of x ordered by time, with the value .y (relative to the first
+# sample with baseline, or a rolling statistic), the subject .id and one
+# .line per subject, gap segment and period cycle.
+#' @importFrom SummarizedExperiment colData
+#' @importFrom stats ave
+.trend_data <- function(x, y, time.col, group, assay.type, baseline,
+        rolling, window, period, max.gap) {
+    if (isTRUE(y %in% rownames(x))) {
+        .get_assay(x, assay.type) # checks assay.type
+    }
+    df <- as.data.frame(colData(x), optional = TRUE)
+    df$.y <- unname(.resolve_y(x, y, assay.type))
+    df <- .break_gaps(.order_time(df, time.col, group), time.col, group,
+        max.gap)
+    df$.id <- if (is.null(group)) 1L else df[[group]]
+    if (baseline != "none") {
+        first <- ave(df$.y, df$.id, FUN = function(v) v[1L])
+        if (baseline != "difference" && any(first <= 0, na.rm = TRUE)) {
+            stop("'baseline' ratios need positive first values; use ",
+                "\"difference\".", call. = FALSE)
+        }
+        df$.y <- switch(baseline, difference = df$.y - first,
+            fold = df$.y / first, log2fold = log2(df$.y / first))
+    }
+    if (rolling != "none") {
+        tnum <- .time_numeric(df[[time.col]])
+        v <- df$.y
+        for (i in split(seq_along(v), df$.id)) {
+            df$.y[i] <- .rolling(v[i], rolling, as.integer(window), tnum[i])
+        }
+        # The first window - 1 samples of each subject have no value.
+        df <- df[!is.na(df$.y), , drop = FALSE]
+        if (nrow(df) == 0L) {
+            stop("No subject has 'window' samples for 'rolling'.",
+                call. = FALSE)
+        }
+    }
+    cycle <- 0L
+    if (!is.null(period)) {
+        cycle <- as.numeric(df[[time.col]]) %/% period
+        df[[time.col]] <- as.numeric(df[[time.col]]) %% period
+    }
+    df$.line <- interaction(df$.id, df$.segment, cycle, drop = TRUE)
+    df
+}
+
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_boxplot
-#'   geom_violin geom_smooth stat_summary facet_wrap vars labs
-#'   scale_x_discrete
-#' @importFrom stats median quantile
-.plot_trend <- function(df, time.col, ylab, layout, show.individuals, smooth,
-        band = NULL, fit = NULL, group.by = NULL, facet.by = NULL,
-        xlab = time.col, events = NULL, ...) {
+#'   geom_violin geom_vline facet_wrap vars labs scale_x_discrete
+.plot_trend <- function(df, time.col, layout, show.individuals, smooth,
+        band, fit, group.by, facet.by, events, aligned, ...) {
     # group.by sets the fill of boxes, violins and bands too.
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
             colour = if (!is.null(group.by)) .data[[group.by]],
@@ -420,39 +411,42 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         p <- p + do.call(geom_line, c(list(aes(group = .data$.line)),
             line_args)) + do.call(geom_point, fade)
     }
-    summary_group <- aes(group = if (is.null(group.by)) 1L else
-        .data[[group.by]])
-    if (!is.null(band)) {
-        p <- p + stat_summary(summary_group,
+    p + list(.trend_summaries(df, time.col, smooth, band, group.by),
+        if (is.character(fit)) geom_line(aes(y = .data[[fit]],
+            group = .data$.line), linetype = "dashed", linewidth = 1),
+        if (is.data.frame(fit)) .fit_layers(fit, time.col, group.by),
+        .events_layer(events, "markers"),
+        if (aligned) geom_vline(xintercept = 0, linetype = "dashed",
+            colour = "grey40"),
+        if (!is.null(facet.by)) facet_wrap(vars(.data[[facet.by]])),
+        if (is.factor(df[[time.col]])) scale_x_discrete(drop = FALSE),
+        labs(colour = group.by, fill = group.by),
+        if ("label" %in% names(events)) labs(linetype = "event"),
+        .scale_by(df, group.by, c("colour", "fill")),
+        .theme_tempoPlot())
+}
+
+# Group summaries over the samples at each time: the band between two
+# quantiles, and the mean, median or loess curve.
+#' @importFrom ggplot2 aes .data stat_summary geom_smooth
+#' @importFrom stats median quantile
+.trend_summaries <- function(df, time.col, smooth, band, group.by) {
+    if ((smooth %in% c("mean", "median") || !is.null(band)) &&
+            !is.factor(df[[time.col]]) && median(table(df[[time.col]])) < 2) {
+        warning("Most times have a single sample, so 'smooth' and 'band' ",
+            "summarise single samples; use smooth = \"loess\" or a factor ",
+            "of visits.", call. = FALSE)
+    }
+    by <- aes(group = if (is.null(group.by)) 1L else .data[[group.by]])
+    list(if (!is.null(band)) stat_summary(by,
             fun.min = function(v) quantile(v, band[1L], names = FALSE),
             fun.max = function(v) quantile(v, band[2L], names = FALSE),
-            fun = median, geom = "ribbon", alpha = 0.2, colour = NA)
-    }
-    if (smooth %in% c("mean", "median")) {
-        p <- p + stat_summary(summary_group,
-            fun = if (smooth == "mean") mean else median, geom = "line",
-            linewidth = 1)
-    } else if (smooth == "loess") {
-        p <- p + geom_smooth(summary_group, method = "loess",
-            formula = y ~ x, se = FALSE, linewidth = 1)
-    }
-    if (is.character(fit)) {
-        p <- p + geom_line(aes(y = .data[[fit]], group = .data$.line),
-            linetype = "dashed", linewidth = 1)
-    } else if (!is.null(fit)) {
-        p <- p + .fit_layers(fit, time.col, group.by)
-    }
-    p <- p + .events_layer(events, "markers")
-    if ("label" %in% names(events)) {
-        p <- p + labs(linetype = "event")
-    }
-    if (!is.null(facet.by)) {
-        p <- p + facet_wrap(vars(.data[[facet.by]]))
-    }
-    if (is.factor(df[[time.col]])) {
-        p <- p + scale_x_discrete(drop = FALSE)
-    }
-    p + labs(x = xlab, y = ylab, colour = group.by, fill = group.by)
+            fun = median, geom = "ribbon", alpha = 0.2, colour = NA),
+        switch(smooth, none = NULL,
+            loess = geom_smooth(by, method = "loess", formula = y ~ x,
+                se = FALSE, linewidth = 1),
+            stat_summary(by, fun = if (smooth == "mean") mean else median,
+                geom = "line", linewidth = 1)))
 }
 
 # Line and interval of a results table, one per group.by group if the
@@ -478,12 +472,14 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 # Statistic over the last window values; NA until the window is full.
 # t gives the times, used by "slope".
 #' @importFrom stats var cor cov
-.rolling <- function(v, stat, window, t = seq_along(v)) {
+.rolling <- function(v, stat, window, t) {
     n <- length(v)
     out <- rep(NA_real_, n)
     for (i in seq_len(n)[seq_len(n) >= window]) {
         j <- (i - window + 1L):i
         w <- v[j]
+        # A constant window has no autocorrelation: cor() warns and gives
+        # NA, which drops the point like an incomplete window.
         out[i] <- switch(stat, mean = mean(w, na.rm = TRUE),
             variance = var(w, na.rm = TRUE),
             acf1 = suppressWarnings(cor(w[-1L], w[-window],
@@ -498,17 +494,13 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 # stays free for group.by.
 #' @importFrom ggplot2 geom_text aes .data
 .trend_event_bands <- function(events) {
-    if (is.null(events) || !"end" %in% names(events)) {
+    if (!"end" %in% names(events)) {
         return(list())
     }
     bands <- events[!is.na(events$end), , drop = FALSE]
-    layers <- .events_layer(bands[setdiff(names(bands), "label")], "bands")
-    if (nrow(bands) && "label" %in% names(bands)) {
-        pos <- function(v) if (is.factor(v)) as.integer(v) else v
-        bands$.start <- pos(bands$start)
-        layers <- c(layers, list(geom_text(aes(x = .data$.start, y = Inf,
-            label = .data$label), data = bands, inherit.aes = FALSE,
-            hjust = -0.05, vjust = 1.5, size = 3, colour = "grey30")))
-    }
-    layers
+    list(.events_layer(bands[setdiff(names(bands), "label")], "bands"),
+        if (nrow(bands) && "label" %in% names(bands)) geom_text(aes(
+            x = .data$start, y = Inf, label = .data$label), data = bands,
+            inherit.aes = FALSE, hjust = -0.05, vjust = 1.5, size = 3,
+            colour = "grey30"))
 }

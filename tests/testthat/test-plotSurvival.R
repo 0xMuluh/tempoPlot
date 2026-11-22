@@ -45,6 +45,13 @@ test_that("plotSurvival times arrival and loss of a feature", {
     df <- fits(event = "loss", feature = "f")
     expect_equal(df$.time, 4)
     expect_equal(df$.surv, 0)
+    # Above detection = 1, only s3's 2 is present: s1 never arrives.
+    df <- fits(event = "arrival", feature = "f", detection = 1)
+    expect_true(all(df$.surv == 1))
+    expect_error(fits(event = "arrival", feature = "f", assay.type = "clr"),
+        "'assay.type' must be one of assayNames")
+    expect_error(fits(event = "arrival", feature = "f", detection = NA),
+        "'detection'")
 })
 
 test_that("plotSurvival times state exits and outcomes by group", {
@@ -55,6 +62,9 @@ test_that("plotSurvival times state exits and outcomes by group", {
     expect_equal(x$.time, c(0, 4, 5))
     expect_equal(x$.surv, c(1, 0.5, 0))
     expect_identical(p$labels$colour, "arm")
+    expect_setequal(layer_data(p, 2L)$colour, .okabe_ito[1:2])
+    expect_setequal(layer_data(p, 1L)$fill, .okabe_ito[1:2])
+    expect_identical(p$theme$legend.position, "bottom")
     df <- fits(event = "outcome", event.col = "sick")
     expect_equal(df$.time[df$.surv < 1], 5)
 })

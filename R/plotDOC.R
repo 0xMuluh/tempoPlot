@@ -98,7 +98,7 @@ setMethod("plotDOC", signature = c(x = "SummarizedExperiment"),
     if (n >= 10L) {
         curve <- as.data.frame(lowess(df$.overlap, df$.dissimilarity))
         p <- p + geom_line(aes(x = .data$x, y = .data$y), data = curve,
-            colour = "#2c6fbb", linewidth = 1)
+            colour = .okabe_ito[1L], linewidth = 1)
     }
-    p + labs(x = overlap, y = dissimilarity)
+    p + labs(x = overlap, y = dissimilarity) + .theme_tempoPlot()
 }

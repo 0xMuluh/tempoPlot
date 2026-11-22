@@ -16,6 +16,7 @@ plotSurvival(x, ...)
   group.by = NULL,
   feature = NULL,
   assay.type = "counts",
+  detection = 0,
   state.col = NULL,
   event.col = NULL,
   ...
@@ -51,10 +52,14 @@ their first sample. (Default: \code{NULL})}
 
 \item{feature}{\code{Character scalar}. Specifies the feature for
 \code{event = "arrival"} and \code{"loss"}. A feature is present when
-its value in \code{assay.type} is above zero. (Default: \code{NULL})}
+its value in \code{assay.type} is above \code{detection}.
+(Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay for
 \code{feature}. (Default: \code{"counts"})}
+
+\item{detection}{\code{Numeric scalar}. Specifies the value above which
+\code{feature} is present. (Default: \code{0})}
 
 \item{state.col}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} with the state of each sample, for

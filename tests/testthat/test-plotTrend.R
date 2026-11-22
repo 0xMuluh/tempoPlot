@@ -427,7 +427,7 @@ test_that("boxes and violins are drawn per group.by group", {
             layout = layout)
         ld <- layer_data(p, 1L)
         expect_length(unique(ld$group), cells)
-        expect_length(unique(ld$fill), 2L)
+        expect_setequal(ld$fill, .okabe_ito[1:2])
         # Boxes of one visit sit side by side.
         expect_length(unique(ld$x), cells)
     }
@@ -493,6 +493,61 @@ test_that("plotTrend marks events and intervals", {
     # Visits are drawn at their level codes.
     x$visit <- factor(ave(x$Time_hr_num, x$StudyIdentifier, FUN = rank))
     p <- plotTrend(x, "Acetate", "visit", "StudyIdentifier",
-        events = data.frame(start = "2", end = "4"))
+        events = data.frame(start = "2", end = "4", label = "a"))
     expect_equal(c(layer_data(p, 1L)$xmin, layer_data(p, 1L)$xmax), c(2, 4))
+    expect_equal(as.numeric(layer_data(p, 2L)$x), 2)
+})
+
+test_that("lines break at skipped visits unless max.gap joins them", {
+    # Subject a skips visit 3, b does not.
+    toy <- SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 5L)),
+        colData = DataFrame(id = c("a", "a", "a", "b", "b"),
+            v = factor(c(1, 2, 4, 1, 2), levels = 1:4), y = 1:5))
+    p <- plotTrend(toy, "y", "v", "id")
+    line <- split(layer_data(p, 1L)$x, layer_data(p, 1L)$group)
+    expect_setequal(lapply(line, as.numeric), list(c(1, 2), 4, c(1, 2)))
+    p <- plotTrend(toy, "y", "v", "id", max.gap = 2)
+    expect_length(unique(layer_data(p, 1L)$group), 2L)
+    # Numeric times are not broken without max.gap.
+    toy$t <- c(1, 2, 4, 1, 2)
+    expect_length(unique(layer_data(plotTrend(toy, "y", "t", "id"),
+        1L)$group), 2L)
+})
+
+test_that("assay.type defaults to counts and is checked", {
+    toy <- SummarizedExperiment(
+        assays = list(clr = matrix(c(-1, 0, 1), 1L), counts = matrix(1:3, 1L)),
+        colData = DataFrame(t = 1:3))
+    rownames(toy) <- "f"
+    expect_equal(layer_data(plotTrend(toy, "f", "t"), 2L)$y, c(1, 2, 3))
+    expect_equal(layer_data(plotTrend(toy, "f", "t", assay.type = "clr"),
+        2L)$y, c(-1, 0, 1))
+    expect_error(plotTrend(toy, "f", "t", assay.type = "relabundance"),
+        "'assay.type' must be one of assayNames")
+    # A colData y needs no assay.
+    toy$v <- 3:1
+    expect_no_error(plotTrend(toy, "v", "t", assay.type = "relabundance"))
+})
+
+test_that("plotTrend colours groups with the package palette and theme", {
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", smooth = "mean")
+    for (i in 1:3) {
+        expect_setequal(layer_data(p, i)$colour, .okabe_ito[1:3])
+    }
+    expect_identical(p$theme$legend.position, "bottom")
+    expect_identical(calc_element("panel.background", p$theme)$fill,
+        "white")
+    # A numeric group.by is coloured on the sequential scale.
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "Time_hr_num")
+    expect_s3_class(p$scales$get_scales("colour"), "ScaleContinuous")
+    # Fit tables share the colours of their group.
+    grid <- data.frame(Time_hr_num = c(0, 400, 0, 400),
+        StudyIdentifier = rep(c("Bioreactor A", "Bioreactor B"), each = 2),
+        estimate = 1:4, lower = 0:3, upper = 2:5)
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = "StudyIdentifier", fit = grid)
+    expect_setequal(layer_data(p, 3L)$fill, .okabe_ito[1:2])
 })
