@@ -172,20 +172,8 @@ setGeneric("plotProcrustes", signature = "x",
 setGeneric("plotNetwork", signature = "x",
     function(x, ...) standardGeneric("plotNetwork"))
 
-#' @rdname plotReport
-#' @importFrom methods setGeneric
-#' @export
-setGeneric("plotReport", signature = "x",
-    function(x, ...) standardGeneric("plotReport"))
-
 #' @rdname plotTimeLoadings
 #' @importFrom methods setGeneric
 #' @export
 setGeneric("plotTimeLoadings", signature = "x",
     function(x, ...) standardGeneric("plotTimeLoadings"))
-
-#' @rdname plotAccumulation
-#' @importFrom methods setGeneric
-#' @export
-setGeneric("plotAccumulation", signature = "x",
-    function(x, ...) standardGeneric("plotAccumulation"))

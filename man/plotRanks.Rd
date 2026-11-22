@@ -13,7 +13,6 @@ plotRanks(x, ...)
   group = NULL,
   assay.type = "counts",
   top = 5,
-  rank = NULL,
   coord = c("cartesian", "polar"),
   ...
 )
@@ -34,14 +33,12 @@ a factor of visits.}
 form one series. (Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay of
-abundances. (Default: \code{"counts"})}
+abundances. To rank taxa such as phyla, agglomerate \code{x} first with
+\code{\link[mia:agglomerate-methods]{mia::agglomerateByRank()}}.
+(Default: \code{"counts"})}
 
 \item{top}{\code{Integer scalar}. Number of features with the largest
-mean abundance to draw. (Default: \code{5})}
-
-\item{rank}{\code{Character scalar}. Specifies the column of
-\code{rowData(x)}, such as a taxonomic rank, whose levels are summed
-before ranking. (Default: \code{NULL})}
+mean value in \code{assay.type} to draw. (Default: \code{5})}
 
 \item{coord}{\code{Character scalar}. Draws time on a straight
 (\code{"cartesian"}) or circular (\code{"polar"}) axis.
@@ -62,11 +59,20 @@ their mean rank.
 \examples{
 # 16 species in three bioreactors
 data("minimalgut", package = "miaTime")
-plotRanks(minimalgut, time.col = "Time.hr", group = "StudyIdentifier")
+tse <- minimalgut
+plotRanks(tse, time.col = "Time.hr", group = "StudyIdentifier")
 
 # As rank clocks
-plotRanks(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+plotRanks(tse, time.col = "Time.hr", group = "StudyIdentifier",
     coord = "polar")
+
+# Phyla of the subjects sampled five times
+data("hitchip1006", package = "miaTime")
+tse <- hitchip1006[, !duplicated(t(SummarizedExperiment::assay(
+    hitchip1006, "counts")))]
+tse <- tse[, tse$subject \%in\% names(which(table(tse$subject) == 5))]
+tse <- mia::agglomerateByRank(tse, rank = "Phylum")
+plotRanks(tse, time.col = "time", group = "subject", top = 3)
 }
 \references{
 Collins SL, et al. (2008). Rank clocks and plant community dynamics.

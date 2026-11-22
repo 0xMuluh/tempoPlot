@@ -12,8 +12,8 @@ plotTransitionMatrix(x, ...)
   state.col,
   time.col,
   group,
-  normalize = c("row", "none"),
-  group.by = NULL,
+  as.relative = TRUE,
+  facet.by = NULL,
   ...
 )
 }
@@ -35,11 +35,11 @@ a factor of visits.}
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}
 
-\item{normalize}{\code{Character scalar}. Shows the share of transitions
-from each state (\code{"row"}) or the counts (\code{"none"}).
-(Default: \code{"row"})}
+\item{as.relative}{\code{Logical scalar}. Shows the share of transitions
+from each state (\code{TRUE}) or the counts (\code{FALSE}).
+(Default: \code{TRUE})}
 
-\item{group.by}{\code{Character scalar}. Specifies the column from
+\item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the transitions into panels. Each
 transition takes the value of its earlier sample.
 (Default: \code{NULL})}
@@ -66,5 +66,5 @@ plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
 
 # Counts by sex
 plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
-    group = "subject", normalize = "none", group.by = "sex")
+    group = "subject", as.relative = FALSE, facet.by = "sex")
 }

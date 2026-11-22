@@ -82,18 +82,23 @@
     if (is.factor(time)) as.integer(time) else as.numeric(time)
 }
 
-# Add integer column .segment, increasing within each subject when the
-# gap to the previous sample exceeds max.gap. Distance is numeric
-# difference, days for Date, or level steps for visit factors.
-# max.gap = NULL keeps one segment per subject.
-#' @importFrom stats ave
-.break_gaps <- function(df, time.col, group = NULL, max.gap = NULL) {
+# Error unless max.gap is NULL or a single positive number.
+.check_max_gap <- function(max.gap) {
     if (!is.null(max.gap) &&
             !(is.numeric(max.gap) && length(max.gap) == 1L &&
                 is.finite(max.gap) && max.gap > 0)) {
         stop("'max.gap' must be NULL or a single positive number.",
             call. = FALSE)
     }
+}
+
+# Add integer column .segment, increasing within each subject when the
+# gap to the previous sample exceeds max.gap. Distance is numeric
+# difference, days for Date, or level steps for visit factors.
+# max.gap = NULL keeps one segment per subject.
+#' @importFrom stats ave
+.break_gaps <- function(df, time.col, group = NULL, max.gap = NULL) {
+    .check_max_gap(max.gap)
 
     n <- nrow(df)
     if (n == 0L || is.null(max.gap)) {
@@ -415,6 +420,8 @@
         .time = rep(time, each = length(features)),
         .value = as.vector(mat))
     if (level == "group") {
+        # A factor keeps the selection order through aggregate().
+        df$.feature <- factor(df$.feature, levels = features)
         df <- aggregate(.value ~ .feature + .panel + .time, data = df,
             FUN = mean, na.action = na.pass)
     }

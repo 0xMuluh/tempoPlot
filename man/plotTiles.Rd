@@ -19,6 +19,7 @@ plotTiles(x, ...)
   order.by = c("mean", "cluster"),
   level = c("subject", "group"),
   group.by = NULL,
+  max.gap = NULL,
   ...
 )
 
@@ -32,6 +33,7 @@ plotTiles(x, ...)
   top = 20,
   order.by = c("mean", "cluster"),
   feature.col = "feature",
+  max.gap = NULL,
   ...
 )
 }
@@ -44,8 +46,8 @@ and time point, such as differential abundance at each visit.}
 \code{\link[ggplot2:geom_tile]{geom_tile}}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling times: numeric, \code{Date} or
-a factor of visits.}
+\code{colData(x)}, or of a \code{data.frame} \code{x}, that contains
+times: numeric, \code{Date} or a factor of visits.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -55,7 +57,8 @@ form one series. (Default: \code{NULL})}
 (Default: \code{"counts"})}
 
 \item{features}{\code{Character vector}. Features to plot. If
-\code{NULL}, plots the \code{top} features with the largest mean.
+\code{NULL}, plots the \code{top} features with the largest mean, or
+the largest mean absolute effect for a \code{data.frame}.
 (Default: \code{NULL})}
 
 \item{top}{\code{Integer scalar}. Number of features to plot when
@@ -79,6 +82,11 @@ of subjects with the feature. (Default: \code{"subject"})}
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that groups subjects when \code{level = "group"}. If
 \code{NULL}, all subjects form one group. (Default: \code{NULL})}
+
+\item{max.gap}{\code{Numeric scalar}. Leaves blank the gaps between
+consecutive times that are further apart than this, in \code{time.col}
+units: a tile reaches at most \code{max.gap / 2} from its time.
+\code{NULL} never leaves gaps. (Default: \code{NULL})}
 
 \item{effect}{\code{Character scalar}. For a \code{data.frame}, the
 column of effects, such as log fold changes at each time point.}

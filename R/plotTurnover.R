@@ -51,10 +51,11 @@
 #' @examples
 #' # 16 species in three bioreactors
 #' data("minimalgut", package = "miaTime")
-#' plotTurnover(minimalgut, time.col = "Time.hr", group = "StudyIdentifier")
+#' tse <- minimalgut
+#' plotTurnover(tse, time.col = "Time.hr", group = "StudyIdentifier")
 #'
 #' # Turnover components, averaged over the bioreactors
-#' plotTurnover(minimalgut, time.col = "Time.hr", group = "StudyIdentifier",
+#' plotTurnover(tse, time.col = "Time.hr", group = "StudyIdentifier",
 #'     type = "components", level = "group")
 NULL
 
@@ -145,7 +146,7 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
 
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_rect geom_hline labs
-#'   facet_wrap vars scale_fill_manual scale_x_continuous
+#'   facet_wrap vars scale_fill_manual scale_x_continuous scale_y_continuous
 .plot_turnover <- function(df, time.col, type, panels, levels, ...) {
     colours <- c(gained = "#2166ac", lost = "#b2182b",
         appearance = "#2166ac", disappearance = "#b2182b")
@@ -158,7 +159,9 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
         labs(x = time.col, fill = NULL,
             y = if (type == "gainloss") "features" else "turnover")
     if (type == "gainloss") {
-        p <- p + geom_hline(yintercept = 0, colour = "grey30")
+        # Losses are drawn downwards but counted as positive numbers.
+        p <- p + geom_hline(yintercept = 0, colour = "grey30") +
+            scale_y_continuous(labels = abs)
     }
     if (!is.null(levels)) {
         p <- p + scale_x_continuous(breaks = seq_along(levels),
