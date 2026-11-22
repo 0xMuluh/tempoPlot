@@ -20,7 +20,7 @@ from miaTime, and per-subject estimates such as slopes."><!-- mathjax --><script
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ from miaTime, and per-subject estimates such as slopes."><!-- mathjax --><script
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot ranked statistics of features or subjects</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotStats.R" class="external-link"><code>R/plotStats.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-trend/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-trend/R/plotStats.R" class="external-link"><code>R/plotStats.R</code></a></small>
     <div class="hidden name"><code>plotStats.Rd</code></div>
     </div>
 
@@ -127,7 +127,8 @@ same table as <code>stat</code>, that colours the points.
     <div id="details">
     <h2>Details</h2>
     <p>Rows are ordered by the statistic, the largest at the top. Missing
-statistics are dropped.</p>
+statistics are dropped. Above 60 rows, row labels are hidden; use
+<code>top</code> to keep fewer.</p>
     </div>
 
     <div id="ref-examples">

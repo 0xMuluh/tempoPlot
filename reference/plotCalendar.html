@@ -19,7 +19,7 @@ week of the year."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aja
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ week of the year."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aja
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot sample counts on a calendar</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotCalendar.R" class="external-link"><code>R/plotCalendar.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-trend/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-trend/R/plotCalendar.R" class="external-link"><code>R/plotCalendar.R</code></a></small>
     <div class="hidden name"><code>plotCalendar.Rd</code></div>
     </div>
 
@@ -101,12 +101,17 @@ with the ISO week on the x axis and the year on the y axis
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Daily sampling of 20 people; study days placed on an arbitrary</span></span></span>
-<span class="r-in"><span><span class="co"># calendar starting on 1 March</span></span></span>
+<span class="r-in"><span><span class="co"># calendar starting on 1 March, with no samples at weekends</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"temporalMicrobiome20"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">temporalMicrobiome20</span></span></span>
 <span class="r-in"><span><span class="va">tse</span><span class="op">$</span><span class="va">date</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2021-03-01"</span><span class="op">)</span> <span class="op">+</span> <span class="va">tse</span><span class="op">$</span><span class="va">day</span> <span class="op">-</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">date</span>, <span class="st">"%u"</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"6"</span>, <span class="st">"7"</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="fu">plotCalendar</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"date"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotCalendar-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Samples per week of the year</span></span></span>
+<span class="r-in"><span><span class="fu">plotCalendar</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"date"</span>, unit <span class="op">=</span> <span class="st">"week"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotCalendar-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>

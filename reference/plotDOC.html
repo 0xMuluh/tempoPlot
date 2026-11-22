@@ -20,7 +20,7 @@ behave alike in different communities."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.56</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.57</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@ behave alike in different communities."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot dissimilarity against overlap of sample pairs</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotDOC.R" class="external-link"><code>R/plotDOC.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-trend/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-trend/R/plotDOC.R" class="external-link"><code>R/plotDOC.R</code></a></small>
     <div class="hidden name"><code>plotDOC.Rd</code></div>
     </div>
 
@@ -111,10 +111,12 @@ different subjects (<code>"between"</code>). (Default: <code>"all"</code>)</p></
     </div>
     <div id="details">
     <h2>Details</h2>
-    <p>Each pair of samples is drawn once, with a loess smooth. In Bashan et
-al. (2016), overlap is mia's <code>"overlap"</code> of relative abundances and
-dissimilarity is the root Jensen-Shannon divergence of the shared taxa,
-renormalised; mia's <code>"jsd"</code> uses all taxa.</p>
+    <p>Each pair of samples is drawn once, with the robust LOWESS curve of
+Bashan et al. (2016); above 1000 pairs, points are drawn with
+transparency. In Bashan et al. (2016), overlap is mia's
+<code>"overlap"</code> of relative abundances and dissimilarity is the root
+Jensen-Shannon divergence of the shared taxa, renormalised; mia's
+<code>"jsd"</code> uses all taxa.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -135,7 +137,7 @@ renormalised; mia's <code>"jsd"</code> uses all taxa.</p>
 <span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/getDissimilarity.html" class="external-link">addDissimilarity</a></span><span class="op">(</span><span class="va">tse</span>, method <span class="op">=</span> <span class="st">"jsd"</span>,</span></span>
 <span class="r-in"><span>    assay.type <span class="op">=</span> <span class="st">"relabundance"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plotDOC</span><span class="op">(</span><span class="va">tse</span>, overlap <span class="op">=</span> <span class="st">"overlap"</span>, dissimilarity <span class="op">=</span> <span class="st">"jsd"</span>,</span></span>
-<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"Vessel"</span>, pairs <span class="op">=</span> <span class="st">"between"</span>, alpha <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"Vessel"</span>, pairs <span class="op">=</span> <span class="st">"between"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotDOC-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
