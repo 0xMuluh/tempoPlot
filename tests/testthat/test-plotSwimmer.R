@@ -72,9 +72,11 @@ test_that("plotSwimmer colours points by colour.by", {
 })
 
 test_that("plotSwimmer keeps subjects with a single sample", {
+    n <- sum(table(hitchip1006$subject) == 1L)
     expect_warning(
         p <- plotSwimmer(hitchip1006, "time", "subject"),
-        "single sample"
+        paste("'group' has", n, "subjects with a single sample."),
+        fixed = TRUE
     )
     ld <- layer_data(p, 2L)
     expect_identical(nrow(ld), ncol(hitchip1006))
@@ -243,4 +245,10 @@ test_that("plotSwimmer draws one band per experiment", {
     expect_equal(unique(df$.y[df$.experiment == "a" & df$id == "s1"]),
         2.3)
     expect_error(plotSwimmer(mae, "none", "id"), "'time.col'")
+    # Arguments of the SummarizedExperiment method do not reach geom_point.
+    expect_error(plotSwimmer(mae, "t", "id", max.gap = 1), "'max.gap'")
+    MultiAssayExperiment::colData(mae)$hour <-
+        as.POSIXct("2020-01-01", tz = "UTC") + cd$t * 3600
+    expect_s3_class(layer_scales(plotSwimmer(mae, "hour", "id"))$x,
+        "ScaleContinuousDatetime")
 })

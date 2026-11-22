@@ -52,6 +52,13 @@ test_that("plotTiles computes change and occupancy", {
     df <- cells(plotTiles(toy, "t", "id", value = "occupancy"))
     expect_equal(df$.value[df$.panel == "s1" & df$.feature == "b"],
         c(1, 0, 0))
+    # a in s1 is 1, 2, 4: present above 1 at the last two times.
+    df <- cells(plotTiles(toy, "t", "id", value = "occupancy",
+        detection = 1))
+    expect_equal(df$.value[df$.panel == "s1" & df$.feature == "a"],
+        c(0, 1, 1))
+    expect_error(plotTiles(toy, "t", "id", value = "occupancy",
+        detection = "a"), "'detection'")
 })
 
 test_that("plotTiles averages subjects with level = 'group'", {
@@ -73,6 +80,8 @@ test_that("plotTiles orders by clustering and handles visits and Dates", {
     expect_true(all(df$.width == 1))
     toy$date <- as.Date("2020-01-01") + toy$t
     expect_s3_class(plotTiles(toy, "date", "id")$data$.mid, "Date")
+    toy$hour <- as.POSIXct("2020-01-01", tz = "UTC") + toy$t * 3600
+    expect_s3_class(plotTiles(toy, "hour", "id")$data$.mid, "POSIXct")
     # A tile reaches at most max.gap / 2, so the gap from 1 to 3 is blank.
     s1 <- cells(plotTiles(toy, "t", "id", max.gap = 1.5))
     s1 <- s1[s1$.panel == "s1" & s1$.feature == "a", ]
@@ -125,6 +134,12 @@ test_that("plotTiles keeps the time type of results tables", {
     df <- df[order(df$.time), ]
     expect_s3_class(df$.mid, "Date")
     # Dates keep their spacing; the 29-day gap stays blank.
+    expect_equal(df$.width, c(1, 1.5, 2))
+    # POSIXct times are in hours.
+    res$hour <- as.POSIXct("2020-01-01", tz = "UTC") + c(0, 1, 30) * 3600
+    df <- plotTiles(res, "hour", effect = "lfc", max.gap = 2)$data
+    df <- df[order(df$.time), ]
+    expect_s3_class(df$.mid, "POSIXct")
     expect_equal(df$.width, c(1, 1.5, 2))
     res$visit <- factor(c("w2", "w10", "w20"), levels = c("w2", "w10", "w20"))
     df <- plotTiles(res, "visit", effect = "lfc")$data

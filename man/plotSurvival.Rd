@@ -32,8 +32,8 @@ object.}
 \code{\link[ggplot2:geom_step]{geom_step}}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling times: numeric, \code{Date} or
-a factor of visits.}
+\code{colData(x)} that contains sampling times: numeric, \code{Date},
+\code{POSIXct} or a factor of visits.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}
@@ -93,7 +93,8 @@ time of the study, the latest time in \code{x}. A subject that joins
 late and is sampled until the end is not a dropout. For
 \code{"arrival"} and \code{"loss"}, only subjects without and with the
 feature at their first sample are at risk. Times are in \code{time.col}
-units: days for \code{Date} times and visit steps for visits.
+units: days for \code{Date}, hours for \code{POSIXct} times and visit
+steps for visits.
 }
 \examples{
 # Time until the dominant genus changes, by sex

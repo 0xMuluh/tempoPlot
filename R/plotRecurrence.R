@@ -12,8 +12,8 @@
 #'   \code{\link[mia:getDissimilarity]{mia::addDissimilarity()}}.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects.
@@ -60,13 +60,9 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
     function(x, dissimilarity, time.col, group, subjects = NULL,
             threshold = NULL, ...) {
         .require_column(x, group)
-        type <- .check_longitudinal(x, time.col, group)
+        .check_longitudinal(x, time.col, group)
         d <- .get_dissimilarity(x, dissimilarity)
-        if (!is.null(threshold) && !(is.numeric(threshold) &&
-                length(threshold) == 1L && is.finite(threshold))) {
-            stop("'threshold' must be NULL or a single number.",
-                call. = FALSE)
-        }
+        .check_number(threshold, null = TRUE)
         subject <- as.character(colData(x)[[group]])
         if (is.null(subjects)) {
             subjects <- unique(subject)
@@ -81,11 +77,7 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
         df <- do.call(rbind, lapply(subjects, function(s) {
             i <- which(subject == s)
             i <- i[order(tnum[i])]
-            edges <- if (type == "visit") {
-                list(lower = tnum[i] - 0.5, upper = tnum[i] + 0.5)
-            } else {
-                .tile_edges(tnum[i])
-            }
+            edges <- .tile_edges(tnum[i], is.factor(time))
             k <- expand.grid(a = seq_along(i), b = seq_along(i))
             data.frame(.subject = s,
                 xmin = edges$lower[k$a], xmax = edges$upper[k$a],
@@ -94,19 +86,15 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
         }))
         df$.subject <- factor(df$.subject, levels = subjects)
         names(df)[1L] <- group
-        if (type == "date") {
-            for (col in c("xmin", "xmax", "ymin", "ymax")) {
-                df[[col]] <- as.Date(df[[col]], origin = "1970-01-01")
-            }
-        }
-        levels <- if (type == "visit") levels(time)
+        edges <- c("xmin", "xmax", "ymin", "ymax")
+        df[edges] <- lapply(df[edges], .time_restore, time)
         .plot_recurrence(df, dissimilarity, time.col, group, threshold,
-            levels, ...)
+            levels(time), ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot aes .data geom_rect labs facet_wrap vars
-#'   scale_fill_manual scale_x_continuous scale_y_continuous theme
+#'   scale_x_continuous scale_y_continuous theme
 .plot_recurrence <- function(df, dissimilarity, time.col, group, threshold,
         levels, ...) {
     p <- ggplot(df, aes(xmin = .data$xmin, xmax = .data$xmax,
@@ -116,11 +104,9 @@ setMethod("plotRecurrence", signature = c(x = "SummarizedExperiment"),
             .scale_sequential("fill") +
             labs(fill = dissimilarity)
     } else {
-        df$recurrent <- factor(ifelse(df$dissimilarity <= threshold, "yes",
-            "no"), levels = c("yes", "no"))
+        df$recurrent <- df$dissimilarity <= threshold
         p <- p + geom_rect(aes(fill = .data$recurrent), data = df, ...) +
-            scale_fill_manual(values = c(yes = .okabe_ito[[1L]],
-                no = "grey80")) +
+            .scale_highlight("fill") +
             labs(fill = paste(dissimilarity, "<=", threshold))
     }
     if (!is.null(levels)) {

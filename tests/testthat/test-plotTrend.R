@@ -352,6 +352,13 @@ test_that("plotTrend aligns time to an event per subject", {
     p <- plotTrend(m[, !duplicated(paste(m$StudyIdentifier, m$date))],
         "Acetate", "date", "StudyIdentifier", align.to = "start")
     expect_true(min(p$data$date) == -4)
+    # POSIXct times are aligned in hours.
+    m$hour <- as.POSIXct("2020-01-01", tz = "UTC") + m$Time_hr_num * 3600
+    m$at <- as.POSIXct("2020-01-01", tz = "UTC") + 100 * 3600
+    p <- plotTrend(m, "Acetate", "hour", "StudyIdentifier", align.to = "at")
+    expect_equal(sort(p$data$hour), sort(m$Time_hr_num - 100))
+    expect_error(plotTrend(m, "Acetate", "hour", "StudyIdentifier",
+        align.to = "start"), "type of 'time.col'")
 })
 
 test_that("plotTrend draws rolling statistics", {
@@ -381,6 +388,10 @@ test_that("plotTrend wraps time into periods", {
     p <- plotTrend(toy, "v", "t", period = 24)
     expect_equal(p$data$t, c(0, 6, 12, 0, 6, 12))
     expect_identical(nlevels(p$data$.line), 2L)
+    # POSIXct times wrap in hours.
+    toy$h <- as.POSIXct("2020-01-01", tz = "UTC") + toy$t * 3600
+    expect_equal(plotTrend(toy, "v", "h", period = 24)$data$h,
+        c(0, 6, 12, 0, 6, 12))
     expect_error(plotTrend(toy, "v", "t", period = -1), "'period'")
     # Events and fit tables keep absolute times, so they are not wrapped.
     expect_error(plotTrend(toy, "v", "t", period = 24,
@@ -484,6 +495,11 @@ test_that("plotTrend marks events and intervals", {
     expect_equal(layer_data(p, which(geoms == "GeomVline"))$xintercept,
         152)
     expect_identical(p$labels$linetype, "event")
+    # Labelled bands alone name no linetype legend.
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        events = events[1L, ])
+    expect_null(p$labels$linetype)
+    expect_no_message(ggplot_build(p))
     expect_error(plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
         events = data.frame(start = "a")), "type of 'time.col'")
     # Events of single subjects belong to align.to.

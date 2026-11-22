@@ -77,4 +77,6 @@ test_that("plotHorizon draws a strip per feature and panel", {
     expect_length(p$facet$params$cols, 1L)
     toy$date <- as.Date("2020-01-01") + toy$t
     expect_s3_class(plotHorizon(toy, "date", "id")$data$.time, "Date")
+    toy$hour <- as.POSIXct("2020-01-01", tz = "UTC") + toy$t * 3600
+    expect_s3_class(plotHorizon(toy, "hour", "id")$data$.time, "POSIXct")
 })

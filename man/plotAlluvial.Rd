@@ -32,8 +32,9 @@ object.}
 community type or the dominant taxon.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains the time points shared by the subjects,
-best a factor of visits. Each distinct time is one axis.}
+\code{colData(x)} that contains the time points shared by the subjects:
+numeric, \code{Date}, \code{POSIXct} or, best, a factor of visits.
+Each distinct time is one axis.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects.}

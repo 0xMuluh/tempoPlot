@@ -28,10 +28,25 @@
         hcl.colors(n, "viridis")
 }
 
-#' @importFrom ggplot2 discrete_scale
-.scale_categorical <- function(aesthetics, ...) {
-    discrete_scale(aesthetics, palette = .palette_categorical,
+# The level grey ("Other", "missing") is left out of the palette, so it is
+# drawn in the neutral grey of missing values.
+#' @importFrom ggplot2 discrete_scale ggproto ggproto_parent
+.scale_categorical <- function(aesthetics, grey = NULL, ...) {
+    scale <- discrete_scale(aesthetics, palette = .palette_categorical,
         na.value = .na_colour, ...)
+    if (is.null(grey)) {
+        return(scale)
+    }
+    ggproto(NULL, scale, map = function(self, x, limits = self$get_limits())
+        ggproto_parent(scale, self)$map(x, setdiff(limits, grey)))
+}
+
+# Highlight of a logical: TRUE ("yes") in the first categorical colour,
+# FALSE ("no") in light grey.
+.scale_highlight <- function(aesthetics, ...) {
+    discrete_scale(aesthetics, palette = function(n)
+        c(.okabe_ito[[1L]], "grey80"), limits = c("TRUE", "FALSE"),
+        labels = c("yes", "no"), na.value = .na_colour, ...)
 }
 
 #' @importFrom ggplot2 scale_colour_viridis_c

@@ -38,6 +38,33 @@ test_that(".scale_categorical colours levels in order and NA grey", {
         "viridis"))
 })
 
+test_that(".scale_categorical draws the grey level in neutral grey", {
+    d <- data.frame(x = 1:3, g = factor(c("a", "Other", "b"),
+        levels = c("a", "b", "Other")))
+    p <- ggplot(d, aes(x, x, colour = g)) + geom_point() +
+        .scale_categorical("colour", grey = "Other")
+    expect_identical(layer_data(p)$colour, c("#0072B2", "grey50",
+        "#E69F00"))
+    key <- get_guide_data(p, "colour")
+    expect_identical(key$.label, c("a", "b", "Other"))
+    expect_identical(key$colour, c("#0072B2", "#E69F00", "grey50"))
+    # Without the grey level, every level keeps its palette colour.
+    p <- ggplot(d[-2L, ], aes(x, x, colour = g)) + geom_point() +
+        .scale_categorical("colour", grey = "Other")
+    expect_identical(layer_data(p)$colour, c("#0072B2", "#E69F00"))
+})
+
+test_that(".scale_highlight draws yes in the first colour, no grey", {
+    d <- data.frame(x = 1:3, h = c(FALSE, TRUE, NA))
+    p <- ggplot(d, aes(x, x, colour = h)) + geom_point() +
+        .scale_highlight("colour")
+    expect_identical(layer_data(p)$colour, c("grey80", "#0072B2",
+        "grey50"))
+    key <- get_guide_data(p, "colour")
+    expect_identical(key$.label, c("yes", "no"))
+    expect_identical(key$colour, c("#0072B2", "grey80"))
+})
+
 test_that(".scale_sequential is viridis with grey NA", {
     p <- ggplot(df, aes(x, y, fill = v)) + geom_tile() +
         .scale_sequential("fill")

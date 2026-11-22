@@ -12,6 +12,10 @@ test_that("plotLandscape checks its arguments", {
     expect_error(plotLandscape(toy, "v", scale = "log"))
     expect_error(plotLandscape(toy, "v", group.by = "none"), "'group.by'")
     expect_error(plotLandscape(toy[, 1], "v"), "two values")
+    se <- toy
+    rownames(se) <- "f"
+    expect_error(plotLandscape(se, "f", assay.type = "clr"),
+        "'assay.type' must be one of assayNames")
 })
 
 test_that("plotLandscape draws the density and the potential", {

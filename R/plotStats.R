@@ -87,11 +87,7 @@ setMethod("plotStats", signature = c(x = "SummarizedExperiment"),
             stop("'lower' and 'upper' must be given together.",
                 call. = FALSE)
         }
-        if (!is.null(top) && !(is.numeric(top) && length(top) == 1L &&
-                top >= 1)) {
-            stop("'top' must be NULL or a single number of at least 1.",
-                call. = FALSE)
-        }
+        .check_number(top, 1, null = TRUE)
 
         cols <- unique(c(group, stat, lower, upper, colour.by))
         tab <- if (is.null(group)) rowData(x) else colData(x)

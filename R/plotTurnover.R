@@ -8,8 +8,10 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling times: numeric, \code{Date} or
-#'   a factor of visits.
+#'   \code{colData(x)} that contains sampling times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits. Time differences, as in
+#'   \code{max.gap}, are in days for \code{Date} and hours for
+#'   \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
@@ -79,7 +81,7 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
             ...) {
         type <- match.arg(type)
         level <- match.arg(level)
-        ttype <- .check_longitudinal(x, time.col, group)
+        .check_longitudinal(x, time.col, group)
         .check_column(x, group.by)
         present <- .present(.get_assay(x, assay.type), detection)
 
@@ -88,9 +90,6 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
             optional = TRUE)
         cd$.i <- seq_len(ncol(x))
         cd <- .order_time(cd, time.col, group)
-        if (is.null(max.gap) && ttype == "visit") {
-            max.gap <- 1
-        }
         cd <- .break_gaps(cd, time.col, group, max.gap)
         subject <- if (is.null(group)) rep("", nrow(cd)) else
             as.character(cd[[group]])
@@ -98,8 +97,7 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
             (is.null(group.by)) rep("", nrow(cd)) else
             as.character(cd[[group.by]])
         # Consecutive samples of a subject, not across a gap.
-        i <- .next_in_subject(subject)
-        i <- i[cd$.segment[i] == cd$.segment[i + 1L]]
+        i <- .next_in_subject(subject, segment = cd$.segment)
         if (length(i) == 0L) {
             stop("No subject has two consecutive samples.", call. = FALSE)
         }
@@ -109,11 +107,11 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
             df <- aggregate(cbind(.from, .value) ~ .panel + .time + .part,
                 data = df, FUN = mean)
         }
-        df <- .stack_turnover(df, type, ttype)
-        levels <- if (ttype == "visit") levels(cd[[time.col]])
+        time <- cd[[time.col]]
+        df <- .stack_turnover(df, type, time)
         panels <- level == "group" && !is.null(group.by) ||
             level == "subject" && !is.null(group)
-        .plot_turnover(df, time.col, type, panels, levels, ...)
+        .plot_turnover(df, time.col, type, panels, levels(time), ...)
     }
 )
 
@@ -140,9 +138,9 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
 
 # Bar extents: gains and appearance from zero up; losses from zero down and
 # disappearance stacked on appearance. Visit bars leave a small space
-# between intervals; Date times are returned as Dates.
+# between intervals; other times are returned in the class of time.
 #' @importFrom stats ave
-.stack_turnover <- function(df, type, ttype) {
+.stack_turnover <- function(df, type, time) {
     df <- df[order(df$.panel, df$.time, df$.part), , drop = FALSE]
     df$.ymin <- pmin(df$.value, 0)
     df$.ymax <- pmax(df$.value, 0)
@@ -151,14 +149,12 @@ setMethod("plotTurnover", signature = c(x = "SummarizedExperiment"),
             c(0, cumsum(v)[-length(v)]))
         df$.ymax <- df$.ymin + df$.value
     }
-    if (ttype == "visit") {
+    if (is.factor(time)) {
         df$.from <- df$.from + 0.05
         df$.time <- df$.time - 0.05
     }
-    if (ttype == "date") {
-        df$.from <- as.Date(df$.from, origin = "1970-01-01")
-        df$.time <- as.Date(df$.time, origin = "1970-01-01")
-    }
+    df$.from <- .time_restore(df$.from, time)
+    df$.time <- .time_restore(df$.time, time)
     df
 }
 

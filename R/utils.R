@@ -36,24 +36,18 @@
             stop("'group' and 'time.col' must not contain duplicated ",
                 "subject-time pairs.", call. = FALSE)
         }
-        counts <- table(subject)
-        singles <- names(counts)[counts == 1L]
-        if (length(singles) > 0L) {
-            warning(
-                "'group' has subjects with a single sample: ",
-                paste(singles, collapse = ", "),
-                ".",
-                call. = FALSE
-            )
+        singles <- sum(table(subject) == 1L)
+        if (singles > 0L) {
+            warning("'group' has ", singles, " subjects with a single ",
+                "sample.", call. = FALSE)
         }
     }
-    invisible(.time_type(x, time.col))
+    invisible(.time_type(time))
 }
 
-# Classify the time column as "numeric", "date", "datetime" (POSIXct) or
-# "visit".
-.time_type <- function(x, time.col) {
-    time <- colData(x)[[time.col]]
+# Classify times (the values of time.col) as "numeric", "date",
+# "datetime" (POSIXct) or "visit".
+.time_type <- function(time) {
     if (is.numeric(time)) {
         return("numeric")
     }
@@ -105,24 +99,18 @@
     t
 }
 
-# Error unless max.gap is NULL or a single positive number.
-.check_max_gap <- function(max.gap) {
-    if (!is.null(max.gap) &&
-            !(is.numeric(max.gap) && length(max.gap) == 1L &&
-                is.finite(max.gap) && max.gap > 0)) {
-        stop("'max.gap' must be NULL or a single positive number.",
-            call. = FALSE)
-    }
-}
-
 # Add integer column .segment, increasing within each subject when the
 # gap to the previous sample exceeds max.gap. Distance is numeric
 # difference, days for Date, hours for POSIXct, or level steps for visit
-# factors.
-# max.gap = NULL keeps one segment per subject.
+# factors. max.gap = NULL keeps one segment per subject, except for visits
+# (by default a factor time.col), which break at every skipped level.
 #' @importFrom stats ave
-.break_gaps <- function(df, time.col, group = NULL, max.gap = NULL) {
-    .check_max_gap(max.gap)
+.break_gaps <- function(df, time.col, group = NULL, max.gap = NULL,
+        visit = is.factor(df[[time.col]])) {
+    .check_number(max.gap, 0, open = TRUE, null = TRUE)
+    if (visit) {
+        max.gap <- max.gap %||% 1
+    }
 
     n <- nrow(df)
     if (n == 0L || is.null(max.gap)) {
@@ -144,8 +132,9 @@
 }
 
 # Resolve y to a numeric vector of length ncol(x), named by colnames(x).
-# Places checked: colData column, assay row, "<dimred>:<component>". Error
-# messages name the argument arg.
+# Places checked: colData column, assay row, "<dimred>:<component>". A row
+# is read from assay.type, checked by .get_assay(), or from the first
+# assay if NULL. Error messages name the argument arg.
 #' @importFrom SummarizedExperiment assay colData
 .resolve_y <- function(x, y, assay.type = NULL, arg = "y") {
     if (!.is_one_name(y)) {
@@ -186,7 +175,8 @@
         }
         value <- as.numeric(col)
     } else if (identical(places, "assay")) {
-        value <- as.numeric(assay(x, assay.type %||% 1L)[y, ])
+        value <- as.numeric(if (is.null(assay.type)) assay(x)[y, ] else
+            .get_assay(x[y, ], assay.type))
     } else {
         rd <- reducedDim(x, dimred_match$dimred)
         value <- as.numeric(rd[, dimred_match$j])
@@ -199,6 +189,33 @@
 # TRUE when x is a single non-NA character string.
 .is_one_name <- function(x) {
     is.character(x) && length(x) == 1L && !is.na(x)
+}
+
+# Error unless x is TRUE or FALSE. The message names the argument.
+.check_flag <- function(x, arg = deparse(substitute(x))) {
+    if (!(isTRUE(x) || isFALSE(x))) {
+        stop("'", arg, "' must be TRUE or FALSE.", call. = FALSE)
+    }
+}
+
+# Error unless x is a single number of at least min (above min if open)
+# and at most max, or NULL if null is TRUE. The message names the
+# argument.
+.check_number <- function(x, min = -Inf, max = Inf, open = FALSE,
+        null = FALSE, arg = deparse(substitute(x))) {
+    if (null && is.null(x) || is.numeric(x) && length(x) == 1L &&
+            !is.na(x) && x <= max && if (open) x > min else x >= min) {
+        return(invisible())
+    }
+    range <- if (max < Inf) {
+        sprintf(" in %s%g, %g]", if (open) "(" else "[", min, max)
+    } else if (open) {
+        paste(" above", min)
+    } else if (min > -Inf) {
+        paste(" of at least", min)
+    }
+    stop("'", arg, "' must be ", if (null) "NULL or ", "a single number",
+        range, ".", call. = FALSE)
 }
 
 # Error unless col is NULL or one column name of colData(x) or rowData(x).
@@ -296,11 +313,14 @@
 # markers (rows without end). Events with a group column are drawn on the
 # row of their subject when y.levels gives the subject rows, bottom to
 # top; the others span the whole plot. label sets the fill, or the
-# linetype of markers that span the plot. Returns a
-# list of layers, empty without events of that kind.
-#' @importFrom ggplot2 aes .data geom_point geom_rect geom_vline
+# linetype of markers that span the plot, in a legend titled "event"; with
+# text = TRUE, the events stay grey and the labels are written at the top
+# instead. Returns a list of layers, empty without events of that kind.
+#' @importFrom ggplot2 aes .data geom_point geom_rect geom_vline geom_text
+#'   labs
+#' @importFrom stats setNames
 .events_layer <- function(events, what = c("bands", "markers"),
-        group = NULL, y.levels = NULL) {
+        group = NULL, y.levels = NULL, text = FALSE) {
     what <- match.arg(what)
     if (is.null(events)) {
         return(list())
@@ -319,39 +339,35 @@
     # Visits are drawn at their level codes.
     pos <- function(v) if (is.factor(v)) as.integer(v) else v
     ev$.start <- pos(ev$start)
-    fill <- if ("label" %in% names(ev)) "label" else NULL
+    labelled <- "label" %in% names(ev)
+    legend <- labelled && !text
+    # Fixed grey styles replace the label mapping without a legend.
+    fixed <- function(...) if (!legend) list(...)
     if (what == "bands") {
         ev$.end <- pos(ev$end)
         ev$.ymin <- if (rows) ev$.y - 0.4 else -Inf
         ev$.ymax <- if (rows) ev$.y + 0.4 else Inf
-        mapping <- aes(xmin = .data$.start, xmax = .data$.end,
-            ymin = .data$.ymin, ymax = .data$.ymax)
-        if (is.null(fill)) {
-            return(list(geom_rect(mapping, data = ev, inherit.aes = FALSE,
-                fill = "grey50", alpha = 0.3)))
-        }
-        mapping <- aes(xmin = .data$.start, xmax = .data$.end,
-            ymin = .data$.ymin, ymax = .data$.ymax, fill = .data$label)
-        return(list(geom_rect(mapping, data = ev, inherit.aes = FALSE,
-            alpha = 0.3)))
+        layer <- do.call(geom_rect, c(list(aes(xmin = .data$.start,
+            xmax = .data$.end, ymin = .data$.ymin, ymax = .data$.ymax,
+            fill = if (legend) .data$label), data = ev,
+            inherit.aes = FALSE, alpha = 0.3), fixed(fill = "grey50")))
+    } else if (rows) {
+        ev$.y <- ev$.y + 0.3
+        layer <- do.call(geom_point, c(list(aes(x = .data$.start,
+            y = .data$.y, fill = if (legend) .data$label), data = ev,
+            inherit.aes = FALSE, shape = 25, size = 2.5),
+            fixed(fill = "grey30")))
+    } else {
+        layer <- do.call(geom_vline, c(list(aes(xintercept = .data$.start,
+            linetype = if (legend) .data$label), data = ev,
+            colour = "grey30"), fixed(linetype = "dashed")))
     }
-    if (!rows) {
-        if (is.null(fill)) {
-            return(list(geom_vline(aes(xintercept = .data$.start),
-                data = ev, linetype = "dashed", colour = "grey30")))
-        }
-        return(list(geom_vline(
-            aes(xintercept = .data$.start, linetype = .data$label),
-            data = ev, colour = "grey30")))
-    }
-    ev$.y <- ev$.y + 0.3
-    if (is.null(fill)) {
-        return(list(geom_point(aes(x = .data$.start, y = .data$.y),
-            data = ev, inherit.aes = FALSE, shape = 25, size = 2.5,
-            fill = "grey30")))
-    }
-    list(geom_point(aes(x = .data$.start, y = .data$.y, fill = .data$label),
-        data = ev, inherit.aes = FALSE, shape = 25, size = 2.5))
+    aesthetic <- if (what == "markers" && !rows) "linetype" else "fill"
+    list(layer,
+        if (legend) do.call(labs, setNames(list("event"), aesthetic)),
+        if (text && labelled) geom_text(aes(x = .data$.start, y = Inf,
+            label = .data$label), data = ev, inherit.aes = FALSE,
+            hjust = -0.05, vjust = 1.5, size = 3, colour = "grey30"))
 }
 
 # Sample-by-sample dissimilarity matrix stored by mia::addDissimilarity()
@@ -379,10 +395,11 @@
 }
 
 # Lower and upper edges of the tile of each sorted time: halfway to the
-# neighbouring times, mirrored at the ends. A single time spans +-0.5.
-.tile_edges <- function(t) {
+# neighbouring times, mirrored at the ends. Visits (level codes) and a
+# single time span +-0.5.
+.tile_edges <- function(t, visit = FALSE) {
     n <- length(t)
-    if (n == 1L) {
+    if (visit || n == 1L) {
         return(list(lower = t - 0.5, upper = t + 0.5))
     }
     mid <- (t[-1L] + t[-n]) / 2
@@ -398,9 +415,7 @@
         }
         return(unique(features))
     }
-    if (!(is.numeric(top) && length(top) == 1L && top >= 1)) {
-        stop("'top' must be a single number of at least 1.", call. = FALSE)
-    }
+    .check_number(top, 1)
     m <- rowMeans(mat, na.rm = TRUE)
     rownames(mat)[order(-m)][seq_len(min(top, nrow(mat)))]
 }
@@ -408,19 +423,15 @@
 # Long table of assay values of the selected features: columns .feature,
 # .panel (subject, group.by group or ""), .time (numeric) and .value.
 # value "change" subtracts the first sample of each subject and
-# "occupancy" marks values above zero. level "group" averages over the
-# samples of each panel at each time.
-#' @importFrom SummarizedExperiment colData assay assayNames
+# "occupancy" marks values above detection. level "group" averages over
+# the samples of each panel at each time.
+#' @importFrom SummarizedExperiment colData
 #' @importFrom stats aggregate na.pass
 .feature_table <- function(x, time.col, group, assay.type, features, top,
-        value = "raw", level = "subject", group.by = NULL) {
+        value = "raw", level = "subject", group.by = NULL, detection = 0) {
     .check_longitudinal(x, time.col, group)
-    .time_type(x, time.col)
     .check_column(x, group.by)
-    if (!.is_one_name(assay.type) || !assay.type %in% assayNames(x)) {
-        stop("'assay.type' must be one of assayNames(x).", call. = FALSE)
-    }
-    mat <- as.matrix(assay(x, assay.type))
+    mat <- .get_assay(x, assay.type)
     features <- .select_features(mat, features, top)
     mat <- mat[features, , drop = FALSE]
 
@@ -433,7 +444,7 @@
         mat <- mat - mat[, first[match(subject, names(first))],
             drop = FALSE]
     } else if (value == "occupancy") {
-        mat <- (mat > 0) + 0
+        mat <- .present(mat, detection) + 0
     }
 
     panel <- if (level == "subject") subject else if (is.null(group.by))
@@ -481,18 +492,20 @@
 }
 
 # For ids sorted by .order_time(), the rows i whose row i + lag belongs to
-# the same subject: the pairs are (i, i + lag). NA ids never pair.
-.next_in_subject <- function(ids, lag = 1L) {
+# the same subject, and to the same gap segment if given: the pairs are
+# (i, i + lag). NA ids never pair.
+.next_in_subject <- function(ids, lag = 1L, segment = NULL) {
     i <- seq_len(max(length(ids) - lag, 0L))
-    i[which(ids[i] == ids[i + lag])]
+    same <- ids[i] == ids[i + lag]
+    if (!is.null(segment)) {
+        same <- same & segment[i] == segment[i + lag]
+    }
+    i[which(same)]
 }
 
 # Presence as mia::getPrevalence() counts it: values above detection.
 .present <- function(mat, detection = 0) {
-    if (!(is.numeric(detection) && length(detection) == 1L &&
-            !is.na(detection))) {
-        stop("'detection' must be a single number.", call. = FALSE)
-    }
+    .check_number(detection)
     mat > detection
 }
 

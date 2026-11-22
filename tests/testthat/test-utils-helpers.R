@@ -73,6 +73,30 @@ test_that(".next_in_subject pairs rows of the same subject", {
     expect_identical(.next_in_subject(c("a", "a", NA)), 1L)
     expect_identical(.next_in_subject("a"), integer(0))
     expect_identical(.next_in_subject(character(0)), integer(0))
+    # Pairs across a gap segment are skipped.
+    expect_identical(.next_in_subject(ids, segment = c(1, 1, 1, 2, 2)),
+        c(1L, 4L))
+})
+
+test_that(".check_flag and .check_number name the argument and range", {
+    flag <- NA
+    expect_error(.check_flag(flag), "'flag' must be TRUE or FALSE.",
+        fixed = TRUE)
+    expect_silent(.check_flag(FALSE))
+    n <- 0
+    expect_silent(.check_number(n, 0))
+    expect_error(.check_number(n, 1),
+        "'n' must be a single number of at least 1.", fixed = TRUE)
+    expect_error(.check_number(n, 0, open = TRUE, null = TRUE),
+        "'n' must be NULL or a single number above 0.", fixed = TRUE)
+    expect_silent(.check_number(NULL, null = TRUE))
+    expect_error(.check_number(n, 0, 1, open = TRUE),
+        "'n' must be a single number in (0, 1].", fixed = TRUE)
+    expect_silent(.check_number(1, 0, 1, open = TRUE))
+    for (bad in list("a", c(1, 2), NA_real_, NULL)) {
+        expect_error(.check_number(bad, arg = "x"),
+            "'x' must be a single number.", fixed = TRUE)
+    }
 })
 
 test_that(".present counts values above detection", {
@@ -82,4 +106,12 @@ test_that(".present counts values above detection", {
     for (bad in list("a", c(1, 2), NA_real_, NULL)) {
         expect_error(.present(m, bad), "'detection' must be a single number")
     }
+})
+
+test_that(".tile_edges reaches halfway to neighbours, visits +-0.5", {
+    expect_identical(.tile_edges(c(0, 1, 3)),
+        list(lower = c(-0.5, 0.5, 2), upper = c(0.5, 2, 4)))
+    expect_identical(.tile_edges(c(1, 2, 4), visit = TRUE),
+        list(lower = c(0.5, 1.5, 3.5), upper = c(1.5, 2.5, 4.5)))
+    expect_identical(.tile_edges(5), list(lower = 4.5, upper = 5.5))
 })

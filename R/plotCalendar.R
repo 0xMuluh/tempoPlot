@@ -8,7 +8,9 @@
 #'   object.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that contains sampling dates, of class \code{Date}.
+#'   \code{colData(x)} that contains sampling dates, of class \code{Date},
+#'   or times of class \code{POSIXct}, counted on their date in their time
+#'   zone.
 #'
 #' @param unit \code{Character scalar}. Counts samples per day, with weeks
 #'   on the x axis and weekdays on the y axis (\code{"day"}), or per week,
@@ -49,8 +51,11 @@ setMethod("plotCalendar", signature = c(x = "SummarizedExperiment"),
         unit <- match.arg(unit)
         .require_column(x, time.col)
         date <- colData(x)[[time.col]]
+        if (inherits(date, "POSIXct")) {
+            date <- as.Date(date, tz = attr(date, "tzone") %||% "")
+        }
         if (!inherits(date, "Date")) {
-            stop("'time.col' must be a Date column of colData(x).",
+            stop("'time.col' must be a Date or POSIXct column of colData(x).",
                 call. = FALSE)
         }
         date <- date[!is.na(date)]

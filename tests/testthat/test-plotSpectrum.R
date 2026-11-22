@@ -10,8 +10,12 @@ toy <- SummarizedExperiment(
         id = rep(c("a", "b"), 60), f = factor(seq_len(120))))
 
 test_that("plotSpectrum checks its arguments", {
-    expect_error(plotSpectrum(toy, "v", "f"), "numeric or Date")
+    expect_error(plotSpectrum(toy, "v", "f"), "numeric, Date or POSIXct")
     expect_error(plotSpectrum(toy[, 1:3], "v", "t"), "four or more")
+    se <- toy
+    rownames(se) <- "taxon"
+    expect_error(plotSpectrum(se, "taxon", "t", assay.type = "clr"),
+        "'assay.type' must be one of assayNames")
 })
 
 test_that("plotSpectrum finds the period of a sine", {
@@ -33,6 +37,13 @@ test_that("plotSpectrum gives Date frequencies per day", {
     days$t <- as.Date("2020-01-01") + round(days$t)
     days <- days[, !duplicated(days$t)]
     df <- plotSpectrum(days, "v", "t")$data
+    expect_equal(df$frequency[which.max(df$power)], 0.1, tolerance = 0.05)
+})
+
+test_that("plotSpectrum gives POSIXct frequencies per hour", {
+    hours <- toy
+    hours$t <- as.POSIXct("2020-01-01", tz = "UTC") + hours$t * 3600
+    df <- plotSpectrum(hours, "v", "t")$data
     expect_equal(df$frequency[which.max(df$power)], 0.1, tolerance = 0.05)
 })
 

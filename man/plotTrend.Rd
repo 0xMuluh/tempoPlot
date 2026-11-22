@@ -48,8 +48,10 @@ ordination component to plot: a column of \code{colData(x)}, a row of
 \code{assay(x, assay.type)}, or \code{"<dimred>:<component>"}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that contains sampling times: numeric, \code{Date} or
-a factor of visits.}
+\code{colData(x)} that contains sampling times: numeric, \code{Date},
+\code{POSIXct} or a factor of visits. Time differences, as in
+\code{max.gap} and \code{period}, are in days for \code{Date} and
+hours for \code{POSIXct} times.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that identifies subjects. (Default: \code{NULL})}
@@ -110,10 +112,10 @@ line; subjects with fewer than \code{window} samples are dropped.
 window. (Default: \code{5})}
 
 \item{period}{\code{Numeric scalar}. Wraps time into cycles of this
-length, in \code{time.col} units (days for \code{Date} times), to
-show daily or seasonal patterns; each cycle is drawn as its own line.
-Cycles start at time 0, which for \code{Date} times is 1970-01-01, a
-Thursday. Not combined with \code{events} or a \code{fit} table.
+length, in \code{time.col} units, to show daily or seasonal patterns;
+each cycle is drawn as its own line. Cycles start at time 0, which for
+\code{Date} and \code{POSIXct} times is 1970-01-01 (UTC), a Thursday.
+Not combined with \code{events} or a \code{fit} table.
 (Default: \code{NULL})}
 
 \item{events}{\code{data.frame}. Events or intervals to mark, one per

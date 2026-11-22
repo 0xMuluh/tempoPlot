@@ -28,8 +28,8 @@ optionally \code{lower} and \code{upper} for an interval.}
 \code{metadata(x)} holding the results.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column of the
-results that contains the times: numeric, \code{Date} or a factor of
-visits.}
+results that contains the times: numeric, \code{Date},
+\code{POSIXct} or a factor of visits.}
 
 \item{group.by}{\code{Character scalar}. Specifies the column of the
 results that splits the estimates into curves, such as the contrast or

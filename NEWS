@@ -1,3 +1,11 @@
+Changes in version 0.99.62 (2026-11-22)
++ Shared helpers for visit gaps, grey and highlight levels, assay and
+  presence checks, events legends and scalar checks; the package is
+  about 90 lines shorter
++ POSIXct times in all plots (hours); plotSpectrum gives frequencies per
+  hour for POSIXct; plotTiles takes detection
++ The single-sample warning gives the number of subjects
+
 Changes in version 0.99.61 (2026-11-22)
 + Composition plots use the shared theme and palettes; "Other" is grey;
   top features through one helper; rank lines, transitions and turnover

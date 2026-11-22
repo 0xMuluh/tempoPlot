@@ -14,8 +14,8 @@
 #'   \code{metadata(x)} holding the results.
 #'
 #' @param time.col \code{Character scalar}. Specifies the column of the
-#'   results that contains the times: numeric, \code{Date} or a factor of
-#'   visits.
+#'   results that contains the times: numeric, \code{Date},
+#'   \code{POSIXct} or a factor of visits.
 #'
 #' @param group.by \code{Character scalar}. Specifies the column of the
 #'   results that splits the estimates into curves, such as the contrast or
@@ -82,10 +82,7 @@ setMethod("plotTimeEffect", signature = c(x = "data.frame"),
             stop("'group.by' must be NULL or one column name of 'x'.",
                 call. = FALSE)
         }
-        time <- x[[time.col]]
-        if (!(is.numeric(time) || inherits(time, "Date") || is.factor(time))) {
-            stop("'time.col' must be numeric, Date or factor.", call. = FALSE)
-        }
+        .time_type(x[[time.col]])
         if (!is.numeric(x$estimate) ||
                 sum(c("lower", "upper") %in% names(x)) == 1L) {
             stop("'x' must have a numeric column estimate, and lower and ",

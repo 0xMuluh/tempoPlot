@@ -8,7 +8,7 @@ toy <- SummarizedExperiment(
         "2024-01-03", "2024-01-08", "2024-12-30")), n = 1:5))
 
 test_that("plotCalendar checks its arguments", {
-    expect_error(plotCalendar(toy, "n"), "Date")
+    expect_error(plotCalendar(toy, "n"), "Date or POSIXct")
     expect_error(plotCalendar(toy, "none"), "'time.col'")
     expect_error(plotCalendar(toy, "d", unit = "month"))
 })
@@ -20,6 +20,13 @@ test_that("plotCalendar counts samples per day", {
     expect_identical(jan1$n, 2L)
     expect_identical(as.character(df$.y[df$n == 1L & df$.x ==
         as.Date("2024-01-01")]), "Wed")
+    # POSIXct times count on their date in their time zone: 00:30 on
+    # Monday in Helsinki is still Sunday in UTC.
+    toy$at <- as.POSIXct("2024-01-08 00:30", tz = "Europe/Helsinki") +
+        c(0, 1, 2, 3, 4) * 60
+    df <- plotCalendar(toy, "at")$data
+    expect_identical(as.character(df$.y), "Mon")
+    expect_identical(df$n, 5L)
 })
 
 test_that("plotCalendar counts samples per ISO week", {
