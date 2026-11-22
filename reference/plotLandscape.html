@@ -19,7 +19,7 @@ density, valleys of the potential, suggest alternative states."><!-- mathjax -->
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.54</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.55</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ density, valleys of the potential, suggest alternative states."><!-- mathjax -->
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the density landscape of a variable</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotLandscape.R" class="external-link"><code>R/plotLandscape.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/fix-composition/R/plotLandscape.R" class="external-link"><code>R/plotLandscape.R</code></a></small>
     <div class="hidden name"><code>plotLandscape.Rd</code></div>
     </div>
 
@@ -66,6 +66,8 @@ density, valleys of the potential, suggest alternative states.</p>
 <span>  assay.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"density"</span>, <span class="st">"potential"</span><span class="op">)</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bw <span class="op">=</span> <span class="st">"nrd0"</span>,</span>
+<span>  adjust <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -81,8 +83,7 @@ object.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>additional arguments passed to
-<code><a href="https://rdrr.io/r/stats/density.html" class="external-link">density</a></code>, such as <code>bw</code> or
-<code>adjust</code>.</p></dd>
+<code><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></code>.</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
@@ -107,6 +108,17 @@ retrieve <code>y</code> from when <code>y</code> is a feature name.
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> that splits the samples into curves.
 (Default: <code>NULL</code>)</p></dd>
+
+
+<dt id="arg-bw">bw<a class="anchor" aria-label="anchor" href="#arg-bw"></a></dt>
+<dd><p><code>Numeric scalar</code> or <code>Character scalar</code>. Bandwidth
+of the kernel, passed to <code><a href="https://rdrr.io/r/stats/density.html" class="external-link">density</a></code>.
+(Default: <code>"nrd0"</code>)</p></dd>
+
+
+<dt id="arg-adjust">adjust<a class="anchor" aria-label="anchor" href="#arg-adjust"></a></dt>
+<dd><p><code>Numeric scalar</code>. Multiplies the bandwidth.
+(Default: <code>1</code>)</p></dd>
 
 </dl></div>
     <div id="value">
