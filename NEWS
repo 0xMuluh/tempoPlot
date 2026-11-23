@@ -1,3 +1,24 @@
+Changes in version 0.99.68 (2026-11-23)
++ New plots: plotProfiles (feature trajectory clusters), plotTimeline (one
+  subject as stacked tracks), plotRuns (durations of presence or states),
+  plotStates (state shares per subject), plotRmcorr (repeated-measures
+  correlation), plotChanges (distribution of abundance changes),
+  plotPartner and plotOrigin (mother-infant, donor-recipient designs) and
+  plotNoise (noise colour of each subject's features)
++ plotNetwork draws a matrix of interaction strengths (layout = "matrix")
++ plotTiles draws categorical results, such as strains
++ plotIndividuality draws within- and between-subject dissimilarity over
+  time windows (layout = "time")
++ plotTimeEffect draws permutation curves (null), p-values (p.col) and
+  points sized by a column (size.by)
++ plotTrend splits a feature into prevalence and values above detection
+  (detection); with align.to, fits stop at the event; events of single
+  subjects are drawn in their panels
++ plotLagProfile draws autocorrelation tables; plotSpectrum tapers each
+  series before the periodogram, which changes its spectra slightly, and
+  fits the log-log slope (fit = "power")
++ plotTrend: a column starting with .part no longer splits the panels
+
 Changes in version 0.99.67 (2026-11-23)
 + New plotIntervals() draws time intervals of features, such as the
   significant intervals of MetaLonDA, from a table or metadata(x)

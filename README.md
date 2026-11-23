@@ -58,14 +58,18 @@ human cohort and of the bioreactors.
 | When were samples taken? | `plotSwimmer()` |
 | | `plotGaps()` |
 | | `plotCalendar()` |
+| What happened to one subject? | `plotTimeline()` |
 | How does a value change over time? | `plotTrend()` |
 | | `plotTimeEffect()` |
 | | `plotIntervals()` |
+| | `plotRmcorr()` |
 | How does the composition change? | `plotComposition()` |
 | | `plotTiles()` |
+| | `plotProfiles()` |
 | | `plotHorizon()` |
 | | `plotRanks()` |
 | How fast and how much do communities change? | `plotTurnover()` |
+| | `plotChanges()` |
 | | `plotTBI()` |
 | | `plotLagProfile()` |
 | | `plotRecurrence()` |
@@ -74,10 +78,15 @@ human cohort and of the bioreactors.
 | | `plotDOC()` |
 | Are there states and rhythms? | `plotTransitionMatrix()` |
 | | `plotAlluvial()` |
+| | `plotStates()` |
+| | `plotRuns()` |
 | | `plotSurvival()` |
 | | `plotLandscape()` |
 | | `plotSpectrum()` |
+| | `plotNoise()` |
 | | `plotLagHeatmap()` |
+| What does a subject share with its partner? | `plotPartner()` |
+| | `plotOrigin()` |
 | Which features or subjects stand out? | `plotStats()` |
 | | `plotVolcano()` |
 | | `plotFeatureScatter()` |

@@ -65,14 +65,20 @@
 #' @name plotChanges
 #'
 #' @examples
-#' # Changes over at most 4 hours in three bioreactors, with the Laplace
-#' # distribution of the same median and mean absolute deviation
+#' # Daily changes of the absolute abundances of genera in 20 women, with
+#' # the Laplace distribution of the same median and mean absolute
+#' # deviation
+#' data("temporalMicrobiome20", package = "miaTime")
+#' tse <- temporalMicrobiome20
+#' # Three samples have no day
+#' tse <- tse[, !is.na(tse$day)]
+#' plotChanges(tse, time.col = "day", group = "person_id", max.gap = 1,
+#'     fit = "laplace")
+#'
+#' # Changes of relative abundances over at most 4 hours in each of three
+#' # bioreactors
 #' data("minimalgut", package = "miaTime")
 #' tse <- mia::transformAssay(minimalgut, method = "relabundance")
-#' plotChanges(tse, time.col = "Time.hr", group = "StudyIdentifier",
-#'     assay.type = "relabundance", max.gap = 4, fit = "laplace")
-#'
-#' # The same by bioreactor
 #' plotChanges(tse, time.col = "Time.hr", group = "StudyIdentifier",
 #'     assay.type = "relabundance", max.gap = 4,
 #'     group.by = "StudyIdentifier")
