@@ -13,7 +13,9 @@ plotIndividuality(x, ...)
   x,
   dissimilarity,
   group,
-  layout = c("density", "box", "violin"),
+  layout = c("density", "box", "violin", "time"),
+  group.by = NULL,
+  time.col = NULL,
   facet.by = NULL,
   ...
 )
@@ -26,8 +28,9 @@ object.}
 
 \item{...}{additional arguments passed to
 \code{\link[ggplot2:geom_density]{geom_density}},
-\code{\link[ggplot2:geom_boxplot]{geom_boxplot}} or
-\code{\link[ggplot2:geom_violin]{geom_violin}}.}
+\code{\link[ggplot2:geom_boxplot]{geom_boxplot}},
+\code{\link[ggplot2:geom_violin]{geom_violin}} or, for
+\code{layout = "time"}, \code{\link[ggplot2:geom_line]{geom_line}}.}
 
 \item{dissimilarity}{\code{Character scalar}. Specifies the
 sample by sample dissimilarity in \code{metadata(x)}, as stored by
@@ -37,8 +40,19 @@ sample by sample dissimilarity in \code{metadata(x)}, as stored by
 \code{colData(x)} that identifies subjects.}
 
 \item{layout}{\code{Character scalar}. Draws density curves
-(\code{"density"}), box plots (\code{"box"}) or violins
-(\code{"violin"}). (Default: \code{"density"})}
+(\code{"density"}), box plots (\code{"box"}), violins
+(\code{"violin"}) or the median and interquartile range in each time
+window (\code{"time"}). (Default: \code{"density"})}
+
+\item{group.by}{\code{Character scalar}. Specifies the column from
+\code{colData(x)} that splits the between-subject pairs into pairs of
+the same and of different groups, such as the study centre.
+(Default: \code{NULL})}
+
+\item{time.col}{\code{Character scalar}. For \code{layout = "time"},
+specifies the column from \code{colData(x)} holding the time window
+of each sample: a factor, or numeric, \code{Date} or \code{POSIXct}
+values of which each is one window. (Default: \code{NULL})}
 
 \item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the pairs into panels. Only pairs of
@@ -61,6 +75,12 @@ communities.
 Each pair of samples is counted once. A subject with \eqn{k} samples
 gives \eqn{k(k-1)/2} within-subject pairs, so subjects sampled often
 weigh most in the within distribution.
+
+With \code{layout = "time"}, only pairs of samples from the same window
+are kept, and each line is the median dissimilarity of a kind of pair
+across the windows, as in Vatanen et al. (2018,
+doi:10.1038/s41586-018-0620-2, Fig. 2b). Make windows from times with
+\code{\link[base:cut]{cut()}}.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -72,4 +92,11 @@ plotIndividuality(tse, dissimilarity = "bray", group = "subject")
 # By sex
 plotIndividuality(tse, dissimilarity = "bray", group = "subject",
     layout = "box", facet.by = "sex")
+
+# Across age windows, with pairs of subjects of the same and of
+# different sex
+tse$age.window <- cut(tse$age, c(18, 30, 40, 50, 60, 80),
+    include.lowest = TRUE)
+plotIndividuality(tse, dissimilarity = "bray", group = "subject",
+    layout = "time", time.col = "age.window", group.by = "sex")
 }
