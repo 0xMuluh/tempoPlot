@@ -45,7 +45,7 @@ panel per subject or per group of subjects."><!-- mathjax --><script src="https:
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot features over time as tiles</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/new-runs-states/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-runs-states/R/plotTiles.R" class="external-link"><code>R/plotTiles.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-runs-states/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotTiles.R" class="external-link"><code>R/plotTiles.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTiles.Rd</code></div>
     </div>
 
@@ -132,7 +132,8 @@ subjects. If <code>NULL</code>, all samples, or all rows, form one series.
 <dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
 <dd><p><code>Character vector</code>. Features to plot. If
 <code>NULL</code>, plots the <code>top</code> features with the largest mean, or
-the largest mean absolute effect for a <code>data.frame</code>.
+for a <code>data.frame</code> the largest mean absolute effect or, for a
+categorical effect, the most cells with a value.
 (Default: <code>NULL</code>)</p></dd>
 
 
@@ -158,7 +159,10 @@ this. (Default: <code>0</code>)</p></dd>
 <dt id="arg-order-by">order.by<a class="anchor" aria-label="anchor" href="#arg-order-by"></a></dt>
 <dd><p><code>Character scalar</code>. Orders features by their mean
 plotted value, largest at the top (<code>"mean"</code>), or by hierarchical
-clustering of their profiles (<code>"cluster"</code>). (Default: <code>"mean"</code>)</p></dd>
+clustering of their profiles (<code>"cluster"</code>). For a categorical
+effect, <code>"mean"</code> puts the features with the most cells with a
+value at the top, and clustering counts the cells where two features
+differ. (Default: <code>"mean"</code>)</p></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
@@ -183,13 +187,15 @@ units: a tile reaches at most <code>max.gap / 2</code> from its time.
 
 <dt id="arg-effect">effect<a class="anchor" aria-label="anchor" href="#arg-effect"></a></dt>
 <dd><p><code>Character scalar</code>. For a <code>data.frame</code>, the
-column of effects, such as log fold changes at each time point.</p></dd>
+column of effects: numbers, such as log fold changes at each time
+point, or categories (character, factor or logical), such as the
+strain or origin of a feature in each sample.</p></dd>
 
 
 <dt id="arg-p-col">p.col<a class="anchor" aria-label="anchor" href="#arg-p-col"></a></dt>
-<dd><p><code>Character scalar</code>. For a <code>data.frame</code>, the column
-of p-values or adjusted p-values; cells below <code>threshold</code> are
-marked with a dot. (Default: <code>NULL</code>)</p></dd>
+<dd><p><code>Character scalar</code>. For a <code>data.frame</code>, the
+numeric column of p-values or adjusted p-values; cells below
+<code>threshold</code> are marked with a dot. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
@@ -218,6 +224,10 @@ the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
 halfway to its next one, so the time axis keeps the spacing of the
 sampling times. Visits are evenly spaced. Missing values are drawn
 grey, times without a sample blank.</p>
+<p>A categorical effect draws maps such as the strain of each species in
+the samples of mother-infant pairs (Ferretti et al. 2018, Fig. 4A,
+<a href="https://doi.org/10.1016/j.chom.2018.06.005" class="external-link">doi:10.1016/j.chom.2018.06.005</a>
+).</p>
     </div>
 
     <div id="ref-examples">
@@ -263,6 +273,22 @@ grey, times without a sample blank.</p>
 <span class="r-in"><span>    effect <span class="op">=</span> <span class="st">"rate_of_change"</span>, feature.col <span class="op">=</span> <span class="st">"FeatureID"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, top <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTiles-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Origin of the strain of each species in two infants (illustrative</span></span></span>
+<span class="r-in"><span><span class="co"># values, not data)</span></span></span>
+<span class="r-in"><span><span class="va">strains</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>infant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    species <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B. longum"</span>, <span class="st">"B. bifidum"</span>, <span class="st">"E. coli"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>        each <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    day <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">7</span>, <span class="fl">30</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    origin <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mother"</span>, <span class="st">"mother"</span>, <span class="st">"mother"</span>, <span class="st">"mother"</span>,</span></span>
+<span class="r-in"><span>        <span class="cn">NA</span>, <span class="st">"mother"</span>, <span class="st">"mother"</span>, <span class="st">"other"</span>,</span></span>
+<span class="r-in"><span>        <span class="st">"other"</span>, <span class="st">"other"</span>, <span class="st">"other"</span>, <span class="cn">NA</span>,</span></span>
+<span class="r-in"><span>        <span class="st">"other"</span>, <span class="st">"mother"</span>, <span class="st">"mother"</span>, <span class="st">"mother"</span>,</span></span>
+<span class="r-in"><span>        <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="st">"other"</span>, <span class="st">"other"</span>,</span></span>
+<span class="r-in"><span>        <span class="st">"mother"</span>, <span class="st">"mother"</span>, <span class="st">"other"</span>, <span class="st">"other"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotTiles</span><span class="op">(</span><span class="va">strains</span>, time.col <span class="op">=</span> <span class="st">"day"</span>, effect <span class="op">=</span> <span class="st">"origin"</span>,</span></span>
+<span class="r-in"><span>    feature.col <span class="op">=</span> <span class="st">"species"</span>, group <span class="op">=</span> <span class="st">"infant"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotTiles-5.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
