@@ -16,6 +16,7 @@ export(plotLagHeatmap)
 export(plotLagProfile)
 export(plotLandscape)
 export(plotNetwork)
+export(plotNoise)
 export(plotOrigin)
 export(plotPartner)
 export(plotPath)
@@ -56,6 +57,7 @@ exportMethods(plotLagHeatmap)
 exportMethods(plotLagProfile)
 exportMethods(plotLandscape)
 exportMethods(plotNetwork)
+exportMethods(plotNoise)
 exportMethods(plotOrigin)
 exportMethods(plotPartner)
 exportMethods(plotPath)
@@ -122,6 +124,7 @@ importFrom(ggplot2,
   facet_grid,
   facet_wrap,
   geom_abline,
+  geom_bar,
   geom_boxplot,
   geom_col,
   geom_density,
@@ -151,6 +154,7 @@ importFrom(ggplot2,
   position_dodge,
   scale_colour_gradient2,
   scale_colour_viridis_c,
+  scale_fill_manual,
   scale_linewidth_continuous,
   scale_x_continuous,
   scale_x_discrete,

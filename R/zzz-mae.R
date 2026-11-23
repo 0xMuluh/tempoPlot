@@ -302,3 +302,9 @@ setMethod("plotPartner", signature = c(x = "MultiAssayExperiment"),
 #' @export
 setMethod("plotOrigin", signature = c(x = "MultiAssayExperiment"),
     .mae_method(plotOrigin))
+
+#' @rdname plotNoise
+#' @template mae-experiment
+#' @export
+setMethod("plotNoise", signature = c(x = "MultiAssayExperiment"),
+    .mae_method(plotNoise))

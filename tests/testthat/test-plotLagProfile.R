@@ -72,3 +72,63 @@ test_that("plotLagProfile draws ratios between split.by levels", {
     S4Vectors::metadata(toy)$w <- vg[vg$type == "dissimilarity", -3L]
     expect_error(plotLagProfile(toy, "w", type = "ratio"), "split.by")
 })
+
+test_that("plotLagProfile reads a variogram table directly", {
+    expect_equal(plotLagProfile(v)$data, plotLagProfile(tse)$data)
+    expect_error(plotLagProfile(v, facet.by = "subject"),
+        "'facet.by' must be NULL or one column name of 'x'")
+    expect_error(plotLagProfile(v[, c("lag", "estimate")]), "acf")
+})
+
+# Autocorrelations of features f1 and f2 in subjects a and b at lags of 1
+# to 3 steps of 2 days. Subject b has 4, 1 and 0 pairs of samples: no
+# estimate at lag 3.
+acfs <- data.frame(
+    FeatureID = rep(rep(c("f1", "f2"), each = 3L), 2L),
+    subject = rep(c("a", "b"), each = 6L),
+    lag = rep(1:3, 4L), time.lag = rep(c(2, 4, 6), 4L),
+    acf = c(0.8, 0.5, 0.2, 0.1, -0.1, 0, 0.6, 0.3, NA, 0.2, 0, NA),
+    n.pairs = c(16, 9, 4, 16, 9, 4, 4, 1, 0, 4, 1, 0))
+
+test_that("plotLagProfile draws a line per feature and subject", {
+    p <- plotLagProfile(acfs, group = "subject", linewidth = 2)
+    expect_true(all(layer_data(p, 1L)$yintercept == 0))
+    ld <- layer_data(p, 3L)
+    ok <- !is.na(acfs$acf)
+    # x is the lag in days; lags without an estimate are dropped.
+    expect_equal(ld$x, acfs$time.lag[ok])
+    expect_equal(ld$y, acfs$acf[ok])
+    expect_length(unique(ld$group), 4L)
+    expect_true(all(ld$colour == "#0072B2"))
+    expect_true(all(ld$linewidth == 2))
+    # One panel per subject.
+    expect_equal(as.integer(ld$PANEL), rep(1:2, c(6L, 4L)))
+    # One band per subject, +-1.96 / sqrt(n.pairs), lags with pairs only.
+    band <- layer_data(p, 2L)
+    expect_equal(band$ymax, 1.96 / c(4, 3, 2, 2, 1))
+    expect_equal(band$ymin, -band$ymax)
+    expect_equal(as.integer(band$PANEL), c(1L, 1L, 1L, 2L, 2L))
+})
+
+test_that("plotLagProfile colours, facets and reads autocorrelations", {
+    p <- plotLagProfile(acfs, group = "subject", colour.by = "FeatureID",
+        facet.by = NULL)
+    ld <- layer_data(p, 3L)
+    expect_setequal(ld$colour, c("#0072B2", "#E69F00"))
+    expect_identical(p$labels$colour, "FeatureID")
+    expect_length(unique(ld$PANEL), 1L)
+    expect_length(unique(ld$group), 4L)
+    # Without time.lag, x is the lag in steps; without n.pairs, no band.
+    one <- acfs[acfs$FeatureID == "f1" & acfs$subject == "a",
+        c("lag", "acf")]
+    p <- plotLagProfile(one, feature.col = NULL)
+    expect_length(p$layers, 2L)
+    expect_equal(layer_data(p, 2L)$x, 1:3)
+    expect_error(plotLagProfile(one), "'feature.col' must be NULL")
+    expect_error(plotLagProfile(acfs, group = "id"), "'group' must be NULL")
+    toy <- SummarizedExperiment(assays = list(counts = matrix(1, 1L, 1L)))
+    S4Vectors::metadata(toy)$autocorrelation <- S4Vectors::DataFrame(acfs)
+    expect_equal(
+        plotLagProfile(toy, "autocorrelation", group = "subject")$data,
+        plotLagProfile(acfs, group = "subject")$data)
+})

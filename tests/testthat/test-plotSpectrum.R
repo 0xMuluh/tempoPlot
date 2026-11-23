@@ -55,3 +55,22 @@ test_that("plotSpectrum reads features from counts by default", {
     df <- plotSpectrum(se, "g", "t")$data
     expect_equal(df$frequency[which.max(df$power)], 0.1, tolerance = 0.05)
 })
+
+test_that("plotSpectrum fits a straight line on log-log axes", {
+    p <- plotSpectrum(toy, "v", "t", group = "id", fit = "power")
+    expect_s3_class(p$scales$get_scales("x")$trans, "transform")
+    expect_s3_class(p$scales$get_scales("y")$trans, "transform")
+    ld <- layer_data(p, 2L)
+    expect_true(all(ld$linetype == "dashed"))
+    for (s in c("a", "b")) {
+        d <- p$data[p$data$.subject == s, ]
+        b <- coef(lm(log10(power) ~ log10(frequency), d))[[2L]]
+        fitted <- ld[ld$group == match(s, c("a", "b")), ]
+        expect_equal(coef(lm(y ~ x, fitted))[[2L]], b)
+        expect_match(p$labels$subtitle, sprintf("%s: slope %.2f", s, b),
+            fixed = TRUE)
+    }
+    p <- plotSpectrum(toy, "v", "t", fit = "power")
+    expect_match(p$labels$subtitle, "^slope -?[0-9.]+$")
+    expect_true(all(layer_data(p, 2L)$colour == "black"))
+})

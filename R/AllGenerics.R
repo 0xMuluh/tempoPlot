@@ -237,3 +237,9 @@ setGeneric("plotPartner", signature = "x",
 #' @export
 setGeneric("plotOrigin", signature = "x",
     function(x, ...) standardGeneric("plotOrigin"))
+
+#' @rdname plotNoise
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotNoise", signature = "x",
+    function(x, ...) standardGeneric("plotNoise"))
