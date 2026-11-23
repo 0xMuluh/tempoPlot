@@ -573,3 +573,85 @@ test_that("plotTrend colours groups with the package palette and theme", {
         group.by = "StudyIdentifier", fit = grid)
     expect_setequal(layer_data(p, 3L)$fill, .okabe_ito[1:2])
 })
+
+test_that("detection splits y into prevalence and values when present", {
+    # Subject a is absent at times 1 and 3, b at time 3.
+    toy <- SummarizedExperiment(
+        assays = list(counts = matrix(1, 1L, 8L)),
+        colData = DataFrame(id = rep(c("a", "b"), each = 4), t = rep(1:4, 2),
+            v = c(0, 5, 0, 7, 3, 4, 0, 6)))
+    p <- plotTrend(toy, "v", "t", "id", detection = 0, smooth = "mean")
+    expect_s3_class(p$facet, "FacetGrid")
+    expect_identical(levels(p$data$.part), c("Prevalence", "When present"))
+    by_panel <- function(i) split(layer_data(p, i), layer_data(p, i)$PANEL)
+    # Prevalence per time; the mean of the values when present.
+    mean_line <- by_panel(3L)
+    expect_equal(mean_line[[1L]]$y, c(0.5, 1, 0, 1))
+    expect_equal(mean_line[[2L]]$x, c(1, 2, 4))
+    expect_equal(mean_line[[2L]]$y, c(3, 4.5, 6.5))
+    # One presence line per subject; the lines of values break at absences:
+    # a at 2 and at 4, b at 1-2 and at 4.
+    lines <- by_panel(1L)
+    expect_length(unique(lines[[1L]]$group), 2L)
+    expect_length(unique(lines[[2L]]$group), 4L)
+    # Presence is a value above detection.
+    p <- plotTrend(toy, "v", "t", "id", detection = 4, smooth = "mean")
+    expect_equal(by_panel(3L)[[1L]]$y, c(0, 0.5, 0, 1))
+    # facet.by adds columns of panels.
+    p <- plotTrend(toy, "v", "t", "id", detection = 0, facet.by = "id")
+    expect_identical(nrow(p$facet$compute_layout(list(p$data),
+        p$facet$params)), 4L)
+    expect_error(plotTrend(toy, "v", "t", "id", detection = "a"),
+        "'detection'")
+    for (args in list(list(layout = "box"), list(baseline = "difference"),
+            list(rolling = "mean", window = 2), list(fit = "v"))) {
+        expect_error(do.call(plotTrend, c(list(toy, "v", "t", "id",
+            detection = 0), args)), "'detection'")
+    }
+})
+
+test_that("summaries and fits stop at an aligned event", {
+    m <- x
+    m$added <- 152
+    side_groups <- function(ld) {
+        lapply(split(ld$x, ld$group), function(t) unique(t >= 0))
+    }
+    geom_of <- function(p, geom) {
+        geoms <- vapply(p$layers, function(l) class(l$geom)[1L], "")
+        layer_data(p, max(which(geoms == geom)))
+    }
+    # One mean line before the event and one from time 0 on.
+    p <- plotTrend(m, "Acetate", "Time_hr_num", "StudyIdentifier",
+        align.to = "added", smooth = "mean")
+    expect_setequal(side_groups(layer_data(p, 3L)), list(FALSE, TRUE))
+    p <- plotTrend(m, "Acetate", "Time_hr_num", "StudyIdentifier",
+        align.to = "added", smooth = "loess", group.by = "StudyIdentifier")
+    expect_length(side_groups(layer_data(p, 3L)), 2L * n_subjects)
+    expect_true(all(lengths(side_groups(layer_data(p, 3L))) == 1L))
+    # Fitted values per sample and fit tables split too.
+    m$fitted <- m$Acetate
+    p <- plotTrend(m, "Acetate", "Time_hr_num", "StudyIdentifier",
+        align.to = "added", fit = "fitted")
+    expect_length(side_groups(layer_data(p, 3L)), 2L * n_subjects)
+    fit <- data.frame(Time_hr_num = c(-100, -1, 0, 100), estimate = 1:4)
+    p <- plotTrend(m, "Acetate", "Time_hr_num", "StudyIdentifier",
+        align.to = "added", fit = fit)
+    expect_setequal(side_groups(geom_of(p, "GeomLine")),
+        list(FALSE, TRUE))
+    # Without align.to, the curves continue.
+    p <- plotTrend(m, "Acetate", "Time_hr_num", "StudyIdentifier",
+        smooth = "mean")
+    expect_length(unique(layer_data(p, 3L)$group), 1L)
+})
+
+test_that("events of single subjects are drawn in their panels", {
+    events <- data.frame(StudyIdentifier = c("Bioreactor A", "Bioreactor C"),
+        start = c(100, 200))
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        facet.by = "StudyIdentifier", events = events)
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    vline <- layer_data(p, which(geoms == "GeomVline"))
+    # Panels follow the sorted subjects: A is 1, C is 3.
+    expect_equal(vline$xintercept[order(vline$PANEL)], c(100, 200))
+    expect_equal(as.integer(sort(vline$PANEL)), c(1L, 3L))
+})
