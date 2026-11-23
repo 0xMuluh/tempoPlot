@@ -173,9 +173,11 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     df
 }
 
+# grey names the level drawn in the neutral grey.
 #' @importFrom ggplot2 ggplot aes .data geom_col geom_ribbon facet_wrap
 #'   vars labs scale_x_discrete theme element_blank
-.plot_composition <- function(df, time.col, panel, layout, ylab, ...) {
+.plot_composition <- function(df, time.col, panel, layout, ylab,
+        grey = "Other", ...) {
     if (layout == "bar") {
         p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
                 fill = .data$.feature)) +
@@ -186,7 +188,7 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
                 group = interaction(.data$.feature, .data$.segment))) +
             geom_ribbon(...)
     }
-    p <- p + .scale_categorical("fill", grey = "Other") +
+    p <- p + .scale_categorical("fill", grey = grey) +
         labs(x = time.col, y = ylab, fill = "feature") +
         .theme_tempoPlot()
     if (layout == "stream") {
