@@ -485,7 +485,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         .events_layer(events, "markers"),
         if (aligned) geom_vline(xintercept = 0, linetype = "dashed",
             colour = "grey40"),
-        if (!is.null(df$.part)) facet_grid(rows = vars(.data$.part),
+        if (!is.null(df[[".part"]])) facet_grid(rows = vars(.data$.part),
             cols = if (!is.null(facet.by)) vars(.data[[facet.by]]),
             scales = "free_y") else if (!is.null(facet.by))
             facet_wrap(vars(.data[[facet.by]])),
@@ -502,7 +502,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 .trend_summaries <- function(df, time.col, smooth, band, group.by) {
     if ((smooth %in% c("mean", "median") || !is.null(band)) &&
             !is.factor(df[[time.col]]) &&
-            median(table(paste(df[[time.col]], df$.part))) < 2) {
+            median(table(paste(df[[time.col]], df[[".part"]]))) < 2) {
         warning("Most times have a single sample, so 'smooth' and 'band' ",
             "summarise single samples; use smooth = \"loess\" or a factor ",
             "of visits.", call. = FALSE)
