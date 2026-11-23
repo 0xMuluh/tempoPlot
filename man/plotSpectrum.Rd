@@ -8,7 +8,15 @@
 \usage{
 plotSpectrum(x, ...)
 
-\S4method{plotSpectrum}{SummarizedExperiment}(x, y, time.col, group = NULL, assay.type = "counts", ...)
+\S4method{plotSpectrum}{SummarizedExperiment}(
+  x,
+  y,
+  time.col,
+  group = NULL,
+  assay.type = "counts",
+  fit = c("none", "power"),
+  ...
+)
 
 \S4method{plotSpectrum}{MultiAssayExperiment}(x, ..., experiment = 1L)
 }
@@ -35,6 +43,10 @@ form one series. (Default: \code{NULL})}
 retrieve \code{y} from when \code{y} is a feature name.
 (Default: \code{"counts"})}
 
+\item{fit}{\code{Character scalar}. Draws no fit (\code{"none"}) or a
+straight line on log-log axes (\code{"power"}) for each subject; the
+subtitle gives its slope. (Default: \code{"none"})}
+
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get
 the \code{colData} of \code{x}. (Default: \code{1L})}
@@ -51,10 +63,19 @@ rhythms.
 Frequencies are in cycles per \code{time.col} unit (per day for
 \code{Date}, per hour for \code{POSIXct} times), from one cycle over
 the series to half the median sampling rate. A linear trend is removed
-first. The power is normalised by the variance of the series. The
+first, and the first and last tenth of the series are tapered with a
+cosine bell, as \code{\link[stats:spectrum]{spectrum}} does by default;
+the taper reduces the leakage of power from low to high frequencies.
+The power is normalised by the variance of the series. The
 periodogram allows uneven sampling; for even sampling it equals the
 classical periodogram. Subjects with fewer than four samples are left
 out.
+
+The slope of the log-log fit gives the noise colour of the series:
+about 0 for white noise, -1 for pink, -2 for brown and below for black
+noise (Faust et al. 2018, doi:10.1186/s40168-018-0496-2).
+\code{\link{plotNoise}} classifies the features of each subject by
+this slope.
 }
 \examples{
 # Acetate in three bioreactors fasted once a day: peaks near 1/24 per
@@ -62,6 +83,19 @@ out.
 data("minimalgut", package = "miaTime")
 plotSpectrum(minimalgut, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier")
+
+# Hourly samples with reads of four vessels of an artificial gut, hours
+# 476 to 592, one sample per hour: the slope of the spectrum of the most
+# abundant taxon on log-log axes
+data("SilvermanAGutData", package = "miaTime")
+tse <- SilvermanAGutData
+tse <- tse[, tse$SampleType == "Hourly" &
+    tse$Normal_Noise_Sample == "Normal" & tse$Time.hr \%in\% 476:592 &
+    colSums(SummarizedExperiment::assay(tse)) > 0]
+tse <- tse[, !duplicated(paste(tse$Vessel, tse$Time.hr))]
+tse <- mia::transformAssay(tse, method = "relabundance")
+plotSpectrum(tse, y = mia::getTop(tse, top = 1), time.col = "Time.hr",
+    group = "Vessel", assay.type = "relabundance", fit = "power")
 }
 \references{
 Lomb NR (1976). Least-squares frequency analysis of unequally spaced

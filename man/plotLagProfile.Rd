@@ -3,29 +3,58 @@
 \name{plotLagProfile}
 \alias{plotLagProfile}
 \alias{plotLagProfile,SummarizedExperiment-method}
+\alias{plotLagProfile,data.frame-method}
 \alias{plotLagProfile,MultiAssayExperiment-method}
-\title{Plot a variogram against time lag}
+\title{Plot a lag profile: a variogram or autocorrelations}
 \usage{
 plotLagProfile(x, ...)
 
-\S4method{plotLagProfile}{SummarizedExperiment}(x, name = "variogram", type = c("dissimilarity", "ratio"), ...)
+\S4method{plotLagProfile}{SummarizedExperiment}(x, name = "variogram", ...)
+
+\S4method{plotLagProfile}{data.frame}(
+  x,
+  type = c("dissimilarity", "ratio"),
+  feature.col = "FeatureID",
+  group = NULL,
+  colour.by = NULL,
+  facet.by = group,
+  ...
+)
 
 \S4method{plotLagProfile}{MultiAssayExperiment}(x, ..., experiment = 1L)
 }
 \arguments{
-\item{x}{a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-object.}
+\item{x}{a \code{data.frame} with a variogram or an autocorrelation
+table, or a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+object with such a table in its \code{metadata}.}
 
 \item{...}{additional arguments passed to
-\code{\link[ggplot2:geom_linerange]{geom_pointrange}}.}
+\code{\link[ggplot2:geom_linerange]{geom_pointrange}} for variograms
+and \code{\link[ggplot2:geom_path]{geom_line}} for autocorrelations.}
 
 \item{name}{\code{Character scalar}. Specifies the entry of
-\code{metadata(x)} holding the variogram. (Default: \code{"variogram"})}
+\code{metadata(x)} holding the table. (Default: \code{"variogram"})}
 
-\item{type}{\code{Character scalar}. Draws the dissimilarity at each lag
-(\code{"dissimilarity"}) or, for a variogram computed with
-\code{split.by}, the ratio between its levels (\code{"ratio"}), on a
-log scale with a line at 1. (Default: \code{"dissimilarity"})}
+\item{type}{\code{Character scalar}. For variograms, draws the
+dissimilarity at each lag (\code{"dissimilarity"}) or, for a variogram
+computed with \code{split.by}, the ratio between its levels
+(\code{"ratio"}), on a log scale with a line at 1.
+(Default: \code{"dissimilarity"})}
+
+\item{feature.col}{\code{Character scalar}. For autocorrelations,
+specifies the column of feature names; \code{NULL} for a table of one
+series. (Default: \code{"FeatureID"})}
+
+\item{group}{\code{Character scalar}. For autocorrelations, specifies
+the column that identifies subjects. (Default: \code{NULL})}
+
+\item{colour.by}{\code{Character scalar}. For autocorrelations,
+specifies the column that colours the lines, such as
+\code{feature.col}. If \code{NULL}, all lines take one colour.
+(Default: \code{NULL})}
+
+\item{facet.by}{\code{Character scalar}. Specifies the column that
+splits the table into panels. (Default: \code{group})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get
@@ -35,17 +64,29 @@ the \code{colData} of \code{x}. (Default: \code{1L})}
 A \code{ggplot} object.
 }
 \description{
-\code{plotLagProfile()} draws how far samples of the same subject are
-apart at each time lag: the variogram \eqn{D(L)} with its confidence
-interval, as stored by \code{miaTime::addVariogram()}.
+\code{plotLagProfile()} draws a statistic against time lag: the
+variogram \eqn{D(L)}, how far samples of the same subject are apart at
+each lag, with its confidence interval, as stored by
+\code{miaTime::addVariogram()}; or the autocorrelation of each feature
+in each subject.
 }
 \details{
 The variogram is a table with the columns \code{lag}, \code{estimate},
 \code{lower} and \code{upper}, and optionally \code{type} and, between
-\code{lag} and \code{type}, the \code{split.by} column. Lags the design
-does not support (missing estimates) are dropped. With \code{split.by},
-each level or comparison is drawn in its own colour, slightly shifted
-apart at each lag.
+\code{lag} and \code{type}, the \code{split.by} column. With
+\code{split.by}, each level or comparison is drawn in its own colour,
+slightly shifted apart at each lag.
+
+An autocorrelation table has the columns \code{lag} and \code{acf},
+one row per feature, subject and lag, as in Gibbons et al. (2017,
+doi:10.1371/journal.pcbi.1005364, Fig. 5). Each feature in each subject
+is a line, by default in one panel per subject. A column
+\code{time.lag} (the lag in time units) replaces \code{lag} on the x
+axis. With a column \code{n.pairs}, the pairs of samples at each lag,
+a band shows \eqn{\pm 1.96 / \sqrt{n}}{+-1.96 / sqrt(n)}, the range of
+autocorrelations expected without dependence between samples.
+
+Lags without an estimate are dropped.
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -66,4 +107,34 @@ plotLagProfile(tse, name = "variogram_sex")
 
 # Their ratio
 plotLagProfile(tse, name = "variogram_sex", type = "ratio")
+
+# Hourly samples with reads of four vessels of an artificial gut, hours
+# 476 to 592, one sample per hour, and the five most abundant taxa
+data("SilvermanAGutData", package = "miaTime")
+tse <- SilvermanAGutData
+tse <- tse[, tse$SampleType == "Hourly" &
+    tse$Normal_Noise_Sample == "Normal" & tse$Time.hr \%in\% 476:592 &
+    colSums(SummarizedExperiment::assay(tse)) > 0]
+tse <- tse[, !duplicated(paste(tse$Vessel, tse$Time.hr))]
+tse <- mia::transformAssay(tse, method = "relabundance")
+tse <- tse[mia::getTop(tse, top = 5), ]
+
+# Illustrative autocorrelation table in the form of miaTime's
+# getAutocorrelation(), from stats::acf() on the hourly grid; hours
+# without a sample are NA
+acfs <- do.call(rbind, lapply(unique(tse$Vessel), function(v) {
+    j <- match(476:592, tse$Time.hr[tse$Vessel == v])
+    m <- SummarizedExperiment::assay(tse, "relabundance")[,
+        tse$Vessel == v][, j]
+    present <- !is.na(j)
+    do.call(rbind, lapply(rownames(m), function(feature) {
+        r <- stats::acf(m[feature, ], lag.max = 12,
+            na.action = stats::na.pass, plot = FALSE)
+        data.frame(FeatureID = feature, Vessel = v, lag = 1:12,
+            acf = r$acf[-1L], n.pairs = vapply(1:12, function(l)
+                sum(present[-seq_len(l)] & head(present, -l)),
+                integer(1)))
+    }))
+}))
+plotLagProfile(acfs, group = "Vessel", colour.by = "FeatureID")
 }
