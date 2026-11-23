@@ -1,6 +1,6 @@
 Package: tempoPlot
 Title: Microbiome Time Series Visualization
-Version: 0.99.68
+Version: 0.99.69
 Authors@R: 
     person("0xMuluh", , , "rysdaena8@gmail.com", role = c("aut", "cre"))
 Description: Plots longitudinal microbiome data stored in
@@ -9,10 +9,10 @@ Description: Plots longitudinal microbiome data stored in
     community composition over time. Plots use results computed with
     miaTime and mia and are returned as ggplot2 objects.
 License: MIT + file LICENSE
-URL: https://github.com/0xMuluh/tempoPlot
+URL: https://github.com/0xMuluh/tempoPlot, https://0xmuluh.github.io/tempoPlot/
 BugReports: https://github.com/0xMuluh/tempoPlot/issues
 Depends: 
-    R (>= 4.5.0)
+    R (>= 4.6.0)
 Imports: 
     ggplot2 (>= 4.0.0),
     ggrepel,

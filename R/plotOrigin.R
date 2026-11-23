@@ -139,17 +139,8 @@ setMethod("plotOrigin", signature = c(x = "SummarizedExperiment"),
         subject <- as.character(colData(x)[[group]])
         ref <- !is.null(align.to) &
             .time_numeric(colData(y)[[time.col]]) <= 0
-        own <- present[, linked, drop = FALSE]
-        # Weight of each origin in each sample of y.
-        sums <- matrix(0, length(origins), ncol(y))
-        for (i in split(seq_len(ncol(y)), subject[linked])) {
-            p <- rowSums(present[, subject == partner[linked][i[1L]],
-                drop = FALSE]) > 0
-            r <- rowSums(own[, i[ref[i]], drop = FALSE]) > 0
-            from <- cbind(partner = p & !r, both = p & r, own = !p & r,
-                new = !p & !r)[, origins, drop = FALSE]
-            sums[, i] <- crossprod(from, w[, i, drop = FALSE])
-        }
+        sums <- .origin_weights(present, w, subject, partner, linked, ref,
+            origins)
         keep <- !ref & colSums(sums) > 0
         shares <- prop.table(sums[, keep, drop = FALSE], 2L)
 
@@ -175,3 +166,21 @@ setMethod("plotOrigin", signature = c(x = "SummarizedExperiment"),
                 paste(" since", align.to)), fill = "origin")
     }
 )
+
+# Weight w of each origin (rows) in each linked sample (columns): features
+# present in the partner (p) and in the subject's own reference samples
+# (r, those at time 0 or before) are "partner", "both", "own" or "new".
+.origin_weights <- function(present, w, subject, partner, linked, ref,
+        origins) {
+    own <- present[, linked, drop = FALSE]
+    sums <- matrix(0, length(origins), ncol(w))
+    for (i in split(seq_len(ncol(w)), subject[linked])) {
+        p <- rowSums(present[, subject == partner[linked][i[1L]],
+            drop = FALSE]) > 0
+        r <- rowSums(own[, i[ref[i]], drop = FALSE]) > 0
+        from <- cbind(partner = p & !r, both = p & r, own = !p & r,
+            new = !p & !r)[, origins, drop = FALSE]
+        sums[, i] <- crossprod(from, w[, i, drop = FALSE])
+    }
+    sums
+}

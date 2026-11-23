@@ -552,14 +552,24 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     for (i in seq_len(n)[seq_len(n) >= window]) {
         j <- (i - window + 1L):i
         w <- v[j]
-        # A constant window has no autocorrelation: cor() warns and gives
-        # NA, which drops the point like an incomplete window.
         out[i] <- switch(stat, mean = mean(w, na.rm = TRUE),
             variance = var(w, na.rm = TRUE),
-            acf1 = suppressWarnings(cor(w[-1L], w[-window],
-                use = "complete.obs")),
+            acf1 = .lag1_correlation(w),
             slope = cov(t[j], w, use = "complete.obs") /
                 var(t[j], na.rm = TRUE))
     }
     out
+}
+
+# Correlation between consecutive values of w; NA for a window with fewer
+# than two complete pairs or a constant side, like an incomplete window.
+#' @importFrom stats cor sd
+.lag1_correlation <- function(w) {
+    a <- w[-1L]
+    b <- w[-length(w)]
+    ok <- !is.na(a) & !is.na(b)
+    if (sum(ok) < 2L || sd(a[ok]) == 0 || sd(b[ok]) == 0) {
+        return(NA_real_)
+    }
+    cor(a[ok], b[ok])
 }

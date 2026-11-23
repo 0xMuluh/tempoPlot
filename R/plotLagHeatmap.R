@@ -41,8 +41,8 @@
 #' At lag \eqn{k}, each feature at a sample is paired with the target
 #' \eqn{k} samples later in the same subject. For visits (a factor
 #' \code{time.col}), it is paired with the target \eqn{k} visits later, and
-#' samples without a sample \eqn{k} visits away are left out. Feature and target are
-#' centred on their mean over the pairs of each subject, so that
+#' samples without a sample \eqn{k} visits away are left out. Feature and
+#' target are centred on their mean over the pairs of each subject, so that
 #' differences between subjects do not drive the correlation, and the
 #' Spearman correlation is computed over all pairs. Positive lags show
 #' features that change before the target, negative lags features that

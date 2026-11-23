@@ -1,0 +1,77 @@
+url: https://0xmuluh.github.io/tempoPlot/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: "When were samples taken?"
+  contents:
+  - plotSwimmer
+  - plotGaps
+  - plotCalendar
+
+- title: "What happened to one subject?"
+  contents:
+  - plotTimeline
+
+- title: "How does a value change over time?"
+  contents:
+  - plotTrend
+  - plotTimeEffect
+  - plotIntervals
+  - plotRmcorr
+
+- title: "How does the composition change?"
+  contents:
+  - plotComposition
+  - plotTiles
+  - plotProfiles
+  - plotHorizon
+  - plotRanks
+
+- title: "How fast and how much do communities change?"
+  contents:
+  - plotTurnover
+  - plotChanges
+  - plotTBI
+  - plotLagProfile
+  - plotRecurrence
+  - plotIndividuality
+  - plotFingerprint
+  - plotDOC
+
+- title: "Are there states and rhythms?"
+  contents:
+  - plotTransitionMatrix
+  - plotAlluvial
+  - plotStates
+  - plotRuns
+  - plotSurvival
+  - plotLandscape
+  - plotSpectrum
+  - plotNoise
+  - plotLagHeatmap
+
+- title: "What does a subject share with its partner?"
+  contents:
+  - plotPartner
+  - plotOrigin
+
+- title: "Which features or subjects stand out?"
+  contents:
+  - plotStats
+  - plotVolcano
+  - plotFeatureScatter
+  - plotSubjectScatter
+  - plotTimeLoadings
+
+- title: "How do subjects move in ordinations and networks?"
+  contents:
+  - plotPath
+  - plotDirection
+  - plotProcrustes
+  - plotNetwork
+
+- title: Package
+  contents:
+  - tempoPlot-package

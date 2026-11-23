@@ -1,3 +1,8 @@
+Changes in version 0.99.69 (2026-11-23)
++ Reference index of the pkgdown site grouped by question, Bootstrap 5
++ BiocCheck notes addressed: R >= 4.6.0, no suppressWarnings() in
+  plotTrend, shorter helpers for events and plotOrigin
+
 Changes in version 0.99.68 (2026-11-23)
 + New plots: plotProfiles (feature trajectory clusters), plotTimeline (one
   subject as stacked tracks), plotRuns (durations of presence or states),
