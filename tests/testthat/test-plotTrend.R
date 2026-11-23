@@ -432,6 +432,9 @@ test_that("boxes and violins are drawn per group.by group", {
     h <- hitchip1006[, !is.na(hitchip1006$sex) & hitchip1006$subject %in%
         names(which(table(hitchip1006$subject) >= 3))]
     h$visit <- factor(ave(h$time, h$subject, FUN = rank))
+    # Visits 1 to 4 have at least two samples of each sex, which violins
+    # need.
+    h <- h[, as.integer(h$visit) <= 4L]
     cells <- nrow(unique(colData(h)[, c("visit", "sex")]))
     for (layout in c("box", "violin")) {
         p <- plotTrend(h, "diversity", "visit", "subject", group.by = "sex",
@@ -654,4 +657,13 @@ test_that("events of single subjects are drawn in their panels", {
     # Panels follow the sorted subjects: A is 1, C is 3.
     expect_equal(vline$xintercept[order(vline$PANEL)], c(100, 200))
     expect_equal(as.integer(sort(vline$PANEL)), c(1L, 3L))
+})
+
+test_that("a column named like .part does not split the panels", {
+    # df$.part would partially match a column .partition.
+    x$.partition <- x$StudyIdentifier
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        group.by = ".partition")
+    expect_s3_class(p$facet, "FacetNull")
+    expect_no_error(ggplot_build(p))
 })
