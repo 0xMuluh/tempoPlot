@@ -23,7 +23,8 @@
 #'
 #' @param features \code{Character vector}. Features to plot. If
 #'   \code{NULL}, plots the \code{top} features with the largest mean, or
-#'   the largest mean absolute effect for a \code{data.frame}.
+#'   for a \code{data.frame} the largest mean absolute effect or, for a
+#'   categorical effect, the most cells with a value.
 #'   (Default: \code{NULL})
 #'
 #' @param top \code{Integer scalar}. Number of features to plot when
@@ -40,11 +41,13 @@
 #'   this. (Default: \code{0})
 #'
 #' @param effect \code{Character scalar}. For a \code{data.frame}, the
-#'   column of effects, such as log fold changes at each time point.
+#'   column of effects: numbers, such as log fold changes at each time
+#'   point, or categories (character, factor or logical), such as the
+#'   strain or origin of a feature in each sample.
 #'
-#' @param p.col \code{Character scalar}. For a \code{data.frame}, the column
-#'   of p-values or adjusted p-values; cells below \code{threshold} are
-#'   marked with a dot. (Default: \code{NULL})
+#' @param p.col \code{Character scalar}. For a \code{data.frame}, the
+#'   numeric column of p-values or adjusted p-values; cells below
+#'   \code{threshold} are marked with a dot. (Default: \code{NULL})
 #'
 #' @param threshold \code{Numeric scalar}. Significance level for
 #'   \code{p.col}. (Default: \code{0.05})
@@ -54,7 +57,10 @@
 #'
 #' @param order.by \code{Character scalar}. Orders features by their mean
 #'   plotted value, largest at the top (\code{"mean"}), or by hierarchical
-#'   clustering of their profiles (\code{"cluster"}). (Default: \code{"mean"})
+#'   clustering of their profiles (\code{"cluster"}). For a categorical
+#'   effect, \code{"mean"} puts the features with the most cells with a
+#'   value at the top, and clustering counts the cells where two features
+#'   differ. (Default: \code{"mean"})
 #'
 #' @param level \code{Character scalar}. Draws one panel per subject
 #'   (\code{"subject"}) or averages the subjects of each \code{group.by}
@@ -78,6 +84,10 @@
 #' halfway to its next one, so the time axis keeps the spacing of the
 #' sampling times. Visits are evenly spaced. Missing values are drawn
 #' grey, times without a sample blank.
+#'
+#' A categorical effect draws maps such as the strain of each species in
+#' the samples of mother-infant pairs (Ferretti et al. 2018, Fig. 4A,
+#' \doi{10.1016/j.chom.2018.06.005}).
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -122,6 +132,21 @@
 #' plotTiles(as.data.frame(change), time.col = "Time.hr",
 #'     effect = "rate_of_change", feature.col = "FeatureID",
 #'     group = "StudyIdentifier", top = 8)
+#'
+#' # Origin of the strain of each species in two infants (illustrative
+#' # values, not data)
+#' strains <- data.frame(infant = rep(c("A", "B"), each = 12),
+#'     species = rep(rep(c("B. longum", "B. bifidum", "E. coli"),
+#'         each = 4), 2),
+#'     day = factor(rep(c(1, 3, 7, 30), 6)),
+#'     origin = c("mother", "mother", "mother", "mother",
+#'         NA, "mother", "mother", "other",
+#'         "other", "other", "other", NA,
+#'         "other", "mother", "mother", "mother",
+#'         NA, NA, "other", "other",
+#'         "mother", "mother", "other", "other"))
+#' plotTiles(strains, time.col = "day", effect = "origin",
+#'     feature.col = "species", group = "infant")
 NULL
 
 #' @rdname plotTiles
@@ -164,15 +189,20 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
         if (is.factor(time)) {
             time <- droplevels(time)
         }
-        # Features with the largest mean absolute effect.
-        size <- tapply(abs(x[[effect]]), x[[feature.col]], mean,
-            na.rm = TRUE)
+        # Features with the largest mean absolute effect, or with the most
+        # cells with a category.
+        v <- x[[effect]]
+        size <- if (is.numeric(v)) {
+            tapply(abs(v), x[[feature.col]], mean, na.rm = TRUE)
+        } else {
+            tapply(!is.na(v), x[[feature.col]], sum)
+        }
         mat <- matrix(size, dimnames = list(names(size), NULL))
         features <- .select_features(mat, features, top)
         df <- data.frame(.feature = as.character(x[[feature.col]]),
             .panel = if (is.null(group)) "" else as.character(x[[group]]),
             .time = .time_numeric(time),
-            .value = x[[effect]])
+            .value = v)
         if (!is.null(p.col)) {
             df$.significant <- !is.na(x[[p.col]]) & x[[p.col]] < threshold
         }
@@ -184,7 +214,8 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
         df$.feature <- factor(df$.feature,
             levels = .order_features(df, order.by))
         df <- .add_tile_edges(df, time, max.gap)
-        p <- .plot_tiles(df, time.col, effect, "effect", "subject", group,
+        value <- if (is.numeric(v)) "effect" else "category"
+        p <- .plot_tiles(df, time.col, effect, value, "subject", group,
             levels(time), ...)
         if (!is.null(p.col)) {
             p <- p + geom_point(aes(x = .data$.mid, y = .data$.feature),
@@ -208,23 +239,34 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
                 call. = FALSE)
         }
     }
-    if (!is.numeric(x[[effect]])) {
-        stop("'effect' must be a numeric column.", call. = FALSE)
+    v <- x[[effect]]
+    if (!(is.numeric(v) || is.character(v) || is.factor(v) ||
+            is.logical(v))) {
+        stop("'effect' must be a numeric, character, factor or logical ",
+            "column.", call. = FALSE)
+    }
+    if (!is.null(p.col) && !is.numeric(x[[p.col]])) {
+        stop("'p.col' must be a numeric column.", call. = FALSE)
     }
     .check_number(threshold, 0, 1, open = TRUE)
     .time_type(x[[time.col]])
 }
 
 # Feature levels, bottom to top: by mean value (largest on top) or by the
-# order of a hierarchical clustering of the feature profiles.
+# order of a hierarchical clustering of the feature profiles. Categories
+# count instead: cells with a value, or as one indicator column per cell
+# and category, so that the distance grows with the cells that differ.
 #' @importFrom stats dist hclust
 .order_features <- function(df, order.by) {
+    num <- is.numeric(df$.value)
     if (order.by == "mean") {
-        m <- tapply(df$.value, df$.feature, mean, na.rm = TRUE)
+        m <- if (num) tapply(df$.value, df$.feature, mean, na.rm = TRUE) else
+            tapply(!is.na(df$.value), df$.feature, sum)
         return(names(sort(m, na.last = FALSE)))
     }
     key <- paste(df$.panel, df$.time)
-    wide <- tapply(df$.value, list(df$.feature, key), mean)
+    wide <- if (num) tapply(df$.value, list(df$.feature, key), mean) else
+        unclass(table(df$.feature, paste(key, df$.value)))
     wide[is.na(wide)] <- 0
     if (nrow(wide) < 2L) {
         return(rownames(wide))
@@ -256,13 +298,14 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
 #'   vars scale_x_continuous
 .plot_tiles <- function(df, time.col, assay.type, value, level, panel.col,
         levels, ...) {
-    lab <- switch(value, raw = assay.type,
-        change = paste(assay.type, "change"), effect = assay.type,
-        occupancy = if (level == "group") "occupancy" else "present")
+    lab <- switch(value, change = paste(assay.type, "change"),
+        occupancy = if (level == "group") "occupancy" else "present",
+        assay.type)
     p <- ggplot(df, aes(x = .data$.mid, y = .data$.feature)) +
         geom_tile(aes(width = .data$.width, fill = .data$.value), ...) +
         switch(value, raw = .scale_sequential("fill"),
             occupancy = .scale_sequential("fill", limits = c(0, 1)),
+            category = .scale_categorical("fill"),
             .scale_diverging("fill")) +
         labs(x = time.col, y = NULL, fill = lab) +
         .theme_tempoPlot()

@@ -66,7 +66,8 @@ subjects. If \code{NULL}, all samples, or all rows, form one series.
 
 \item{features}{\code{Character vector}. Features to plot. If
 \code{NULL}, plots the \code{top} features with the largest mean, or
-the largest mean absolute effect for a \code{data.frame}.
+for a \code{data.frame} the largest mean absolute effect or, for a
+categorical effect, the most cells with a value.
 (Default: \code{NULL})}
 
 \item{top}{\code{Integer scalar}. Number of features to plot when
@@ -84,7 +85,10 @@ this. (Default: \code{0})}
 
 \item{order.by}{\code{Character scalar}. Orders features by their mean
 plotted value, largest at the top (\code{"mean"}), or by hierarchical
-clustering of their profiles (\code{"cluster"}). (Default: \code{"mean"})}
+clustering of their profiles (\code{"cluster"}). For a categorical
+effect, \code{"mean"} puts the features with the most cells with a
+value at the top, and clustering counts the cells where two features
+differ. (Default: \code{"mean"})}
 
 \item{level}{\code{Character scalar}. Draws one panel per subject
 (\code{"subject"}) or averages the subjects of each \code{group.by}
@@ -101,11 +105,13 @@ units: a tile reaches at most \code{max.gap / 2} from its time.
 \code{NULL} never leaves gaps. (Default: \code{NULL})}
 
 \item{effect}{\code{Character scalar}. For a \code{data.frame}, the
-column of effects, such as log fold changes at each time point.}
+column of effects: numbers, such as log fold changes at each time
+point, or categories (character, factor or logical), such as the
+strain or origin of a feature in each sample.}
 
-\item{p.col}{\code{Character scalar}. For a \code{data.frame}, the column
-of p-values or adjusted p-values; cells below \code{threshold} are
-marked with a dot. (Default: \code{NULL})}
+\item{p.col}{\code{Character scalar}. For a \code{data.frame}, the
+numeric column of p-values or adjusted p-values; cells below
+\code{threshold} are marked with a dot. (Default: \code{NULL})}
 
 \item{threshold}{\code{Numeric scalar}. Significance level for
 \code{p.col}. (Default: \code{0.05})}
@@ -129,6 +135,10 @@ Each sample covers the time from halfway to its previous sample to
 halfway to its next one, so the time axis keeps the spacing of the
 sampling times. Visits are evenly spaced. Missing values are drawn
 grey, times without a sample blank.
+
+A categorical effect draws maps such as the strain of each species in
+the samples of mother-infant pairs (Ferretti et al. 2018, Fig. 4A,
+\doi{10.1016/j.chom.2018.06.005}).
 }
 \examples{
 # 16 species in three bioreactors
@@ -168,4 +178,19 @@ change <- miaTime::getShortTermChange(tse, assay.type = "relabundance",
 plotTiles(as.data.frame(change), time.col = "Time.hr",
     effect = "rate_of_change", feature.col = "FeatureID",
     group = "StudyIdentifier", top = 8)
+
+# Origin of the strain of each species in two infants (illustrative
+# values, not data)
+strains <- data.frame(infant = rep(c("A", "B"), each = 12),
+    species = rep(rep(c("B. longum", "B. bifidum", "E. coli"),
+        each = 4), 2),
+    day = factor(rep(c(1, 3, 7, 30), 6)),
+    origin = c("mother", "mother", "mother", "mother",
+        NA, "mother", "mother", "other",
+        "other", "other", "other", NA,
+        "other", "mother", "mother", "mother",
+        NA, NA, "other", "other",
+        "mother", "mother", "other", "other"))
+plotTiles(strains, time.col = "day", effect = "origin",
+    feature.col = "species", group = "infant")
 }

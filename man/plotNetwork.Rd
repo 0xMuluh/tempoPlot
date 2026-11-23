@@ -8,7 +8,17 @@
 \usage{
 plotNetwork(x, ...)
 
-\S4method{plotNetwork}{SummarizedExperiment}(x, edges, split.by = NULL, diff = FALSE, directed = FALSE, ...)
+\S4method{plotNetwork}{SummarizedExperiment}(
+  x,
+  edges,
+  split.by = NULL,
+  diff = FALSE,
+  directed = FALSE,
+  layout = c("graph", "matrix"),
+  p.col = NULL,
+  threshold = 0.05,
+  ...
+)
 
 \S4method{plotNetwork}{MultiAssayExperiment}(x, ..., experiment = 1L)
 }
@@ -18,7 +28,8 @@ object; for \code{rowPair} and \code{colPair} a
 \code{\link[SingleCellExperiment]{SingleCellExperiment}}.}
 
 \item{...}{additional arguments passed to
-\code{\link[ggplot2:geom_segment]{geom_segment}}.}
+\code{\link[ggplot2:geom_segment]{geom_segment}}, or
+\code{\link[ggplot2:geom_tile]{geom_tile}} for the matrix.}
 
 \item{edges}{\code{Character scalar}. Specifies the edges: the name of a
 \code{rowPair} or \code{colPair} of \code{x}, or of a \code{data.frame}
@@ -38,6 +49,18 @@ draws one network that marks the edges only in the first level
 \code{from} to \code{to}, such as transitions between states. Directed
 edges are drawn as arrows, and \code{diff} tells a-b from b-a;
 otherwise they are the same edge. (Default: \code{FALSE})}
+
+\item{layout}{\code{Character scalar}. Draws nodes joined by edges
+(\code{"graph"}) or a matrix of tiles, \code{from} in rows and
+\code{to} in columns (\code{"matrix"}). (Default: \code{"graph"})}
+
+\item{p.col}{\code{Character scalar}. With \code{layout = "matrix"}, a
+numeric column of the edge table holding p-values or adjusted
+p-values; tiles below \code{threshold} are marked with a dot.
+(Default: \code{NULL})}
+
+\item{threshold}{\code{Numeric scalar}. Significance level for
+\code{p.col}. (Default: \code{0.05})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get
@@ -59,6 +82,15 @@ positions on every run). Edges are coloured by the sign of
 (\code{from} equal to \code{to}), such as staying in a state, are drawn
 as rings around their node. With \code{diff}, an edge whose weight
 changes sign is kept. Node names are drawn for up to 40 nodes.
+
+The matrix shows interaction strengths, such as those of a generalised
+Lotka-Volterra model (Bucci et al. 2016, Fig. 4a,
+\doi{10.1186/s13059-016-0980-6}). Tiles are filled by \code{weight},
+blue below zero and red above, or by the change with \code{diff}.
+Self-loops fill the diagonal; pairs without an edge stay blank. Nodes are
+sorted by name in rows and columns, so a node keeps its place in every
+panel. Undirected edges fill both a-b and b-a, so the matrix is
+symmetric. The matrix does not need igraph.
 }
 \examples{
 # Correlations above 0.4 between 15 genera, in women and men
@@ -79,6 +111,20 @@ plotNetwork(tse, edges = "correlations", split.by = "sex")
 
 # Edges gained and lost from women to men
 plotNetwork(tse, edges = "correlations", split.by = "sex", diff = TRUE)
+
+# All correlations as a matrix, with FDR q-values below 0.05 marked
+pairs <- t(combn(top, 2))
+edges <- do.call(rbind, lapply(c("female", "male"), function(s) {
+    m <- SummarizedExperiment::assay(tse, "clr")[, tse$sex == s]
+    test <- apply(pairs, 1, function(p) cor.test(m[p[1], ], m[p[2], ]))
+    data.frame(from = pairs[, 1], to = pairs[, 2], sex = s,
+        weight = vapply(test, `[[`, numeric(1), "estimate"),
+        p = vapply(test, `[[`, numeric(1), "p.value"))
+}))
+edges$q <- p.adjust(edges$p, method = "fdr")
+S4Vectors::metadata(tse)$all <- edges
+plotNetwork(tse, edges = "all", split.by = "sex", layout = "matrix",
+    p.col = "q")
 
 # Moves between the dominant genera of consecutive samples
 tse <- mia::addDominant(hitchip1006, name = "dominant")
