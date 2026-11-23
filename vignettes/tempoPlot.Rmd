@@ -37,7 +37,8 @@ knitr::opts_chunk$set(
 computation belongs to `r BiocStyle::Biocpkg("miaTime")` and
 `r BiocStyle::Biocpkg("mia")`: they add divergences, variograms,
 dissimilarities, states and ordinations to the object, and `tempoPlot`
-draws them. Every function returns a `ggplot` object.
+draws them. Every function returns a `ggplot` object, except
+`plotTimeline()`, which stacks several into a patchwork.
 
 This vignette follows one analysis from the sampling design to
 ordinations and networks. Each step asks a question, computes what it
@@ -48,14 +49,18 @@ needs with mia or miaTime, and plots the result.
 | When were samples taken? | `plotSwimmer()` |
 | | `plotGaps()` |
 | | `plotCalendar()` |
+| What happened to one subject? | `plotTimeline()` |
 | How does a value change over time? | `plotTrend()` |
 | | `plotTimeEffect()` |
 | | `plotIntervals()` |
+| | `plotRmcorr()` |
 | How does the composition change? | `plotComposition()` |
 | | `plotTiles()` |
+| | `plotProfiles()` |
 | | `plotHorizon()` |
 | | `plotRanks()` |
 | How fast and how much do communities change? | `plotTurnover()` |
+| | `plotChanges()` |
 | | `plotTBI()` |
 | | `plotLagProfile()` |
 | | `plotRecurrence()` |
@@ -64,10 +69,15 @@ needs with mia or miaTime, and plots the result.
 | | `plotDOC()` |
 | Are there states and rhythms? | `plotTransitionMatrix()` |
 | | `plotAlluvial()` |
+| | `plotStates()` |
+| | `plotRuns()` |
 | | `plotSurvival()` |
 | | `plotLandscape()` |
 | | `plotSpectrum()` |
+| | `plotNoise()` |
 | | `plotLagHeatmap()` |
+| What does a subject share with its partner? | `plotPartner()` |
+| | `plotOrigin()` |
 | Which features or subjects stand out? | `plotStats()` |
 | | `plotVolcano()` |
 | | `plotFeatureScatter()` |
@@ -783,11 +793,26 @@ the addition, Blautia hydrogenotrophica correlates with Faecalibacterium
 prausnitzii, and only the edge between the two Bacteroides species is
 kept.
 
-# Combining plots
+# One subject at a time
 
-All functions return `ggplot` objects, so the
-`r BiocStyle::CRANpkg("patchwork")` package stacks them over a shared time
-axis, here for one bioreactor.
+`plotTimeline()` stacks one subject's composition, numeric variables, a
+state strip and events over a shared time axis. Here the state is the
+dominant species of each sample.
+
+```{r}
+#| label: plot-timeline
+#| fig-height: 7
+#| eval: !expr requireNamespace("patchwork", quietly = TRUE)
+
+mg <- addDominant(mg, name = "dominant")
+plotTimeline(mg, time.col = "Time.hr", group = "StudyIdentifier",
+    subject = "Bioreactor A", y = c("Acetate", "Butyrate"),
+    state.col = "dominant", events = events, top = 8, layout = "area")
+```
+
+The other functions return `ggplot` objects, so the
+`r BiocStyle::CRANpkg("patchwork")` package combines any of them over a
+shared time axis.
 
 ```{r}
 #| label: combine-plots

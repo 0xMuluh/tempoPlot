@@ -83,6 +83,15 @@
 #' @name plotTimeline
 #'
 #' @examples
+#' # Daily samples of one woman over six weeks: genera, cell count per
+#' # gram of stool and enterotype
+#' data("temporalMicrobiome20", package = "miaTime")
+#' tse <- temporalMicrobiome20
+#' # Samples without a profile have the enterotype "NA"
+#' tse <- tse[, tse$enterotype != "NA"]
+#' plotTimeline(tse, time.col = "day", group = "person_id", subject = 820,
+#'     y = "cell_count_per_gram", state.col = "enterotype", top = 6)
+#'
 #' # A bioreactor of a defined community: species, butyrate, the dominant
 #' # species of each sample and the perturbations of its schedule
 #' data("minimalgut", package = "miaTime")
