@@ -10,6 +10,7 @@
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/plotAlluvial.html</loc></url>
 <url><loc>/reference/plotCalendar.html</loc></url>
+<url><loc>/reference/plotChanges.html</loc></url>
 <url><loc>/reference/plotComposition.html</loc></url>
 <url><loc>/reference/plotDOC.html</loc></url>
 <url><loc>/reference/plotDirection.html</loc></url>
@@ -28,7 +29,10 @@
 <url><loc>/reference/plotProfiles.html</loc></url>
 <url><loc>/reference/plotRanks.html</loc></url>
 <url><loc>/reference/plotRecurrence.html</loc></url>
+<url><loc>/reference/plotRmcorr.html</loc></url>
+<url><loc>/reference/plotRuns.html</loc></url>
 <url><loc>/reference/plotSpectrum.html</loc></url>
+<url><loc>/reference/plotStates.html</loc></url>
 <url><loc>/reference/plotStats.html</loc></url>
 <url><loc>/reference/plotSubjectScatter.html</loc></url>
 <url><loc>/reference/plotSurvival.html</loc></url>
