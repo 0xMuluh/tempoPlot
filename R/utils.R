@@ -503,6 +503,15 @@
     i[which(same)]
 }
 
+# Levels of a time or state column: the levels in use of a factor, else
+# the sorted distinct values (numbers as numbers), as character.
+.levels_of <- function(x) {
+    if (is.factor(x)) {
+        return(levels(droplevels(x)))
+    }
+    as.character(sort(unique(x[!is.na(x)])))
+}
+
 # Presence as mia::getPrevalence() counts it: values above detection.
 .present <- function(mat, detection = 0) {
     .check_number(detection)

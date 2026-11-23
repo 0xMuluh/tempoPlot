@@ -28,9 +28,10 @@ test_that("plotDirection drops zero moves and splits by facet.by", {
     reducedDim(toy, "PC")[5, ] <- 0
     df <- plotDirection(toy, "t", "id", "PC")$data
     expect_identical(nrow(df), 2L)
-    toy$arm <- c("a", "b", "b", "b", "b")
+    # Each move takes the arm of its later sample.
+    toy$arm <- c("a", "b", "c", "b", "b")
     p <- plotDirection(toy, "t", "id", "PC", facet.by = "arm")
-    expect_setequal(p$data$arm, c("a", "b"))
+    expect_identical(p$data$arm[order(p$data$.angle)], c("b", "c"))
     expect_s3_class(p$facet, "FacetWrap")
 })
 

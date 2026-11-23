@@ -31,21 +31,23 @@
 #' @param top \code{Integer scalar}. Number of features when
 #'   \code{features} is \code{NULL}. (Default: \code{20})
 #'
-#' @param max.lag \code{Integer scalar}. Largest lag in samples, in both
-#'   directions. (Default: \code{3})
+#' @param max.lag \code{Integer scalar}. Largest lag in both directions, in
+#'   samples or, for visits, in visits. (Default: \code{3})
 #'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_tile]{geom_tile}}.
 #'
 #' @details
 #' At lag \eqn{k}, each feature at a sample is paired with the target
-#' \eqn{k} samples later in the same subject. Feature and target are
+#' \eqn{k} samples later in the same subject. For visits (a factor
+#' \code{time.col}), it is paired with the target \eqn{k} visits later, and
+#' samples without a sample \eqn{k} visits away are left out. Feature and target are
 #' centred on their mean over the pairs of each subject, so that
 #' differences between subjects do not drive the correlation, and the
 #' Spearman correlation is computed over all pairs. Positive lags show
 #' features that change before the target, negative lags features that
-#' follow it. Lags count samples, so they are comparable across subjects
-#' only for even sampling.
+#' follow it. For other times, lags count samples, so they are comparable
+#' across subjects only for even sampling.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -81,33 +83,41 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
         mat <- .get_assay(x, assay.type)
         mat <- mat[.select_features(mat, features, top), , drop = FALSE]
         y <- unname(.resolve_y(x, target, assay.type, "target"))
-        time <- .time_numeric(colData(x)[[time.col]])
+        time <- colData(x)[[time.col]]
         subject <- if (is.null(group)) rep("", ncol(x)) else
             as.character(colData(x)[[group]])
-        res <- .lag_correlations(mat, y, time, subject, max.lag)
-        .plot_lag_heatmap(res, target, ...)
+        res <- .lag_correlations(mat, y, .time_numeric(time), subject,
+            max.lag, visit = is.factor(time))
+        .plot_lag_heatmap(res, target, if (is.factor(time)) "visits" else
+            "samples", ...)
     }
 )
 
 # Spearman correlation of each feature (rows of mat) with y at lags of
-# -max.lag to max.lag samples within each subject, after centring both
-# within subjects. Positive lags pair a feature with y later in the
-# subject.
+# -max.lag to max.lag samples, or visits (time as level codes), within
+# each subject, after centring both within subjects. Positive lags pair a
+# feature with y later in the subject.
 #' @importFrom stats ave
-.lag_correlations <- function(mat, y, time, subject, max.lag) {
+.lag_correlations <- function(mat, y, time, subject, max.lag,
+        visit = FALSE) {
     .check_number(max.lag, 0)
     max.lag <- as.integer(max.lag)
     ord <- order(subject, time)
     n <- length(ord)
+    rank <- integer(n)
+    rank[ord] <- seq_len(n)
+    key <- paste(subject, time, sep = "\r")
     res <- do.call(rbind, lapply(-max.lag:max.lag, function(k) {
-        a <- seq_len(n)
-        b <- a + k
-        ok <- b >= 1L & b <= n
-        a <- a[ok]
-        b <- b[ok]
-        same <- subject[ord[a]] == subject[ord[b]]
-        a <- ord[a[same]]
-        b <- ord[b[same]]
+        # The sample of the same subject k visits, or k samples, later.
+        if (visit) {
+            b <- match(paste(subject, time + k, sep = "\r"), key)
+        } else {
+            j <- rank + k
+            b <- ord[ifelse(j >= 1L & j <= n, j, NA)]
+            b[which(subject[b] != subject)] <- NA
+        }
+        a <- which(!is.na(b))
+        b <- b[a]
         if (length(a) < 3L) return(NULL)
         # Centre within subjects over the pairs of this lag.
         centre <- function(v) v - ave(v, subject[a],
@@ -136,11 +146,11 @@ setMethod("plotLagHeatmap", signature = c(x = "SummarizedExperiment"),
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_tile labs
-.plot_lag_heatmap <- function(df, target, ...) {
+.plot_lag_heatmap <- function(df, target, unit, ...) {
     ggplot(df, aes(x = .data$.lag, y = .data$.feature, fill = .data$.r)) +
         geom_tile(...) +
         .scale_diverging("fill", limits = c(-1, 1)) +
-        labs(x = paste0("lag in samples (feature before ", target, ")"),
+        labs(x = paste0("lag in ", unit, " (feature before ", target, ")"),
             y = NULL, fill = "Spearman") +
         .theme_tempoPlot()
 }

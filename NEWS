@@ -1,3 +1,11 @@
+Changes in version 0.99.64 (2026-11-23)
++ An interval between two samples takes group.by and facet.by from its
+  later sample in every plot (plotDirection and plotTransitionMatrix
+  used the earlier one)
++ plotComposition areas and streams break at gaps (max.gap), as lines do
++ plotLagHeatmap counts lags in visits for a visit factor
++ plotAlluvial orders numeric states as numbers
+
 Changes in version 0.99.63 (2026-11-22)
 + The vignette is one analysis workflow covering all plot functions; the
   README has an example and a function-by-question table

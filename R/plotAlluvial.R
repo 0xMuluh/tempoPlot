@@ -68,11 +68,9 @@ setMethod("plotAlluvial", signature = c(x = "SummarizedExperiment"),
         .check_number(min.flow, 1)
 
         time <- colData(x)[[time.col]]
-        axes <- if (is.factor(time)) levels(droplevels(time)) else
-            as.character(sort(unique(time)))
+        axes <- .levels_of(time)
         state <- colData(x)[[state.col]]
-        states <- if (is.factor(state)) levels(droplevels(state)) else
-            sort(unique(as.character(state[!is.na(state)])))
+        states <- .levels_of(state)
         subject <- as.character(colData(x)[[group]])
         wide <- matrix(NA_character_, length(unique(subject)), length(axes),
             dimnames = list(unique(subject), axes))

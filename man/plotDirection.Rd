@@ -50,7 +50,7 @@ components by index or name. (Default: \code{2})}
 
 \item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the moves into panels. Each move takes
-the value of its earlier sample. (Default: \code{NULL})}
+the value of its later sample. (Default: \code{NULL})}
 
 \item{max.gap}{\code{Numeric scalar}. Consecutive samples of a subject
 further apart than this, in \code{time.col} units, are not a move.

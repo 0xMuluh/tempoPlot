@@ -108,7 +108,15 @@ test_that("plotComposition averages groups at each time", {
 test_that("plotComposition draws areas and keeps unused visits", {
     p <- plotComposition(mg, "Time_hr_num", "StudyIdentifier",
         layout = "area", alpha = 0.5)
-    expect_s3_class(p$layers[[1L]]$geom, "GeomArea")
+    expect_s3_class(p$layers[[1L]]$geom, "GeomRibbon")
+    # Areas stack from zero, the first feature on top.
+    d <- p$data
+    key <- paste(d$Time_hr_num, d$StudyIdentifier)
+    expect_equal(unname(tapply(d$.ymin, key, min)),
+        rep(0, length(unique(key))), ignore_attr = TRUE)
+    first <- d$.feature == levels(d$.feature)[1L]
+    expect_equal(d$.ymax[first], unname(tapply(d$.ymax, key, max)[key[first]]),
+        ignore_attr = TRUE)
     expect_true(all(layer_data(p, 1L)$alpha == 0.5))
 
     h$visit <- factor(h$visit, levels = c(levels(h$visit), "6"))
@@ -143,4 +151,16 @@ test_that("plotComposition stacks absolute values and streams", {
     expect_s3_class(p$theme$axis.text.y, "element_blank")
     expect_error(plotComposition(mg, "Time_hr_num", "StudyIdentifier",
         as.relative = "yes"), "'as.relative'")
+})
+
+test_that("plotComposition breaks areas at skipped visits", {
+    s <- unique(h$subject)[1L]
+    g <- h[, !(h$subject == s & h$visit == "3")]
+    p <- plotComposition(g, "visit", "subject", layout = "area")
+    d <- p$data[p$data$subject == s, ]
+    expect_identical(sort(unique(d$.segment)), 1:2)
+    expect_identical(unique(d$.segment[d$visit %in% c("4", "5")]), 2L)
+    p <- plotComposition(g, "visit", "subject", layout = "area",
+        max.gap = 2)
+    expect_identical(unique(p$data$.segment), 1L)
 })
