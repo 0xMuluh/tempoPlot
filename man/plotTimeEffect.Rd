@@ -11,7 +11,16 @@ plotTimeEffect(x, ...)
 
 \S4method{plotTimeEffect}{SummarizedExperiment}(x, name, time.col, group.by = NULL, ...)
 
-\S4method{plotTimeEffect}{data.frame}(x, time.col, group.by = NULL, ...)
+\S4method{plotTimeEffect}{data.frame}(
+  x,
+  time.col,
+  group.by = NULL,
+  null = NULL,
+  p.col = NULL,
+  threshold = 0.05,
+  size.by = NULL,
+  ...
+)
 
 \S4method{plotTimeEffect}{MultiAssayExperiment}(x, ..., experiment = 1L)
 }
@@ -35,6 +44,23 @@ results that contains the times: numeric, \code{Date},
 results that splits the estimates into curves, such as the contrast or
 the feature. (Default: \code{NULL})}
 
+\item{null}{\code{data.frame}. Effects estimated under the null
+hypothesis, such as after permuting the group labels, with the
+columns \code{permutation}, \code{time.col} and \code{estimate}, and
+optionally \code{group.by}. Each permutation is drawn as a thin
+translucent line behind the observed effect. (Default: \code{NULL})}
+
+\item{p.col}{\code{Character scalar}. Specifies the column of p-values
+to draw on a log scale instead of the effect, with a dashed line at
+\code{threshold}. (Default: \code{NULL})}
+
+\item{threshold}{\code{Numeric scalar}. Significance level for
+\code{p.col}. (Default: \code{0.05})}
+
+\item{size.by}{\code{Character scalar}. Specifies the column that sets
+the size of a point at each time, such as the number of subjects.
+(Default: \code{NULL})}
+
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get
 the \code{colData} of \code{x}. (Default: \code{1L})}
@@ -52,6 +78,10 @@ curve.
 The y axis shows the effect, not the value of a variable; to draw fitted
 values over the data, use the \code{fit} argument of
 \code{\link{plotTrend}}.
+
+The \code{null} curves and the p-value curve with points sized by the
+number of subjects follow the plots of SplinectomeR (Shields-Cutler et
+al. 2018, doi:10.3389/fmicb.2018.00785, Fig. 2).
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -61,14 +91,30 @@ tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
 
 # Difference in diversity between men and women at each visit, from a
 # linear model per visit; each subject has one sample per visit
+sex_effect <- function(cd) {
+    do.call(rbind, lapply(split(cd, cd$visit), function(d) {
+        model <- lm(diversity ~ sex, data = d)
+        ci <- confint(model)["sexmale", ]
+        data.frame(visit = d$visit[1L],
+            estimate = coef(model)[["sexmale"]],
+            lower = ci[[1L]], upper = ci[[2L]],
+            p = summary(model)$coefficients["sexmale", 4L], n = nrow(d))
+    }))
+}
 cd <- as.data.frame(SummarizedExperiment::colData(tse))
-effect <- do.call(rbind, lapply(split(cd, cd$visit), function(d) {
-    model <- lm(diversity ~ sex, data = d)
-    ci <- confint(model)["sexmale", ]
-    data.frame(visit = d$visit[1L], estimate = coef(model)[["sexmale"]],
-        lower = ci[[1L]], upper = ci[[2L]])
-}))
+effect <- sex_effect(cd)
 plotTimeEffect(effect, time.col = "visit")
+
+# Against the effects after permuting sex within each visit 50 times
+set.seed(1)
+null <- do.call(rbind, lapply(seq_len(50L), function(i) {
+    cd$sex <- ave(as.character(cd$sex), cd$visit, FUN = sample)
+    data.frame(permutation = i, sex_effect(cd))
+}))
+plotTimeEffect(effect, time.col = "visit", null = null)
+
+# p-values, with points sized by the number of subjects
+plotTimeEffect(effect, time.col = "visit", p.col = "p", size.by = "n")
 
 # The same results stored in metadata(tse)
 S4Vectors::metadata(tse)$sex_effect <- effect

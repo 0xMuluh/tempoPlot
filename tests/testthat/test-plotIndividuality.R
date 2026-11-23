@@ -50,3 +50,36 @@ test_that("plotIndividuality keeps pairs within facet.by", {
     p <- plotIndividuality(toy, "d", "id", layout = "violin")
     expect_identical(class(p$layers[[1L]]$geom)[1L], "GeomViolin")
 })
+
+test_that("plotIndividuality splits between pairs by group.by", {
+    p <- plotIndividuality(toy, "d", "id", layout = "box", group.by = "arm")
+    # c1-c4 and c2-c4 share arm x; c1-c3 and c2-c3 do not.
+    df <- p$data
+    expect_identical(levels(df$pair),
+        c("within", "between, same arm", "between, different arm"))
+    expect_setequal(df$dissimilarity[df$pair == "between, same arm"], c(6, 8))
+    expect_setequal(df$dissimilarity[df$pair == "between, different arm"],
+        c(5, 7))
+})
+
+test_that("plotIndividuality layout time summarises pairs per window", {
+    toy$w <- c(1, 1, 1, 2)
+    expect_error(plotIndividuality(toy, "d", "id", layout = "time"),
+        "'time.col'")
+    toy$chr <- c("a", "a", "a", "b")
+    expect_error(plotIndividuality(toy, "d", "id", layout = "time",
+        time.col = "chr"), "numeric, Date")
+    p <- plotIndividuality(toy, "d", "id", layout = "time", time.col = "w")
+    geoms <- vapply(p$layers, function(l) class(l$geom)[1L], character(1))
+    expect_identical(unname(geoms), c("GeomRibbon", "GeomLine"))
+    # Window 1 holds c1-c2 (within, 1), c1-c3 (5) and c2-c3 (7); the
+    # single sample of window 2 gives no pair.
+    band <- layer_data(p, 1L)
+    expect_equal(band$x, c(1, 1))
+    expect_equal(band$ymin[order(band$group)], c(1, 5.5))
+    expect_equal(band$ymax[order(band$group)], c(1, 6.5))
+    line <- layer_data(p, 2L)
+    expect_equal(line$y[order(line$group)], c(1, 6))
+    expect_identical(line$colour[order(line$group)], .okabe_ito[1:2])
+    expect_identical(p$labels$y, "d")
+})

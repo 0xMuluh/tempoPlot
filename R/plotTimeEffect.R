@@ -21,6 +21,23 @@
 #'   results that splits the estimates into curves, such as the contrast or
 #'   the feature. (Default: \code{NULL})
 #'
+#' @param null \code{data.frame}. Effects estimated under the null
+#'   hypothesis, such as after permuting the group labels, with the
+#'   columns \code{permutation}, \code{time.col} and \code{estimate}, and
+#'   optionally \code{group.by}. Each permutation is drawn as a thin
+#'   translucent line behind the observed effect. (Default: \code{NULL})
+#'
+#' @param p.col \code{Character scalar}. Specifies the column of p-values
+#'   to draw on a log scale instead of the effect, with a dashed line at
+#'   \code{threshold}. (Default: \code{NULL})
+#'
+#' @param threshold \code{Numeric scalar}. Significance level for
+#'   \code{p.col}. (Default: \code{0.05})
+#'
+#' @param size.by \code{Character scalar}. Specifies the column that sets
+#'   the size of a point at each time, such as the number of subjects.
+#'   (Default: \code{NULL})
+#'
 #' @param ... additional arguments passed to
 #'   \code{\link[ggplot2:geom_line]{geom_line}}.
 #'
@@ -28,6 +45,10 @@
 #' The y axis shows the effect, not the value of a variable; to draw fitted
 #' values over the data, use the \code{fit} argument of
 #' \code{\link{plotTrend}}.
+#'
+#' The \code{null} curves and the p-value curve with points sized by the
+#' number of subjects follow the plots of SplinectomeR (Shields-Cutler et
+#' al. 2018, doi:10.3389/fmicb.2018.00785, Fig. 2).
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -42,14 +63,30 @@
 #'
 #' # Difference in diversity between men and women at each visit, from a
 #' # linear model per visit; each subject has one sample per visit
+#' sex_effect <- function(cd) {
+#'     do.call(rbind, lapply(split(cd, cd$visit), function(d) {
+#'         model <- lm(diversity ~ sex, data = d)
+#'         ci <- confint(model)["sexmale", ]
+#'         data.frame(visit = d$visit[1L],
+#'             estimate = coef(model)[["sexmale"]],
+#'             lower = ci[[1L]], upper = ci[[2L]],
+#'             p = summary(model)$coefficients["sexmale", 4L], n = nrow(d))
+#'     }))
+#' }
 #' cd <- as.data.frame(SummarizedExperiment::colData(tse))
-#' effect <- do.call(rbind, lapply(split(cd, cd$visit), function(d) {
-#'     model <- lm(diversity ~ sex, data = d)
-#'     ci <- confint(model)["sexmale", ]
-#'     data.frame(visit = d$visit[1L], estimate = coef(model)[["sexmale"]],
-#'         lower = ci[[1L]], upper = ci[[2L]])
-#' }))
+#' effect <- sex_effect(cd)
 #' plotTimeEffect(effect, time.col = "visit")
+#'
+#' # Against the effects after permuting sex within each visit 50 times
+#' set.seed(1)
+#' null <- do.call(rbind, lapply(seq_len(50L), function(i) {
+#'     cd$sex <- ave(as.character(cd$sex), cd$visit, FUN = sample)
+#'     data.frame(permutation = i, sex_effect(cd))
+#' }))
+#' plotTimeEffect(effect, time.col = "visit", null = null)
+#'
+#' # p-values, with points sized by the number of subjects
+#' plotTimeEffect(effect, time.col = "visit", p.col = "p", size.by = "n")
 #'
 #' # The same results stored in metadata(tse)
 #' S4Vectors::metadata(tse)$sex_effect <- effect
@@ -73,31 +110,80 @@ setMethod("plotTimeEffect", signature = c(x = "SummarizedExperiment"),
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTimeEffect", signature = c(x = "data.frame"),
-    function(x, time.col, group.by = NULL, ...) {
+    function(x, time.col, group.by = NULL, null = NULL, p.col = NULL,
+            threshold = 0.05, size.by = NULL, ...) {
         if (!.is_one_name(time.col) || !time.col %in% names(x)) {
             stop("'time.col' must be one column name of 'x'.", call. = FALSE)
         }
-        if (!is.null(group.by) &&
-                !(.is_one_name(group.by) && group.by %in% names(x))) {
-            stop("'group.by' must be NULL or one column name of 'x'.",
-                call. = FALSE)
+        for (arg in c("group.by", "p.col", "size.by")) {
+            col <- get(arg)
+            if (!is.null(col) && !(.is_one_name(col) && col %in% names(x))) {
+                stop("'", arg, "' must be NULL or one column name of 'x'.",
+                    call. = FALSE)
+            }
         }
-        .time_type(x[[time.col]])
-        if (!is.numeric(x$estimate) ||
-                sum(c("lower", "upper") %in% names(x)) == 1L) {
-            stop("'x' must have a numeric column estimate, and lower and ",
-                "upper together.", call. = FALSE)
+        type <- .time_type(x[[time.col]])
+        if (is.null(p.col)) {
+            if (!is.numeric(x$estimate) ||
+                    sum(c("lower", "upper") %in% names(x)) == 1L) {
+                stop("'x' must have a numeric column estimate, and lower ",
+                    "and upper together.", call. = FALSE)
+            }
+        } else {
+            .check_number(threshold, 0, 1, open = TRUE)
+            if (!is.null(null)) {
+                stop("'null' must be NULL when 'p.col' is set.",
+                    call. = FALSE)
+            }
+            # The p-values take the place of the effect.
+            x$estimate <- x[[p.col]]
+            x$lower <- x$upper <- NULL
         }
-        .plot_time_effect(as.data.frame(x), time.col, group.by, ...)
+        if (!is.null(null) && !(is.data.frame(null) &&
+                all(c("permutation", time.col) %in% names(null)) &&
+                is.numeric(null$estimate) &&
+                identical(.time_type(null[[time.col]]), type))) {
+            stop("'null' must be NULL or a data.frame with columns ",
+                "permutation, '", time.col, "' of the type of 'x', and a ",
+                "numeric estimate.", call. = FALSE)
+        }
+        .plot_time_effect(as.data.frame(x), time.col, group.by, null,
+            p.col, threshold, size.by, ...)
     }
 )
 
-#' @importFrom ggplot2 ggplot geom_hline labs
-.plot_time_effect <- function(df, time.col, group.by, ...) {
-    ggplot(df) +
-        geom_hline(yintercept = 0, colour = "grey40") +
-        .fit_layers(df, time.col, group.by, ...) +
-        labs(x = time.col, y = "estimate", colour = group.by) +
+#' @importFrom ggplot2 ggplot geom_hline geom_line geom_point aes .data
+#'   labs scale_y_log10
+.plot_time_effect <- function(df, time.col, group.by, null, p.col,
+        threshold, size.by, ...) {
+    p <- ggplot(df) + if (is.null(p.col)) {
+        geom_hline(yintercept = 0, colour = "grey40")
+    } else {
+        list(geom_hline(yintercept = threshold, colour = "grey40",
+            linetype = "dashed"), scale_y_log10())
+    }
+    if (!is.null(null)) {
+        p <- p + .null_layer(as.data.frame(null), time.col, group.by)
+    }
+    p <- p + .fit_layers(df, time.col, group.by, ...)
+    if (!is.null(size.by)) {
+        p <- p + geom_point(aes(x = .data[[time.col]], y = .data$estimate,
+            size = .data[[size.by]],
+            colour = if (!is.null(group.by)) .data[[group.by]]))
+    }
+    p + labs(x = time.col, y = if (is.null(p.col)) "estimate" else p.col,
+            colour = group.by, size = size.by) +
         .scale_by(df, group.by, c("colour", "fill")) +
         .theme_tempoPlot()
+}
+
+# One thin translucent line per permutation of null (and group.by, if
+# null has it, in the colour of its group; else grey).
+.null_layer <- function(null, time.col, group.by) {
+    by <- if (!is.null(group.by) && group.by %in% names(null)) group.by
+    null$.curve <- paste(null$permutation, if (!is.null(by)) null[[by]])
+    do.call(geom_line, c(list(aes(x = .data[[time.col]], y = .data$estimate,
+            group = .data$.curve, colour = if (!is.null(by)) .data[[by]]),
+        data = null, inherit.aes = FALSE, alpha = 0.2, linewidth = 0.3,
+        show.legend = FALSE), if (is.null(by)) list(colour = .na_colour)))
 }
