@@ -28,8 +28,21 @@
 #'   edges are drawn as arrows, and \code{diff} tells a-b from b-a;
 #'   otherwise they are the same edge. (Default: \code{FALSE})
 #'
+#' @param layout \code{Character scalar}. Draws nodes joined by edges
+#'   (\code{"graph"}) or a matrix of tiles, \code{from} in rows and
+#'   \code{to} in columns (\code{"matrix"}). (Default: \code{"graph"})
+#'
+#' @param p.col \code{Character scalar}. With \code{layout = "matrix"}, a
+#'   numeric column of the edge table holding p-values or adjusted
+#'   p-values; tiles below \code{threshold} are marked with a dot.
+#'   (Default: \code{NULL})
+#'
+#' @param threshold \code{Numeric scalar}. Significance level for
+#'   \code{p.col}. (Default: \code{0.05})
+#'
 #' @param ... additional arguments passed to
-#'   \code{\link[ggplot2:geom_segment]{geom_segment}}.
+#'   \code{\link[ggplot2:geom_segment]{geom_segment}}, or
+#'   \code{\link[ggplot2:geom_tile]{geom_tile}} for the matrix.
 #'
 #' @details
 #' Requires igraph for the layout (Kamada-Kawai, which gives the same
@@ -38,6 +51,15 @@
 #' (\code{from} equal to \code{to}), such as staying in a state, are drawn
 #' as rings around their node. With \code{diff}, an edge whose weight
 #' changes sign is kept. Node names are drawn for up to 40 nodes.
+#'
+#' The matrix shows interaction strengths, such as those of a generalised
+#' Lotka-Volterra model (Bucci et al. 2016, Fig. 4a,
+#' \doi{10.1186/s13059-016-0980-6}). Tiles are filled by \code{weight},
+#' blue below zero and red above, or by the change with \code{diff}.
+#' Self-loops fill the diagonal; pairs without an edge stay blank. Nodes are
+#' sorted by name in rows and columns, so a node keeps its place in every
+#' panel. Undirected edges fill both a-b and b-a, so the matrix is
+#' symmetric. The matrix does not need igraph.
 #'
 #' @return
 #' A \code{ggplot} object.
@@ -64,6 +86,20 @@
 #' # Edges gained and lost from women to men
 #' plotNetwork(tse, edges = "correlations", split.by = "sex", diff = TRUE)
 #'
+#' # All correlations as a matrix, with FDR q-values below 0.05 marked
+#' pairs <- t(combn(top, 2))
+#' edges <- do.call(rbind, lapply(c("female", "male"), function(s) {
+#'     m <- SummarizedExperiment::assay(tse, "clr")[, tse$sex == s]
+#'     test <- apply(pairs, 1, function(p) cor.test(m[p[1], ], m[p[2], ]))
+#'     data.frame(from = pairs[, 1], to = pairs[, 2], sex = s,
+#'         weight = vapply(test, `[[`, numeric(1), "estimate"),
+#'         p = vapply(test, `[[`, numeric(1), "p.value"))
+#' }))
+#' edges$q <- p.adjust(edges$p, method = "fdr")
+#' S4Vectors::metadata(tse)$all <- edges
+#' plotNetwork(tse, edges = "all", split.by = "sex", layout = "matrix",
+#'     p.col = "q")
+#'
 #' # Moves between the dominant genera of consecutive samples
 #' tse <- mia::addDominant(hitchip1006, name = "dominant")
 #' cd <- as.data.frame(SummarizedExperiment::colData(tse))
@@ -83,11 +119,9 @@ NULL
 #' @export
 setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
     function(x, edges, split.by = NULL, diff = FALSE, directed = FALSE,
+            layout = c("graph", "matrix"), p.col = NULL, threshold = 0.05,
             ...) {
-        if (!requireNamespace("igraph", quietly = TRUE)) {
-            stop("plotNetwork() requires the igraph package.",
-                call. = FALSE)
-        }
+        layout <- match.arg(layout)
         .check_flag(diff)
         .check_flag(directed)
         df <- .edge_table(x, edges)
@@ -104,6 +138,17 @@ setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
                     call. = FALSE)
             }
             df <- .edge_diff(df, directed)
+        }
+        if (layout == "matrix") {
+            return(.plot_edge_matrix(df, split.by, diff, directed, p.col,
+                threshold, ...))
+        }
+        if (!is.null(p.col)) {
+            stop("'p.col' needs layout = \"matrix\".", call. = FALSE)
+        }
+        if (!requireNamespace("igraph", quietly = TRUE)) {
+            stop("plotNetwork() requires the igraph package.",
+                call. = FALSE)
         }
         nodes <- unique(c(df$from, df$to))
         g <- igraph::graph_from_data_frame(
@@ -216,4 +261,51 @@ setMethod("plotNetwork", signature = c(x = "SummarizedExperiment"),
         .theme_tempoPlot() +
         theme(axis.title = element_blank(), axis.text = element_blank(),
             axis.ticks = element_blank(), panel.grid = element_blank())
+}
+
+# Tiles of the edges, from in rows and to in columns, nodes sorted by name.
+# Undirected edges fill both a-b and b-a; a table that already lists both
+# orientations collapses to one tile each.
+#' @importFrom ggplot2 ggplot aes .data geom_tile geom_point labs
+#'   facet_wrap vars scale_x_discrete scale_y_discrete coord_equal theme
+#'   element_text
+.plot_edge_matrix <- function(df, split.by, diff, directed, p.col,
+        threshold, ...) {
+    if (!is.null(p.col) && !(.is_one_name(p.col) && p.col %in% names(df) &&
+            is.numeric(df[[p.col]]))) {
+        stop("'p.col' must be one numeric column of the edge table.",
+            call. = FALSE)
+    }
+    .check_number(threshold, 0, 1, open = TRUE)
+    if (!directed) {
+        flip <- df[df$from != df$to, , drop = FALSE]
+        flip[c("from", "to")] <- flip[c("to", "from")]
+        df <- unique(rbind(df, flip))
+    }
+    if (anyDuplicated(df[intersect(c(".split", "from", "to"), names(df))])) {
+        stop("'edges' must have one row per pair of nodes",
+            if (!is.null(split.by)) " in each 'split.by' level", ".",
+            call. = FALSE)
+    }
+    nodes <- sort(unique(c(df$from, df$to)))
+    fill <- if (diff) ".change" else "weight"
+    p <- ggplot(df, aes(x = .data$to, y = .data$from)) +
+        geom_tile(aes(fill = .data[[fill]]), ...) +
+        (if (diff) .scale_categorical("fill", drop = FALSE) else
+            .scale_diverging("fill")) +
+        scale_x_discrete(limits = nodes) +
+        scale_y_discrete(limits = rev(nodes)) +
+        coord_equal() +
+        labs(x = "to", y = "from", fill = if (diff) split.by else "weight") +
+        .theme_tempoPlot() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    if (!is.null(p.col)) {
+        p <- p + geom_point(data = df[which(df[[p.col]] < threshold), ,
+                drop = FALSE], size = 1) +
+            labs(caption = paste("Dots:", p.col, "<", threshold))
+    }
+    if (!diff && !is.null(split.by)) {
+        p <- p + facet_wrap(vars(.data$.split))
+    }
+    p
 }

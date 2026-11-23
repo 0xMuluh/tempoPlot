@@ -175,3 +175,45 @@ test_that("plotTiles draws one panel per subject of a results table", {
     expect_error(plotTiles(res, "t", effect = "lfc", group = "none"),
         "'group'")
 })
+
+test_that("plotTiles draws categorical effects", {
+    # c has three cells with a strain, a two, b one.
+    res <- data.frame(feature = rep(c("a", "b", "c"), each = 3),
+        t = rep(1:3, 3),
+        strain = c("s1", "s1", NA, NA, "s2", NA, "s1", "s2", "s2"),
+        q = c(0.01, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.01))
+    p <- plotTiles(res, "t", effect = "strain", p.col = "q")
+    expect_identical(levels(p$data$.feature), c("b", "a", "c"))
+    ld <- layer_data(p, 1L)
+    expect_identical(unique(ld$fill[p$data$.value %in% "s1"]), "#0072B2")
+    expect_identical(unique(ld$fill[p$data$.value %in% "s2"]), "#E69F00")
+    expect_true(all(ld$fill[is.na(p$data$.value)] == "grey50"))
+    expect_setequal(paste(p$layers[[2L]]$data$.feature,
+        p$layers[[2L]]$data$.time), c("a 1", "c 3"))
+    expect_identical(p$labels$fill, "strain")
+    p <- plotTiles(res, "t", effect = "strain", top = 2)
+    expect_setequal(as.character(p$data$.feature), c("a", "c"))
+    # Factors keep their levels; logicals are categories too.
+    res$strain <- factor(res$strain, levels = c("s2", "s1"))
+    p <- plotTiles(res, "t", effect = "strain")
+    expect_identical(unique(layer_data(p, 1L)$fill[p$data$.value %in%
+        "s2"]), "#0072B2")
+    res$shared <- res$strain == "s1"
+    expect_s3_class(plotTiles(res, "t", effect = "shared"), "ggplot")
+    res$day <- as.Date("2020-01-01") + res$t
+    expect_error(plotTiles(res, "t", effect = "day"), "'effect'")
+    res$q <- as.character(res$q)
+    expect_error(plotTiles(res, "t", effect = "shared", p.col = "q"),
+        "'p.col'")
+})
+
+test_that("plotTiles clusters categorical profiles by matching cells", {
+    # a and c share their strains at every time; b differs everywhere.
+    res <- data.frame(feature = rep(c("a", "b", "c"), each = 3),
+        t = rep(1:3, 3),
+        strain = c("x", "x", "y", "y", "y", "x", "x", "x", "y"))
+    lv <- levels(plotTiles(res, "t", effect = "strain",
+        order.by = "cluster")$data$.feature)
+    expect_identical(abs(diff(match(c("a", "c"), lv))), 1L)
+    expect_false(lv[2L] == "b")
+})
