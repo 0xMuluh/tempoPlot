@@ -315,12 +315,14 @@
 # top; the others span the whole plot. label sets the fill, or the
 # linetype of markers that span the plot, in a legend titled "event"; with
 # text = TRUE, the events stay grey and the labels are written at the top
-# instead. Returns a list of layers, empty without events of that kind.
+# instead, ending at their event in the right half of the times x so that
+# they stay inside the plot. Returns a list of layers, empty without events
+# of that kind.
 #' @importFrom ggplot2 aes .data geom_point geom_rect geom_vline geom_text
 #'   labs
 #' @importFrom stats setNames
 .events_layer <- function(events, what = c("bands", "markers"),
-        group = NULL, y.levels = NULL, text = FALSE) {
+        group = NULL, y.levels = NULL, text = FALSE, x = NULL) {
     what <- match.arg(what)
     if (is.null(events)) {
         return(list())
@@ -363,11 +365,19 @@
             colour = "grey30"), fixed(linetype = "dashed")))
     }
     aesthetic <- if (what == "markers" && !rows) "linetype" else "fill"
+    if (text && labelled) {
+        right <- ev$.start > mean(range(c(pos(x), ev$.start), na.rm = TRUE))
+        ev$.x <- ev$.start
+        if (what == "bands") {
+            ev$.x[right] <- ev$.end[right]
+        }
+        ev$.hjust <- ifelse(right, 1.05, -0.05)
+    }
     list(layer,
         if (legend) do.call(labs, setNames(list("event"), aesthetic)),
-        if (text && labelled) geom_text(aes(x = .data$.start, y = Inf,
-            label = .data$label), data = ev, inherit.aes = FALSE,
-            hjust = -0.05, vjust = 1.5, size = 3, colour = "grey30"))
+        if (text && labelled) geom_text(aes(x = .data$.x, y = Inf,
+            label = .data$label, hjust = .data$.hjust), data = ev,
+            inherit.aes = FALSE, vjust = 1.5, size = 3, colour = "grey30"))
 }
 
 # Sample-by-sample dissimilarity matrix stored by mia::addDissimilarity()

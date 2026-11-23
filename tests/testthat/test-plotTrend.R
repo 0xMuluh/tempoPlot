@@ -495,6 +495,12 @@ test_that("plotTrend marks events and intervals", {
     expect_equal(layer_data(p, which(geoms == "GeomVline"))$xintercept,
         152)
     expect_identical(p$labels$linetype, "event")
+    # A label in the right half ends at its band, inside the plot.
+    p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
+        events = data.frame(start = c(0, 432), end = c(24, 436),
+            label = c("batch", "dilution")))
+    expect_equal(layer_data(p, 2L)$x, c(0, 436))
+    expect_equal(layer_data(p, 2L)$hjust, c(-0.05, 1.05))
     # Labelled bands alone name no linetype legend.
     p <- plotTrend(x, "Acetate", "Time_hr_num", "StudyIdentifier",
         events = events[1L, ])

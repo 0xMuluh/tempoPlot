@@ -97,7 +97,8 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
     }
 )
 
-#' @importFrom ggplot2 ggplot aes .data geom_histogram coord_polar labs
+#' @importFrom ggplot2 ggplot aes .data geom_histogram coord_radial labs
+#'   guides guide_axis_theta
 #'   scale_x_continuous scale_y_sqrt facet_wrap vars
 #' @importFrom utils modifyList
 .plot_direction <- function(df, labels, bins, facet.by, ...) {
@@ -114,8 +115,11 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
             labels = c(labels[1L], labels[2L], paste0("-", labels[1L]),
                 paste0("-", labels[2L]))) +
         scale_y_sqrt() +
-        coord_polar(start = -pi / 2 - w / 2 * pi / 180, direction = -1,
-            clip = "off") +
+        # Counterclockwise from east; labels along the circle stay inside
+        # the panel.
+        coord_radial(start = pi / 2 + w / 2 * pi / 180, expand = FALSE,
+            reverse = "theta") +
+        guides(theta = guide_axis_theta(angle = 0)) +
         labs(x = NULL, y = "moves")
     if (!is.null(facet.by)) {
         p <- p + facet_wrap(vars(.data[[facet.by]]))

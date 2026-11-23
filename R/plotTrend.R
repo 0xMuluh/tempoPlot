@@ -380,7 +380,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
             colour = if (!is.null(group.by)) .data[[group.by]],
             fill = if (!is.null(group.by)) .data[[group.by]])) +
-        .events_layer(events, "bands", text = TRUE)
+        .events_layer(events, "bands", text = TRUE, x = df[[time.col]])
     dots <- list(...)
     if (layout != "line") {
         # One box or violin per time and group.by group; individual points
