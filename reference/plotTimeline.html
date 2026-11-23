@@ -19,7 +19,7 @@ as lines, a strip of states and a strip of events."><!-- mathjax --><script src=
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.67</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.68</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ as lines, a strip of states and a strip of events."><!-- mathjax --><script src=
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the timeline of one subject</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/new-rmcorr-changes/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-rmcorr-changes/R/plotTimeline.R" class="external-link"><code>R/plotTimeline.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-rmcorr-changes/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/integrate-new-plots/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/integrate-new-plots/R/plotTimeline.R" class="external-link"><code>R/plotTimeline.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/integrate-new-plots/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTimeline.Rd</code></div>
     </div>
 
@@ -186,7 +186,17 @@ doi:10.1038/s41586-019-1236-x</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A bioreactor of a defined community: species, butyrate, the dominant</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Daily samples of one woman over six weeks: genera, cell count per</span></span></span>
+<span class="r-in"><span><span class="co"># gram of stool and enterotype</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"temporalMicrobiome20"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">temporalMicrobiome20</span></span></span>
+<span class="r-in"><span><span class="co"># Samples without a profile have the enterotype "NA"</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">[</span>, <span class="va">tse</span><span class="op">$</span><span class="va">enterotype</span> <span class="op">!=</span> <span class="st">"NA"</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu">plotTimeline</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"day"</span>, group <span class="op">=</span> <span class="st">"person_id"</span>, subject <span class="op">=</span> <span class="fl">820</span>,</span></span>
+<span class="r-in"><span>    y <span class="op">=</span> <span class="st">"cell_count_per_gram"</span>, state.col <span class="op">=</span> <span class="st">"enterotype"</span>, top <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotTimeline-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A bioreactor of a defined community: species, butyrate, the dominant</span></span></span>
 <span class="r-in"><span><span class="co"># species of each sample and the perturbations of its schedule</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/getDominant.html" class="external-link">addDominant</a></span><span class="op">(</span><span class="va">minimalgut</span>, name <span class="op">=</span> <span class="st">"dominant"</span><span class="op">)</span></span></span>
@@ -197,7 +207,7 @@ doi:10.1038/s41586-019-1236-x</p>
 <span class="r-in"><span><span class="fu">plotTimeline</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
 <span class="r-in"><span>    subject <span class="op">=</span> <span class="st">"Bioreactor A"</span>, y <span class="op">=</span> <span class="st">"Butyrate"</span>, state.col <span class="op">=</span> <span class="st">"dominant"</span>,</span></span>
 <span class="r-in"><span>    events <span class="op">=</span> <span class="va">events</span>, top <span class="op">=</span> <span class="fl">8</span>, layout <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTimeline-1.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTimeline-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
