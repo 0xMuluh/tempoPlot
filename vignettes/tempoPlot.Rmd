@@ -50,6 +50,7 @@ needs with mia or miaTime, and plots the result.
 | | `plotCalendar()` |
 | How does a value change over time? | `plotTrend()` |
 | | `plotTimeEffect()` |
+| | `plotIntervals()` |
 | How does the composition change? | `plotComposition()` |
 | | `plotTiles()` |
 | | `plotHorizon()` |
@@ -302,6 +303,43 @@ plotTiles(mg, time.col = "Time.hr", group = "StudyIdentifier",
 Bacteroides xylanisolvens gains and Eubacterium siraeum loses most from
 the start of the run, and Blautia hydrogenotrophica appears after 152 h.
 The other species change less.
+
+**When does each species leave its earlier range?** `plotIntervals()`
+draws time intervals of features from a table with columns `feature`,
+`start` and `end`, such as the significant intervals of MetaLonDA. Here an
+interval is a run of times after 152 h in which the mean relative
+abundance over the three bioreactors lies above or below its range before
+152 h.
+
+```{r}
+#| label: plot-intervals
+#| fig-height: 4
+
+ra <- assay(mg, "relabundance")
+time <- mg$Time.hr
+mean_ra <- t(rowsum(t(ra), time) / as.vector(table(time)))
+times <- as.numeric(colnames(mean_ra))
+before <- times < 152
+low <- apply(mean_ra[, before], 1, min)
+high <- apply(mean_ra[, before], 1, max)
+after <- times[!before]
+intervals <- do.call(rbind, lapply(rownames(mean_ra), function(f) {
+    v <- mean_ra[f, !before]
+    side <- ifelse(v > high[f], "above", ifelse(v < low[f], "below", NA))
+    runs <- rle(side)
+    end <- cumsum(runs$lengths)
+    start <- end - runs$lengths + 1
+    keep <- !is.na(runs$values)
+    data.frame(feature = rep(f, sum(keep)), start = after[start[keep]],
+        end = after[end[keep]], direction = runs$values[keep])
+}))
+plotIntervals(intervals, colour.by = "direction", top = 10)
+```
+
+Blautia hydrogenotrophica stays above its earlier range for most of the
+time after it is added. Subdoligranulum variabile rises above its range
+from about 340 h, and Ruminococcus bromii falls below its range between
+about 300 and 390 h. Points mark single times.
 
 `plotHorizon()` folds each feature into a short strip, so that many
 features fit in one figure. Each strip is centred on the feature's median;
