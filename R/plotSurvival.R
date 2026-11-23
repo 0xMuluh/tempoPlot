@@ -125,8 +125,13 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
         if (is.null(df) || nrow(df) == 0L) {
             stop("No subject is at risk of the event.", call. = FALSE)
         }
-        df <- .kaplan_meier(df)
-        .plot_survival(df, time.col, group.by, event, ...)
+        .plot_survival(.kaplan_meier(df), group.by,
+            x.title = paste(time.col, "from the first sample"),
+            y.title = switch(event, dropout = "share still sampled",
+                arrival = "share before arrival",
+                loss = "share before loss",
+                state.exit = "share in the first state",
+                outcome = "share without the outcome"), ...)
     }
 )
 
@@ -181,9 +186,11 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
     do.call(rbind, res)
 }
 
+# Kaplan-Meier curves from .kaplan_meier(), with bands and censoring
+# marks; also used by plotRuns().
 #' @importFrom ggplot2 ggplot aes .data geom_step geom_point geom_rect labs
 #'   ylim
-.plot_survival <- function(df, time.col, group.by, event, ...) {
+.plot_survival <- function(df, group.by, x.title, y.title, ...) {
     by <- !is.null(group.by)
     ggplot(df, aes(x = .data$.time, y = .data$.surv,
             colour = if (by) .data$.by)) +
@@ -195,12 +202,7 @@ setMethod("plotSurvival", signature = c(x = "SummarizedExperiment"),
         geom_point(data = df[df$.censored > 0L, , drop = FALSE],
             shape = 3) +
         ylim(0, 1) +
-        labs(x = paste(time.col, "from the first sample"),
-            y = switch(event, dropout = "share still sampled",
-                arrival = "share before arrival",
-                loss = "share before loss",
-                state.exit = "share in the first state",
-                outcome = "share without the outcome"),
-            colour = group.by, fill = group.by) +
+        labs(x = x.title, y = y.title, colour = group.by,
+            fill = group.by) +
         .scale_categorical(c("colour", "fill")) + .theme_tempoPlot()
 }

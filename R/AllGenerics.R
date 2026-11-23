@@ -201,3 +201,15 @@ setGeneric("plotProfiles", signature = "x",
 #' @export
 setGeneric("plotTimeline", signature = "x",
     function(x, ...) standardGeneric("plotTimeline"))
+
+#' @rdname plotRuns
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotRuns", signature = "x",
+    function(x, ...) standardGeneric("plotRuns"))
+
+#' @rdname plotStates
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotStates", signature = "x",
+    function(x, ...) standardGeneric("plotStates"))
