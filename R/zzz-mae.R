@@ -254,3 +254,9 @@ setMethod("plotVolcano", signature = c(x = "MultiAssayExperiment"),
 #' @export
 setMethod("plotIntervals", signature = c(x = "MultiAssayExperiment"),
     .mae_method(plotIntervals))
+
+#' @rdname plotProfiles
+#' @template mae-experiment
+#' @export
+setMethod("plotProfiles", signature = c(x = "MultiAssayExperiment"),
+    .mae_method(plotProfiles))

@@ -482,12 +482,15 @@
     as.matrix(assay(x, assay.type))
 }
 
-# Error unless col is one column name of colData(x); for required
-# arguments, where .check_column() also accepts NULL.
-#' @importFrom SummarizedExperiment colData
-.require_column <- function(x, col, arg = deparse(substitute(col))) {
-    if (!(.is_one_name(col) && col %in% names(colData(x)))) {
-        stop("'", arg, "' must be one column name of colData(x).",
+# Error unless col is one column name of colData(x) or rowData(x); for
+# required arguments, where .check_column() also accepts NULL.
+#' @importFrom SummarizedExperiment colData rowData
+.require_column <- function(x, col, arg = deparse(substitute(col)),
+        where = c("colData", "rowData")) {
+    where <- match.arg(where)
+    cols <- names(if (where == "colData") colData(x) else rowData(x))
+    if (!(.is_one_name(col) && col %in% cols)) {
+        stop("'", arg, "' must be one column name of ", where, "(x).",
             call. = FALSE)
     }
 }
