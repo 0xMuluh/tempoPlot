@@ -47,7 +47,7 @@ states or associations estimated in time windows."><!-- mathjax --><script src="
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot a network of features or samples</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/new-matrix-tiles/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-matrix-tiles/R/plotNetwork.R" class="external-link"><code>R/plotNetwork.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-matrix-tiles/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/new-individuality-effect/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-individuality-effect/R/plotNetwork.R" class="external-link"><code>R/plotNetwork.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-individuality-effect/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotNetwork.Rd</code></div>
     </div>
 
@@ -62,17 +62,7 @@ states or associations estimated in time windows.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotNetwork</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'SummarizedExperiment'</span></span>
-<span><span class="fu">plotNetwork</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">edges</span>,</span>
-<span>  split.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  diff <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  directed <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"graph"</span>, <span class="st">"matrix"</span><span class="op">)</span>,</span>
-<span>  p.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu">plotNetwork</span><span class="op">(</span><span class="va">x</span>, <span class="va">edges</span>, split.by <span class="op">=</span> <span class="cn">NULL</span>, diff <span class="op">=</span> <span class="cn">FALSE</span>, directed <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
 <span><span class="fu">plotNetwork</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
@@ -90,8 +80,7 @@ object; for <code>rowPair</code> and <code>colPair</code> a
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>additional arguments passed to
-<code><a href="https://ggplot2.tidyverse.org/reference/geom_segment.html" class="external-link">geom_segment</a></code>, or
-<code><a href="https://ggplot2.tidyverse.org/reference/geom_tile.html" class="external-link">geom_tile</a></code> for the matrix.</p></dd>
+<code><a href="https://ggplot2.tidyverse.org/reference/geom_segment.html" class="external-link">geom_segment</a></code>.</p></dd>
 
 
 <dt id="arg-edges">edges<a class="anchor" aria-label="anchor" href="#arg-edges"></a></dt>
@@ -121,24 +110,6 @@ edges are drawn as arrows, and <code>diff</code> tells a-b from b-a;
 otherwise they are the same edge. (Default: <code>FALSE</code>)</p></dd>
 
 
-<dt id="arg-layout">layout<a class="anchor" aria-label="anchor" href="#arg-layout"></a></dt>
-<dd><p><code>Character scalar</code>. Draws nodes joined by edges
-(<code>"graph"</code>) or a matrix of tiles, <code>from</code> in rows and
-<code>to</code> in columns (<code>"matrix"</code>). (Default: <code>"graph"</code>)</p></dd>
-
-
-<dt id="arg-p-col">p.col<a class="anchor" aria-label="anchor" href="#arg-p-col"></a></dt>
-<dd><p><code>Character scalar</code>. With <code>layout = "matrix"</code>, a
-numeric column of the edge table holding p-values or adjusted
-p-values; tiles below <code>threshold</code> are marked with a dot.
-(Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
-<dd><p><code>Numeric scalar</code>. Significance level for
-<code>p.col</code>. (Default: <code>0.05</code>)</p></dd>
-
-
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
 <dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
 <code>MultiAssayExperiment</code>, the experiment to plot; its samples get
@@ -157,15 +128,6 @@ positions on every run). Edges are coloured by the sign of
 (<code>from</code> equal to <code>to</code>), such as staying in a state, are drawn
 as rings around their node. With <code>diff</code>, an edge whose weight
 changes sign is kept. Node names are drawn for up to 40 nodes.</p>
-<p>The matrix shows interaction strengths, such as those of a generalised
-Lotka-Volterra model (Bucci et al. 2016, Fig. 4a,
-<a href="https://doi.org/10.1186/s13059-016-0980-6" class="external-link">doi:10.1186/s13059-016-0980-6</a>
-). Tiles are filled by <code>weight</code>,
-blue below zero and red above, or by the change with <code>diff</code>.
-Self-loops fill the diagonal; pairs without an edge stay blank. Nodes are
-sorted by name in rows and columns, so a node keeps its place in every
-panel. Undirected edges fill both a-b and b-a, so the matrix is
-symmetric. The matrix does not need igraph.</p>
     </div>
 
     <div id="ref-examples">
@@ -191,21 +153,6 @@ symmetric. The matrix does not need igraph.</p>
 <span class="r-in"><span><span class="fu">plotNetwork</span><span class="op">(</span><span class="va">tse</span>, edges <span class="op">=</span> <span class="st">"correlations"</span>, split.by <span class="op">=</span> <span class="st">"sex"</span>, diff <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotNetwork-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># All correlations as a matrix, with FDR q-values below 0.05 marked</span></span></span>
-<span class="r-in"><span><span class="va">pairs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/combn.html" class="external-link">combn</a></span><span class="op">(</span><span class="va">top</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">edges</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>, <span class="st">"male"</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">s</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">assay</a></span><span class="op">(</span><span class="va">tse</span>, <span class="st">"clr"</span><span class="op">)</span><span class="op">[</span>, <span class="va">tse</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="va">s</span><span class="op">]</span></span></span>
-<span class="r-in"><span>    <span class="va">test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">pairs</span>, <span class="fl">1</span>, <span class="kw">function</span><span class="op">(</span><span class="va">p</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.test.html" class="external-link">cor.test</a></span><span class="op">(</span><span class="va">m</span><span class="op">[</span><span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="op">]</span>, <span class="va">m</span><span class="op">[</span><span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="op">]</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>from <span class="op">=</span> <span class="va">pairs</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span>, to <span class="op">=</span> <span class="va">pairs</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span>, sex <span class="op">=</span> <span class="va">s</span>,</span></span>
-<span class="r-in"><span>        weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">test</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, <span class="st">"estimate"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>        p <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">test</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, <span class="st">"p.value"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">edges</span><span class="op">$</span><span class="va">q</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust</a></span><span class="op">(</span><span class="va">edges</span><span class="op">$</span><span class="va">p</span>, method <span class="op">=</span> <span class="st">"fdr"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">S4Vectors</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/S4Vectors/man/Annotated-class.html" class="external-link">metadata</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">$</span><span class="va">all</span> <span class="op">&lt;-</span> <span class="va">edges</span></span></span>
-<span class="r-in"><span><span class="fu">plotNetwork</span><span class="op">(</span><span class="va">tse</span>, edges <span class="op">=</span> <span class="st">"all"</span>, split.by <span class="op">=</span> <span class="st">"sex"</span>, layout <span class="op">=</span> <span class="st">"matrix"</span>,</span></span>
-<span class="r-in"><span>    p.col <span class="op">=</span> <span class="st">"q"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotNetwork-3.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Moves between the dominant genera of consecutive samples</span></span></span>
 <span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/getDominant.html" class="external-link">addDominant</a></span><span class="op">(</span><span class="va">hitchip1006</span>, name <span class="op">=</span> <span class="st">"dominant"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">cd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span></span></span>
@@ -217,7 +164,7 @@ symmetric. The matrix does not need igraph.</p>
 <span class="r-in"><span><span class="va">moves</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="va">weight</span> <span class="op">~</span> <span class="va">from</span> <span class="op">+</span> <span class="va">to</span>, data <span class="op">=</span> <span class="va">moves</span>, FUN <span class="op">=</span> <span class="va">sum</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">S4Vectors</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/S4Vectors/man/Annotated-class.html" class="external-link">metadata</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">$</span><span class="va">moves</span> <span class="op">&lt;-</span> <span class="va">moves</span></span></span>
 <span class="r-in"><span><span class="fu">plotNetwork</span><span class="op">(</span><span class="va">tse</span>, edges <span class="op">=</span> <span class="st">"moves"</span>, directed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotNetwork-4.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotNetwork-3.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
