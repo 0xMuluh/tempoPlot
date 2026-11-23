@@ -225,3 +225,15 @@ setGeneric("plotRmcorr", signature = "x",
 #' @export
 setGeneric("plotChanges", signature = "x",
     function(x, ...) standardGeneric("plotChanges"))
+
+#' @rdname plotPartner
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotPartner", signature = "x",
+    function(x, ...) standardGeneric("plotPartner"))
+
+#' @rdname plotOrigin
+#' @importFrom methods setGeneric
+#' @export
+setGeneric("plotOrigin", signature = "x",
+    function(x, ...) standardGeneric("plotOrigin"))
