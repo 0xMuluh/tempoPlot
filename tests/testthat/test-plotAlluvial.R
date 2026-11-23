@@ -59,3 +59,10 @@ test_that("plotAlluvial colours states in order and missing grey", {
         c(.okabe_ito[1:2], "grey50"))
     expect_identical(p$theme$legend.position, "bottom")
 })
+
+test_that("plotAlluvial orders numeric states as numbers", {
+    skip_if_not_installed("ggalluvial")
+    toy$state <- c(2, 10, 2, 10, 2, 2, 10)
+    p <- suppressWarnings(plotAlluvial(toy, "state", "v", "id"))
+    expect_identical(levels(p$data$.state), c("2", "10", "missing"))
+})

@@ -48,7 +48,7 @@ from each state (\code{TRUE}) or the counts (\code{FALSE}).
 
 \item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the transitions into panels. Each
-transition takes the value of its earlier sample.
+transition takes the value of its later sample.
 (Default: \code{NULL})}
 
 \item{max.gap}{\code{Numeric scalar}. Skips the transitions between

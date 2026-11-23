@@ -91,3 +91,17 @@ test_that("plotLagHeatmap reads counts by default", {
     assays(se) <- list(other = assay(se))
     expect_error(plotLagHeatmap(se, "y", "t"), "'assay.type'")
 })
+
+test_that("plotLagHeatmap counts lags in visits for a visit factor", {
+    # Visit 3 is missing: at lag 1, visit 2 has no partner and visit 4 is
+    # not paired with visit 2.
+    se <- toy[, -3]
+    se$v <- factor(se$t, levels = 1:20)
+    df <- plotLagHeatmap(se, "y", "v", max.lag = 1)$data
+    expect_equal(df$.r[df$.feature == "a" & df$.lag == 1], 1)
+    expect_match(plotLagHeatmap(se, "y", "v", max.lag = 1)$labels$x,
+        "lag in visits")
+    # By samples, visit 2 pairs with visit 4 and breaks the shift.
+    df <- plotLagHeatmap(se, "y", "t", max.lag = 1)$data
+    expect_lt(df$.r[df$.feature == "a" & df$.lag == 1], 1)
+})

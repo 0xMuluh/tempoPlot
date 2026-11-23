@@ -47,9 +47,14 @@
 #'   \code{colData(x)} that groups subjects when \code{level = "group"}. If
 #'   \code{NULL}, all subjects form one group. (Default: \code{NULL})
 #'
+#' @param max.gap \code{Numeric scalar}. Breaks areas and streams where
+#'   consecutive times of a panel are further apart than this, in
+#'   \code{time.col} units. For visits, \code{NULL} breaks them at visits
+#'   without a sample; otherwise \code{NULL} never breaks them. A time
+#'   between two breaks draws no area; bars show it. (Default: \code{NULL})
+#'
 #' @param ... additional arguments passed to
-#'   \code{\link[ggplot2:geom_bar]{geom_col}},
-#'   \code{\link[ggplot2:geom_ribbon]{geom_area}} or
+#'   \code{\link[ggplot2:geom_bar]{geom_col}} or
 #'   \code{\link[ggplot2:geom_ribbon]{geom_ribbon}}.
 #'
 #' @return
@@ -99,7 +104,8 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     function(x, time.col, group = NULL, assay.type = "counts",
             features = NULL, top = 5, as.relative = TRUE,
             layout = c("bar", "area", "stream"),
-            level = c("subject", "group"), group.by = NULL, ...) {
+            level = c("subject", "group"), group.by = NULL, max.gap = NULL,
+            ...) {
         layout <- match.arg(layout)
         level <- match.arg(level)
         .check_longitudinal(x, time.col, group)
@@ -123,6 +129,9 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
                 ".feature")], mean)
             panel <- group.by
         }
+        if (layout != "bar") {
+            df <- .stack_composition(df, time.col, panel, layout, max.gap)
+        }
         ylab <- if (as.relative) "Relative abundance" else assay.type
         .plot_composition(df, time.col, panel, layout, ylab, ...)
     }
@@ -139,31 +148,43 @@ setMethod("plotComposition", signature = c(x = "SummarizedExperiment"),
     rowsum(mat, factor(lab, levels = c(keep, "Other")))
 }
 
-#' @importFrom ggplot2 ggplot aes .data geom_col geom_area geom_ribbon
-#'   facet_wrap vars labs scale_x_discrete theme element_blank
+# Stack the features at each time of a panel, the first on top as in
+# bars, from zero for areas or centred on zero for streams (columns .ymin,
+# .ymax), and number the gap segments of each panel (.segment) so that
+# areas do not bridge gaps.
 #' @importFrom stats ave
-.plot_composition <- function(df, time.col, panel, layout, ylab, ...) {
+.stack_composition <- function(df, time.col, panel, layout, max.gap) {
+    key <- if (is.null(panel)) as.character(df[[time.col]]) else
+        paste(df[[panel]], df[[time.col]], sep = "\r")
+    times <- df[!duplicated(key), c(time.col, panel), drop = FALSE]
+    times$.key <- key[!duplicated(key)]
+    times <- .break_gaps(.order_time(times, time.col, panel), time.col,
+        panel, max.gap)
+    df$.segment <- times$.segment[match(key, times$.key)]
+    # Summing up from the last feature puts the first on top.
+    up <- order(-as.integer(df$.feature))
+    df <- df[up, , drop = FALSE]
+    key <- key[up]
+    df$.ymax <- ave(df$.value, key, FUN = cumsum)
     if (layout == "stream") {
-        # Stack the features at each time, the first on top as in bars and
-        # areas, and centre the stack on zero. Only heights are meaningful,
-        # so the y axis is left unlabelled.
-        df <- df[order(df[[time.col]], -as.integer(df$.feature)), ,
-            drop = FALSE]
-        keys <- if (is.null(panel)) list(df[[time.col]]) else
-            list(df[[time.col]], df[[panel]])
-        top <- ave(df$.value, keys, FUN = cumsum)
-        total <- ave(df$.value, keys, FUN = sum)
-        df$.ymax <- top - total / 2
-        df$.ymin <- df$.ymax - df$.value
+        df$.ymax <- df$.ymax - ave(df$.value, key, FUN = sum) / 2
+    }
+    df$.ymin <- df$.ymax - df$.value
+    df
+}
+
+#' @importFrom ggplot2 ggplot aes .data geom_col geom_ribbon facet_wrap
+#'   vars labs scale_x_discrete theme element_blank
+.plot_composition <- function(df, time.col, panel, layout, ylab, ...) {
+    if (layout == "bar") {
+        p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
+                fill = .data$.feature)) +
+            geom_col(...)
+    } else {
         p <- ggplot(df, aes(x = .data[[time.col]], ymin = .data$.ymin,
                 ymax = .data$.ymax, fill = .data$.feature,
-                group = .data$.feature)) +
+                group = interaction(.data$.feature, .data$.segment))) +
             geom_ribbon(...)
-    } else {
-        geom <- switch(layout, bar = geom_col, area = geom_area)
-        p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.value,
-                fill = .data$.feature, group = .data$.feature)) +
-            geom(...)
     }
     p <- p + .scale_categorical("fill", grey = "Other") +
         labs(x = time.col, y = ylab, fill = "feature") +

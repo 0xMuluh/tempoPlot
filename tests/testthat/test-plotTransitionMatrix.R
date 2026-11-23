@@ -51,6 +51,12 @@ test_that("plotTransitionMatrix splits panels by facet.by", {
     expect_identical(cell(df[df$arm == "x", ], "A", "A"), 1L)
     expect_identical(cell(df[df$arm == "y", ], "A", "A"), 1L)
     expect_s3_class(p$facet, "FacetWrap")
+    # Each transition takes the arm of its later sample.
+    toy$arm[3L] <- "z"
+    df <- plotTransitionMatrix(toy, "state", "t", "id", as.relative = FALSE,
+        facet.by = "arm")$data
+    expect_identical(cell(df[df$arm == "z", ], "A", "B"), 1L)
+    expect_identical(cell(df[df$arm == "x", ], "A", "B"), 0L)
 })
 
 test_that("plotTransitionMatrix keeps factor levels", {

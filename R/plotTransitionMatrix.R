@@ -26,7 +26,7 @@
 #'
 #' @param facet.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that splits the transitions into panels. Each
-#'   transition takes the value of its earlier sample.
+#'   transition takes the value of its later sample.
 #'   (Default: \code{NULL})
 #'
 #' @param max.gap \code{Numeric scalar}. Skips the transitions between
@@ -96,15 +96,14 @@ setMethod("plotTransitionMatrix", signature = c(x = "SummarizedExperiment"),
 .count_transitions <- function(df, state.col, group, facet.by,
         as.relative) {
     state <- df[[state.col]]
-    lv <- if (is.factor(state)) levels(state) else sort(unique(
-        as.character(state[!is.na(state)])))
+    lv <- if (is.factor(state)) levels(state) else .levels_of(state)
     i <- .next_in_subject(df[[group]], segment = df$.segment)
     i <- i[!is.na(state[i]) & !is.na(state[i + 1L])]
     if (length(i) == 0L) {
         stop("No subject has two consecutive samples with a state.",
             call. = FALSE)
     }
-    by <- if (is.null(facet.by)) "" else as.character(df[[facet.by]][i])
+    by <- if (is.null(facet.by)) "" else as.character(df[[facet.by]][i + 1L])
     tr <- data.frame(
         from = factor(as.character(state[i]), levels = lv),
         to = factor(as.character(state[i + 1L]), levels = lv),

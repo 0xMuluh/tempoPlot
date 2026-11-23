@@ -20,6 +20,7 @@ plotComposition(x, ...)
   layout = c("bar", "area", "stream"),
   level = c("subject", "group"),
   group.by = NULL,
+  max.gap = NULL,
   ...
 )
 
@@ -30,8 +31,7 @@ plotComposition(x, ...)
 object.}
 
 \item{...}{additional arguments passed to
-\code{\link[ggplot2:geom_bar]{geom_col}},
-\code{\link[ggplot2:geom_ribbon]{geom_area}} or
+\code{\link[ggplot2:geom_bar]{geom_col}} or
 \code{\link[ggplot2:geom_ribbon]{geom_ribbon}}.}
 
 \item{time.col}{\code{Character scalar}. Specifies the column from
@@ -73,6 +73,12 @@ group at each time (\code{"group"}). (Default: \code{"subject"})}
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that groups subjects when \code{level = "group"}. If
 \code{NULL}, all subjects form one group. (Default: \code{NULL})}
+
+\item{max.gap}{\code{Numeric scalar}. Breaks areas and streams where
+consecutive times of a panel are further apart than this, in
+\code{time.col} units. For visits, \code{NULL} breaks them at visits
+without a sample; otherwise \code{NULL} never breaks them. A time
+between two breaks draws no area; bars show it. (Default: \code{NULL})}
 
 \item{experiment}{\code{Character scalar} or \code{integer scalar}. For a
 \code{MultiAssayExperiment}, the experiment to plot; its samples get

@@ -28,7 +28,7 @@
 #'
 #' @param facet.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that splits the moves into panels. Each move takes
-#'   the value of its earlier sample. (Default: \code{NULL})
+#'   the value of its later sample. (Default: \code{NULL})
 #'
 #' @param max.gap \code{Numeric scalar}. Consecutive samples of a subject
 #'   further apart than this, in \code{time.col} units, are not a move.
@@ -85,7 +85,7 @@ setMethod("plotDirection", signature = c(x = "SummarizedExperiment"),
             .angle = (atan2(dy, dx) * 180 / pi) %% 360,
             .length = sqrt(dx^2 + dy^2))
         if (!is.null(facet.by)) {
-            moves[[facet.by]] <- df[[facet.by]][i]
+            moves[[facet.by]] <- df[[facet.by]][i + 1L]
         }
         moves <- moves[moves$.length > 0, , drop = FALSE]
         if (nrow(moves) == 0L) {
