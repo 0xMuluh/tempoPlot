@@ -184,6 +184,13 @@ tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
 plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
     group.by = "sex", layout = "box")
 
+# Divergence from each subject's previous sample, computed by miaTime
+tse <- miaTime::addStepwiseDivergence(tse, group = "subject",
+    time.col = "time", assay.type = "counts",
+    name = c("stepwise", "step_time", "step_ref"))
+plotTrend(tse, y = "stepwise", time.col = "visit", group = "subject",
+    group.by = "sex", layout = "box")
+
 # Change in diversity from the first visit, mean by sex
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", baseline = "difference", smooth = "mean")

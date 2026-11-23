@@ -14,8 +14,9 @@
 #'   and hours for \code{POSIXct} times.
 #'
 #' @param group \code{Character scalar}. Specifies the column from
-#'   \code{colData(x)} that identifies subjects. If \code{NULL}, all samples
-#'   form one series. (Default: \code{NULL})
+#'   \code{colData(x)}, or of a \code{data.frame} \code{x}, that identifies
+#'   subjects. If \code{NULL}, all samples, or all rows, form one series.
+#'   (Default: \code{NULL})
 #'
 #' @param assay.type \code{Character scalar}. Specifies the assay to plot.
 #'   (Default: \code{"counts"})
@@ -113,6 +114,14 @@
 #' res$q <- p.adjust(res$p, method = "fdr")
 #' plotTiles(res, time.col = "visit", effect = "difference", p.col = "q",
 #'     top = 15)
+#'
+#' # Rate of change of each species in each bioreactor, from miaTime
+#' tse <- mia::transformAssay(minimalgut, method = "relabundance")
+#' change <- miaTime::getShortTermChange(tse, assay.type = "relabundance",
+#'     time.col = "Time.hr", group = "StudyIdentifier")
+#' plotTiles(as.data.frame(change), time.col = "Time.hr",
+#'     effect = "rate_of_change", feature.col = "FeatureID",
+#'     group = "StudyIdentifier", top = 8)
 NULL
 
 #' @rdname plotTiles
@@ -147,9 +156,10 @@ setMethod("plotTiles", signature = c(x = "SummarizedExperiment"),
 setMethod("plotTiles", signature = c(x = "data.frame"),
     function(x, time.col, effect, p.col = NULL, threshold = 0.05,
             features = NULL, top = 20, order.by = c("mean", "cluster"),
-            feature.col = "feature", max.gap = NULL, ...) {
+            feature.col = "feature", group = NULL, max.gap = NULL, ...) {
         order.by <- match.arg(order.by)
-        .check_effects(x, time.col, effect, p.col, threshold, feature.col)
+        .check_effects(x, time.col, effect, p.col, threshold, feature.col,
+            group)
         time <- x[[time.col]]
         if (is.factor(time)) {
             time <- droplevels(time)
@@ -160,20 +170,21 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
         mat <- matrix(size, dimnames = list(names(size), NULL))
         features <- .select_features(mat, features, top)
         df <- data.frame(.feature = as.character(x[[feature.col]]),
-            .panel = "", .time = .time_numeric(time),
+            .panel = if (is.null(group)) "" else as.character(x[[group]]),
+            .time = .time_numeric(time),
             .value = x[[effect]])
         if (!is.null(p.col)) {
             df$.significant <- !is.na(x[[p.col]]) & x[[p.col]] < threshold
         }
         df <- df[df$.feature %in% features, , drop = FALSE]
-        if (anyDuplicated(df[c(".feature", ".time")])) {
-            stop("'x' must have one row per feature and time point.",
-                call. = FALSE)
+        if (anyDuplicated(df[c(".panel", ".feature", ".time")])) {
+            stop("'x' must have one row per feature and time point",
+                if (!is.null(group)) " of each subject", ".", call. = FALSE)
         }
         df$.feature <- factor(df$.feature,
             levels = .order_features(df, order.by))
         df <- .add_tile_edges(df, time, max.gap)
-        p <- .plot_tiles(df, time.col, effect, "effect", "subject", NULL,
+        p <- .plot_tiles(df, time.col, effect, "effect", "subject", group,
             levels(time), ...)
         if (!is.null(p.col)) {
             p <- p + geom_point(aes(x = .data$.mid, y = .data$.feature),
@@ -188,10 +199,10 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
 # Check the columns, times and threshold of a results table x for
 # plotTiles().
 .check_effects <- function(x, time.col, effect, p.col, threshold,
-        feature.col) {
-    for (arg in c("time.col", "effect", "p.col", "feature.col")) {
+        feature.col, group = NULL) {
+    for (arg in c("time.col", "effect", "p.col", "feature.col", "group")) {
         v <- get(arg)
-        if (arg == "p.col" && is.null(v)) next
+        if (arg %in% c("p.col", "group") && is.null(v)) next
         if (!.is_one_name(v) || !v %in% names(x)) {
             stop("'", arg, "' must be one column name of 'x'.",
                 call. = FALSE)

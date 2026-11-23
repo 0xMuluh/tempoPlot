@@ -63,6 +63,16 @@
 #' data("SilvermanAGutData", package = "miaTime")
 #' plotFeatureScatter(SilvermanAGutData, x.stat = "mean",
 #'     y.stat = "occupancy", fit = "neutral", group.by = "Vessel")
+#'
+#' # Stability against bimodality of each species in one bioreactor, both
+#' # computed by miaTime
+#' data("minimalgut", package = "miaTime")
+#' tse <- minimalgut[, minimalgut$StudyIdentifier == "Bioreactor A"]
+#' tse <- mia::transformAssay(tse, method = "clr", pseudocount = 1)
+#' tse <- miaTime::addStability(tse, time.col = "Time.hr",
+#'     assay.type = "clr")
+#' tse <- miaTime::addBimodality(tse, assay.type = "clr")
+#' plotFeatureScatter(tse, x.stat = "stability", y.stat = "bimodality")
 NULL
 
 #' @rdname plotFeatureScatter
