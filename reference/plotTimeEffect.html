@@ -47,7 +47,7 @@ curve."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/math
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot an effect over time</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/new-individuality-effect/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-individuality-effect/R/plotTimeEffect.R" class="external-link"><code>R/plotTimeEffect.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-individuality-effect/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/new-trend-twopart/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-trend-twopart/R/plotTimeEffect.R" class="external-link"><code>R/plotTimeEffect.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/new-trend-twopart/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotTimeEffect.Rd</code></div>
     </div>
 
@@ -65,16 +65,7 @@ curve.</p>
 <span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">x</span>, <span class="va">name</span>, <span class="va">time.col</span>, group.by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'data.frame'</span></span>
-<span><span class="fu">plotTimeEffect</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">time.col</span>,</span>
-<span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  null <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  p.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  size.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">x</span>, <span class="va">time.col</span>, group.by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
 <span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
@@ -113,31 +104,6 @@ results that splits the estimates into curves, such as the contrast or
 the feature. (Default: <code>NULL</code>)</p></dd>
 
 
-<dt id="arg-null">null<a class="anchor" aria-label="anchor" href="#arg-null"></a></dt>
-<dd><p><code>data.frame</code>. Effects estimated under the null
-hypothesis, such as after permuting the group labels, with the
-columns <code>permutation</code>, <code>time.col</code> and <code>estimate</code>, and
-optionally <code>group.by</code>. Each permutation is drawn as a thin
-translucent line behind the observed effect. (Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-p-col">p.col<a class="anchor" aria-label="anchor" href="#arg-p-col"></a></dt>
-<dd><p><code>Character scalar</code>. Specifies the column of p-values
-to draw on a log scale instead of the effect, with a dashed line at
-<code>threshold</code>. (Default: <code>NULL</code>)</p></dd>
-
-
-<dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
-<dd><p><code>Numeric scalar</code>. Significance level for
-<code>p.col</code>. (Default: <code>0.05</code>)</p></dd>
-
-
-<dt id="arg-size-by">size.by<a class="anchor" aria-label="anchor" href="#arg-size-by"></a></dt>
-<dd><p><code>Character scalar</code>. Specifies the column that sets
-the size of a point at each time, such as the number of subjects.
-(Default: <code>NULL</code>)</p></dd>
-
-
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
 <dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
 <code>MultiAssayExperiment</code>, the experiment to plot; its samples get
@@ -153,9 +119,6 @@ the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
     <p>The y axis shows the effect, not the value of a variable; to draw fitted
 values over the data, use the <code>fit</code> argument of
 <code><a href="plotTrend.html">plotTrend</a></code>.</p>
-<p>The <code>null</code> curves and the p-value curve with points sized by the
-number of subjects follow the plots of SplinectomeR (Shields-Cutler et
-al. 2018, doi:10.3389/fmicb.2018.00785, Fig. 2).</p>
     </div>
 
     <div id="ref-examples">
@@ -167,38 +130,20 @@ al. 2018, doi:10.3389/fmicb.2018.00785, Fig. 2).</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Difference in diversity between men and women at each visit, from a</span></span></span>
 <span class="r-in"><span><span class="co"># linear model per visit; each subject has one sample per visit</span></span></span>
-<span class="r-in"><span><span class="va">sex_effect</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cd</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">cd</span>, <span class="va">cd</span><span class="op">$</span><span class="va">visit</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>        <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">diversity</span> <span class="op">~</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">d</span><span class="op">)</span></span></span>
-<span class="r-in"><span>        <span class="va">ci</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">[</span><span class="st">"sexmale"</span>, <span class="op">]</span></span></span>
-<span class="r-in"><span>        <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="va">d</span><span class="op">$</span><span class="va">visit</span><span class="op">[</span><span class="fl">1L</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>            estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">[[</span><span class="st">"sexmale"</span><span class="op">]</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>            lower <span class="op">=</span> <span class="va">ci</span><span class="op">[[</span><span class="fl">1L</span><span class="op">]</span><span class="op">]</span>, upper <span class="op">=</span> <span class="va">ci</span><span class="op">[[</span><span class="fl">2L</span><span class="op">]</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>            p <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="st">"sexmale"</span>, <span class="fl">4L</span><span class="op">]</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span>    <span class="op">}</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span><span class="va">cd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">effect</span> <span class="op">&lt;-</span> <span class="fu">sex_effect</span><span class="op">(</span><span class="va">cd</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">effect</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">cd</span>, <span class="va">cd</span><span class="op">$</span><span class="va">visit</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>    <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">diversity</span> <span class="op">~</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">d</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="va">ci</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">[</span><span class="st">"sexmale"</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="va">d</span><span class="op">$</span><span class="va">visit</span><span class="op">[</span><span class="fl">1L</span><span class="op">]</span>, estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">[[</span><span class="st">"sexmale"</span><span class="op">]</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>        lower <span class="op">=</span> <span class="va">ci</span><span class="op">[[</span><span class="fl">1L</span><span class="op">]</span><span class="op">]</span>, upper <span class="op">=</span> <span class="va">ci</span><span class="op">[[</span><span class="fl">2L</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">effect</span>, time.col <span class="op">=</span> <span class="st">"visit"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTimeEffect-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Against the effects after permuting sex within each visit 50 times</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">null</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">50L</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="va">cd</span><span class="op">$</span><span class="va">sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/ave.html" class="external-link">ave</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">cd</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span>, <span class="va">cd</span><span class="op">$</span><span class="va">visit</span>, FUN <span class="op">=</span> <span class="va">sample</span><span class="op">)</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>permutation <span class="op">=</span> <span class="va">i</span>, <span class="fu">sex_effect</span><span class="op">(</span><span class="va">cd</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">effect</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, null <span class="op">=</span> <span class="va">null</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTimeEffect-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># p-values, with points sized by the number of subjects</span></span></span>
-<span class="r-in"><span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">effect</span>, time.col <span class="op">=</span> <span class="st">"visit"</span>, p.col <span class="op">=</span> <span class="st">"p"</span>, size.by <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTimeEffect-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The same results stored in metadata(tse)</span></span></span>
 <span class="r-in"><span><span class="fu">S4Vectors</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/S4Vectors/man/Annotated-class.html" class="external-link">metadata</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">$</span><span class="va">sex_effect</span> <span class="op">&lt;-</span> <span class="va">effect</span></span></span>
 <span class="r-in"><span><span class="fu">plotTimeEffect</span><span class="op">(</span><span class="va">tse</span>, name <span class="op">=</span> <span class="st">"sex_effect"</span>, time.col <span class="op">=</span> <span class="st">"visit"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTimeEffect-4.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTimeEffect-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
