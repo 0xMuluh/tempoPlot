@@ -80,6 +80,14 @@ plotFeatureScatter(tse, x.stat = "mean", y.stat = "variance",
 data("SilvermanAGutData", package = "miaTime")
 plotFeatureScatter(SilvermanAGutData, x.stat = "mean",
     y.stat = "occupancy", fit = "neutral", group.by = "Vessel")
+
+# Stability against bimodality of each genus over all subjects, both
+# computed by miaTime
+tse <- mia::transformAssay(hitchip1006, method = "clr", pseudocount = 1)
+tse <- miaTime::addStability(tse, time.col = "time", group = "subject",
+    assay.type = "clr")
+tse <- miaTime::addBimodality(tse, assay.type = "clr")
+plotFeatureScatter(tse, x.stat = "stability", y.stat = "bimodality")
 }
 \references{
 Taylor LR (1961). Aggregation, variance and the mean. \emph{Nature}

@@ -161,3 +161,17 @@ test_that("plotTiles fills changes blue below zero, red above, NA grey", {
     expect_identical(ld$fill[which.max(p$data$.value)], "#FDE725")
     expect_identical(p$theme$legend.position, "bottom")
 })
+
+test_that("plotTiles draws one panel per subject of a results table", {
+    res <- data.frame(feature = rep(c("a", "b"), each = 4),
+        id = rep(rep(c("s1", "s2"), each = 2), 2), t = rep(c(1, 2), 4),
+        lfc = 1:8)
+    p <- plotTiles(res, "t", effect = "lfc", group = "id")
+    expect_setequal(p$data$.panel, c("s1", "s2"))
+    expect_s3_class(p$facet, "FacetWrap")
+    d <- p$data[p$data$.panel == "s2" & p$data$.feature == "b", ]
+    expect_equal(d$.value[order(d$.time)], 7:8)
+    expect_error(plotTiles(res, "t", effect = "lfc"), "one row per")
+    expect_error(plotTiles(res, "t", effect = "lfc", group = "none"),
+        "'group'")
+})

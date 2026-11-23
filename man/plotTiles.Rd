@@ -35,6 +35,7 @@ plotTiles(x, ...)
   top = 20,
   order.by = c("mean", "cluster"),
   feature.col = "feature",
+  group = NULL,
   max.gap = NULL,
   ...
 )
@@ -56,8 +57,9 @@ Time differences, as in \code{max.gap}, are in days for \code{Date}
 and hours for \code{POSIXct} times.}
 
 \item{group}{\code{Character scalar}. Specifies the column from
-\code{colData(x)} that identifies subjects. If \code{NULL}, all samples
-form one series. (Default: \code{NULL})}
+\code{colData(x)}, or of a \code{data.frame} \code{x}, that identifies
+subjects. If \code{NULL}, all samples, or all rows, form one series.
+(Default: \code{NULL})}
 
 \item{assay.type}{\code{Character scalar}. Specifies the assay to plot.
 (Default: \code{"counts"})}
@@ -158,4 +160,12 @@ res <- do.call(rbind, lapply(1:3, function(v) {
 res$q <- p.adjust(res$p, method = "fdr")
 plotTiles(res, time.col = "visit", effect = "difference", p.col = "q",
     top = 15)
+
+# Rate of change of each species in each bioreactor, from miaTime
+tse <- mia::transformAssay(minimalgut, method = "relabundance")
+change <- miaTime::getShortTermChange(tse, assay.type = "relabundance",
+    time.col = "Time.hr", group = "StudyIdentifier")
+plotTiles(as.data.frame(change), time.col = "Time.hr",
+    effect = "rate_of_change", feature.col = "FeatureID",
+    group = "StudyIdentifier", top = 8)
 }

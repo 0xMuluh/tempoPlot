@@ -1,3 +1,9 @@
+Changes in version 0.99.66 (2026-11-23)
++ plotTiles draws a results table per subject (group), such as
+  miaTime::getShortTermChange() rates
++ Examples for miaTime stepwise divergence (plotTrend) and stability
+  (plotFeatureScatter)
+
 Changes in version 0.99.65 (2026-11-23)
 + plotTrend event labels in the right half end at their band, so they
   stay inside the plot

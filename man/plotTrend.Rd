@@ -209,6 +209,13 @@ tse <- minimalgut
 plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier")
 
+# Dissimilarity of each sample to the previous one of its bioreactor,
+# computed by miaTime
+tse <- miaTime::addStepwiseDivergence(tse, group = "StudyIdentifier",
+    time.col = "Time_hr_num", assay.type = "counts")
+plotTrend(tse, y = "divergence", time.col = "Time_hr_num",
+    group = "StudyIdentifier", group.by = "StudyIdentifier")
+
 # Fitted acetate of each bioreactor from a cubic time trend per reactor
 cd <- as.data.frame(SummarizedExperiment::colData(tse))
 model <- lm(Acetate ~ poly(Time_hr_num, 3) * StudyIdentifier, data = cd)
