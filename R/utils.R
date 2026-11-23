@@ -338,15 +338,13 @@
     if (nrow(ev) == 0L) {
         return(list())
     }
-    # Visits are drawn at their level codes.
-    pos <- function(v) if (is.factor(v)) as.integer(v) else v
-    ev$.start <- pos(ev$start)
+    ev$.start <- .x_position(ev$start)
     labelled <- "label" %in% names(ev)
     legend <- labelled && !text
     # Fixed grey styles replace the label mapping without a legend.
     fixed <- function(...) if (!legend) list(...)
     if (what == "bands") {
-        ev$.end <- pos(ev$end)
+        ev$.end <- .x_position(ev$end)
         ev$.ymin <- if (rows) ev$.y - 0.4 else -Inf
         ev$.ymax <- if (rows) ev$.y + 0.4 else Inf
         layer <- do.call(geom_rect, c(list(aes(xmin = .data$.start,
@@ -365,19 +363,29 @@
             colour = "grey30"), fixed(linetype = "dashed")))
     }
     aesthetic <- if (what == "markers" && !rows) "linetype" else "fill"
-    if (text && labelled) {
-        right <- ev$.start > mean(range(c(pos(x), ev$.start), na.rm = TRUE))
-        ev$.x <- ev$.start
-        if (what == "bands") {
-            ev$.x[right] <- ev$.end[right]
-        }
-        ev$.hjust <- ifelse(right, 1.05, -0.05)
-    }
     list(layer,
         if (legend) do.call(labs, setNames(list("event"), aesthetic)),
-        if (text && labelled) geom_text(aes(x = .data$.x, y = Inf,
-            label = .data$label, hjust = .data$.hjust), data = ev,
-            inherit.aes = FALSE, vjust = 1.5, size = 3, colour = "grey30"))
+        if (text && labelled) .event_labels(ev, what, x))
+}
+
+# Visits are drawn at their level codes.
+.x_position <- function(v) if (is.factor(v)) as.integer(v) else v
+
+# Labels of the events ev at the top of the plot: those in the right half
+# of the times x end at their event (bands: at its end), so that they stay
+# inside the plot.
+#' @importFrom ggplot2 aes .data geom_text
+.event_labels <- function(ev, what, x) {
+    right <- ev$.start >
+        mean(range(c(.x_position(x), ev$.start), na.rm = TRUE))
+    ev$.x <- ev$.start
+    if (what == "bands") {
+        ev$.x[right] <- ev$.end[right]
+    }
+    ev$.hjust <- ifelse(right, 1.05, -0.05)
+    geom_text(aes(x = .data$.x, y = Inf, label = .data$label,
+        hjust = .data$.hjust), data = ev, inherit.aes = FALSE, vjust = 1.5,
+        size = 3, colour = "grey30")
 }
 
 # Sample-by-sample dissimilarity matrix stored by mia::addDissimilarity()
@@ -560,7 +568,7 @@
     j <- if (is.character(ncomponents)) match(ncomponents, colnames(m)) else
         if (is.numeric(ncomponents)) match(ncomponents, seq_len(ncol(m)))
     if (length(j) == 0L || anyNA(j) || (!is.null(n) && length(j) != n)) {
-        stop("'ncomponents' must select ", if (!is.null(n)) paste0(n, " "),
+        stop("'ncomponents' must select ", if (!is.null(n)) c(n, " "),
             "components out of ", ncol(m), ".", call. = FALSE)
     }
     j

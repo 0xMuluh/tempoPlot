@@ -12,6 +12,7 @@ Plots longitudinal microbiome data stored in (Tree)SummarizedExperiment and Mult
 Useful links:
 \itemize{
   \item \url{https://github.com/0xMuluh/tempoPlot}
+  \item \url{https://0xmuluh.github.io/tempoPlot/}
   \item Report bugs at \url{https://github.com/0xMuluh/tempoPlot/issues}
 }
 
