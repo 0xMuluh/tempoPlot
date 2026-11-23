@@ -76,6 +76,14 @@
 #' @param window \code{Integer scalar}. Number of samples in the rolling
 #'   window. (Default: \code{5})
 #'
+#' @param detection \code{Numeric scalar}. Splits \code{y} into two panels,
+#'   as in two-part models of zero-inflated data: its presence, a value
+#'   above \code{detection}, as 1 or 0 (\code{"Prevalence"}), and its values
+#'   in the samples where it is present (\code{"When present"}). Subject
+#'   lines of the values break at absences, and \code{smooth = "mean"} gives
+#'   the prevalence at each time. Not combined with \code{baseline},
+#'   \code{rolling}, \code{fit} or boxes and violins. (Default: \code{NULL})
+#'
 #' @param period \code{Numeric scalar}. Wraps time into cycles of this
 #'   length, in \code{time.col} units, to show daily or seasonal patterns;
 #'   each cycle is drawn as its own line. Cycles start at time 0, which for
@@ -90,15 +98,19 @@
 #'   such as antibiotic courses, or the time intervals where groups differ,
 #'   as estimated by MetaLonDA or SplinectomeR. Rows with an \code{end} are
 #'   drawn as grey bands with their label at the top, the others as
-#'   vertical lines. Events apply to all subjects; for an event time per
-#'   subject, use \code{align.to}. (Default: \code{NULL})
+#'   vertical lines. Events apply to all subjects, unless they have the
+#'   \code{group} column and \code{facet.by} is \code{group}: then each
+#'   event is drawn in the panel of its subject. To draw time relative to an
+#'   event of each subject, use \code{align.to}. (Default: \code{NULL})
 #'
 #' @param align.to \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} with the time of an event for each subject, such as
 #'   the start of a treatment, in the units of \code{time.col}. Time is then
-#'   drawn relative to the event, marked by a dashed line at 0. The column
-#'   must not contain NA values, so remove subjects without the event
-#'   first. Not available for visits. (Default: \code{NULL})
+#'   drawn relative to the event, marked by a dashed line at 0, and
+#'   \code{smooth}, \code{band} and \code{fit} are drawn separately before
+#'   the event and from time 0 on. The column must not contain NA values, so
+#'   remove subjects without the event first. Not available for visits.
+#'   (Default: \code{NULL})
 #'
 #' @param group.by \code{Character scalar}. Specifies the column from
 #'   \code{colData(x)} that colours subjects, smooth curves and fits and
@@ -126,6 +138,14 @@
 #' The plot data hold all columns of \code{colData(x)}, so further layers
 #' can use them.
 #'
+#' Fits that stop at an aligned event follow DiGiulio et al. (2015,
+#' doi:10.1073/pnas.1502875112, Fig. 5). The prevalence and non-zero panels
+#' of \code{detection} follow MaAsLin 3 (Nickols et al. 2026,
+#' doi:10.1038/s41592-025-02923-9, Fig. 1b). Cycles of varying length, such
+#' as menstrual cycles, are compared by rescaling each cycle to a common
+#' length in a time column, then wrapping it with \code{period} (Gajer et
+#' al. 2012, doi:10.1126/scitranslmed.3003605).
+#'
 #' @return
 #' A \code{ggplot} object.
 #'
@@ -136,6 +156,16 @@
 #' Dakos V, et al. (2012). Methods for detecting early warnings of critical
 #' transitions in time series illustrated using simulated ecological data.
 #' \emph{PLoS One} 7(7):e41010.
+#'
+#' DiGiulio DB, et al. (2015). Temporal and spatial variation of the human
+#' microbiota during pregnancy. \emph{PNAS} 112(35):11060-11065.
+#'
+#' Gajer P, et al. (2012). Temporal dynamics of the human vaginal
+#' microbiota. \emph{Sci Transl Med} 4(132):132ra52.
+#'
+#' Nickols WA, et al. (2026). MaAsLin 3: refining and extending generalized
+#' multivariable linear models for meta-omic association discovery.
+#' \emph{Nat Methods} 23(3):554-564.
 #'
 #' Subramanian S, et al. (2014). Persistent gut microbiota immaturity in
 #' malnourished Bangladeshi children. \emph{Nature} 510(7505):417-421.
@@ -201,14 +231,21 @@
 #'     fit = "fitted")
 #'
 #' # Hours since Blautia hydrogenotrophica was added at 152 h, against the
-#' # range of acetate before it was added
+#' # range of acetate before it was added, with loess curves fitted
+#' # separately before and after
 #' tse$added <- 152
 #' before <- range(tse$Acetate[tse$Time_hr_num < 152])
 #' plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
 #'     group = "StudyIdentifier", group.by = "StudyIdentifier",
-#'     align.to = "added") +
+#'     align.to = "added", smooth = "loess") +
 #'     ggplot2::annotate("rect", xmin = -Inf, xmax = Inf,
 #'         ymin = before[1L], ymax = before[2L], alpha = 0.2)
+#'
+#' # Share of bioreactors where Blautia was detected, and its counts when
+#' # detected
+#' plotTrend(tse, y = "Blautia_hydrogenotrophica", time.col = "Time_hr_num",
+#'     group = "StudyIdentifier", align.to = "added", detection = 0,
+#'     smooth = "mean")
 #'
 #' # Acetate over the day, one line per day and bioreactor
 #' plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
@@ -238,7 +275,8 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             fit = NULL,
             baseline = c("none", "difference", "fold", "log2fold"),
             rolling = c("none", "mean", "variance", "acf1", "slope"),
-            window = 5, period = NULL, events = NULL, align.to = NULL,
+            window = 5, detection = NULL, period = NULL, events = NULL,
+            align.to = NULL,
             group.by = NULL, facet.by = NULL, max.gap = NULL, ...) {
         layout <- match.arg(layout)
         smooth <- match.arg(smooth)
@@ -249,10 +287,14 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         .check_column(x, facet.by)
         x <- .align_time(x, time.col, group, align.to)
         events <- .check_events(events, x, time.col)
-        .check_trend_args(x, time.col, group, type, show.individuals, band,
-            fit, baseline, rolling, window, period, events)
+        .check_trend_args(x, time.col, group, type, layout,
+            show.individuals, band, fit, baseline, rolling, window,
+            detection, period, events, facet.by)
         df <- .trend_data(x, y, time.col, group, assay.type, baseline,
             rolling, window, period, max.gap)
+        if (!is.null(detection)) {
+            df <- .two_part(df, detection)
+        }
 
         ylab <- switch(baseline, none = y,
             difference = paste("Change in", y),
@@ -274,8 +316,9 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 # Errors on the arguments of plotTrend that its helpers do not check, and
 # on the combinations it cannot draw.
 #' @importFrom SummarizedExperiment colData
-.check_trend_args <- function(x, time.col, group, type, show.individuals,
-        band, fit, baseline, rolling, window, period, events) {
+.check_trend_args <- function(x, time.col, group, type, layout,
+        show.individuals, band, fit, baseline, rolling, window, detection,
+        period, events, facet.by) {
     .check_flag(show.individuals)
     if (!is.null(band) && !(is.numeric(band) && length(band) == 2L &&
             all(band >= 0 & band <= 1) && band[1L] < band[2L])) {
@@ -294,15 +337,21 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
             call. = FALSE)
     }
     .check_number(window, 2)
+    .check_number(detection, null = TRUE)
+    if (!is.null(detection) && (layout != "line" || baseline != "none" ||
+            rolling != "none" || !is.null(fit))) {
+        stop("'detection' needs layout = \"line\", without 'baseline', ",
+            "'rolling' or 'fit'.", call. = FALSE)
+    }
     .check_number(period, 0, open = TRUE, null = TRUE)
     if (!is.null(period) && (type == "visit" || !is.null(events) ||
             is.data.frame(fit))) {
         stop("'period' needs numeric, Date or POSIXct times, without ",
             "'events' or a 'fit' table.", call. = FALSE)
     }
-    if (any(group %in% names(events))) {
-        stop("'events' apply to all subjects; use 'align.to' for an ",
-            "event time per subject.", call. = FALSE)
+    if (any(group %in% names(events)) && !identical(facet.by, group)) {
+        stop("'events' of single subjects need facet.by = group; use ",
+            "'align.to' for an event time per subject.", call. = FALSE)
     }
 }
 
@@ -378,11 +427,29 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     df
 }
 
+# df twice, in the panels .part: presence of .y above detection as 1 or 0,
+# and .y of the samples where it is present, with lines broken at absences.
+.two_part <- function(df, detection) {
+    presence <- df
+    presence$.y <- as.numeric(df$.y > detection)
+    presence$.part <- "Prevalence"
+    present <- presence$.y %in% 1
+    df$.line <- interaction(df$.line, cumsum(!present), drop = TRUE)
+    df$.part <- "When present"
+    df <- rbind(presence, df[present, , drop = FALSE])
+    df$.part <- factor(df$.part, c("Prevalence", "When present"))
+    df
+}
+
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_point geom_boxplot
-#'   geom_violin geom_vline facet_wrap vars labs scale_x_discrete
+#'   geom_violin geom_vline facet_wrap facet_grid vars labs
+#'   scale_x_discrete
 .plot_trend <- function(df, time.col, layout, show.individuals, smooth,
         band, fit, group.by, facet.by, events, aligned, ...) {
+    # After align.to, summaries and fits stop at the event: one curve
+    # before it and one from time 0 on.
+    df$.side <- if (aligned) df[[time.col]] >= 0 else TRUE
     # group.by sets the fill of boxes, violins and bands too.
     p <- ggplot(df, aes(x = .data[[time.col]], y = .data$.y,
             colour = if (!is.null(group.by)) .data[[group.by]],
@@ -411,12 +478,17 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
     }
     p + list(.trend_summaries(df, time.col, smooth, band, group.by),
         if (is.character(fit)) geom_line(aes(y = .data[[fit]],
-            group = .data$.line), linetype = "dashed", linewidth = 1),
-        if (is.data.frame(fit)) .fit_layers(fit, time.col, group.by),
+            group = interaction(.data$.line, .data$.side)),
+            linetype = "dashed", linewidth = 1),
+        if (is.data.frame(fit)) .fit_layers(fit, time.col, group.by,
+            split = aligned),
         .events_layer(events, "markers"),
         if (aligned) geom_vline(xintercept = 0, linetype = "dashed",
             colour = "grey40"),
-        if (!is.null(facet.by)) facet_wrap(vars(.data[[facet.by]])),
+        if (!is.null(df$.part)) facet_grid(rows = vars(.data$.part),
+            cols = if (!is.null(facet.by)) vars(.data[[facet.by]]),
+            scales = "free_y") else if (!is.null(facet.by))
+            facet_wrap(vars(.data[[facet.by]])),
         if (is.factor(df[[time.col]])) scale_x_discrete(drop = FALSE),
         labs(colour = group.by, fill = group.by),
         .scale_by(df, group.by, c("colour", "fill")),
@@ -429,12 +501,14 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 #' @importFrom stats median quantile
 .trend_summaries <- function(df, time.col, smooth, band, group.by) {
     if ((smooth %in% c("mean", "median") || !is.null(band)) &&
-            !is.factor(df[[time.col]]) && median(table(df[[time.col]])) < 2) {
+            !is.factor(df[[time.col]]) &&
+            median(table(paste(df[[time.col]], df$.part))) < 2) {
         warning("Most times have a single sample, so 'smooth' and 'band' ",
             "summarise single samples; use smooth = \"loess\" or a factor ",
             "of visits.", call. = FALSE)
     }
-    by <- aes(group = if (is.null(group.by)) 1L else .data[[group.by]])
+    by <- aes(group = interaction(if (is.null(group.by)) 1L else
+        .data[[group.by]], .data$.side))
     list(if (!is.null(band)) stat_summary(by,
             fun.min = function(v) quantile(v, band[1L], names = FALSE),
             fun.max = function(v) quantile(v, band[2L], names = FALSE),
@@ -447,13 +521,16 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
 }
 
 # Line and interval of a results table, one per group.by group if the
-# table has that column. ... goes to the line. Shared with plotTimeEffect.
+# table has that column, split at time 0 with split. ... goes to the line.
+# Shared with plotTimeEffect.
 #' @importFrom utils modifyList
 #' @importFrom ggplot2 aes .data geom_line geom_ribbon labs
-.fit_layers <- function(fit, time.col, group.by, ...) {
+.fit_layers <- function(fit, time.col, group.by, split = FALSE, ...) {
     by <- if (!is.null(group.by) && group.by %in% names(fit)) group.by
+    fit$.curve <- interaction(if (is.null(by)) 1L else fit[[by]],
+        if (split) fit[[time.col]] >= 0 else TRUE)
     line <- do.call(geom_line, c(list(aes(x = .data[[time.col]],
-            y = .data$estimate, group = if (is.null(by)) 1L else .data[[by]],
+            y = .data$estimate, group = .data$.curve,
             colour = if (!is.null(by)) .data[[by]]),
         data = fit, inherit.aes = FALSE),
         modifyList(list(linewidth = 1), list(...))))
@@ -461,7 +538,7 @@ setMethod("plotTrend", signature = c(x = "SummarizedExperiment"),
         return(list(line))
     }
     list(geom_ribbon(aes(x = .data[[time.col]], ymin = .data$lower,
-            ymax = .data$upper, group = if (is.null(by)) 1L else .data[[by]],
+            ymax = .data$upper, group = .data$.curve,
             fill = if (!is.null(by)) .data[[by]]),
         data = fit, inherit.aes = FALSE, alpha = 0.2), line, labs(fill = by))
 }

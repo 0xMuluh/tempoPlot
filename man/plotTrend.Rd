@@ -22,6 +22,7 @@ plotTrend(x, ...)
   baseline = c("none", "difference", "fold", "log2fold"),
   rolling = c("none", "mean", "variance", "acf1", "slope"),
   window = 5,
+  detection = NULL,
   period = NULL,
   events = NULL,
   align.to = NULL,
@@ -111,6 +112,14 @@ line; subjects with fewer than \code{window} samples are dropped.
 \item{window}{\code{Integer scalar}. Number of samples in the rolling
 window. (Default: \code{5})}
 
+\item{detection}{\code{Numeric scalar}. Splits \code{y} into two panels,
+as in two-part models of zero-inflated data: its presence, a value
+above \code{detection}, as 1 or 0 (\code{"Prevalence"}), and its values
+in the samples where it is present (\code{"When present"}). Subject
+lines of the values break at absences, and \code{smooth = "mean"} gives
+the prevalence at each time. Not combined with \code{baseline},
+\code{rolling}, \code{fit} or boxes and violins. (Default: \code{NULL})}
+
 \item{period}{\code{Numeric scalar}. Wraps time into cycles of this
 length, in \code{time.col} units, to show daily or seasonal patterns;
 each cycle is drawn as its own line. Cycles start at time 0, which for
@@ -125,15 +134,19 @@ visits), relative to the event with \code{align.to}: interventions
 such as antibiotic courses, or the time intervals where groups differ,
 as estimated by MetaLonDA or SplinectomeR. Rows with an \code{end} are
 drawn as grey bands with their label at the top, the others as
-vertical lines. Events apply to all subjects; for an event time per
-subject, use \code{align.to}. (Default: \code{NULL})}
+vertical lines. Events apply to all subjects, unless they have the
+\code{group} column and \code{facet.by} is \code{group}: then each
+event is drawn in the panel of its subject. To draw time relative to an
+event of each subject, use \code{align.to}. (Default: \code{NULL})}
 
 \item{align.to}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} with the time of an event for each subject, such as
 the start of a treatment, in the units of \code{time.col}. Time is then
-drawn relative to the event, marked by a dashed line at 0. The column
-must not contain NA values, so remove subjects without the event
-first. Not available for visits. (Default: \code{NULL})}
+drawn relative to the event, marked by a dashed line at 0, and
+\code{smooth}, \code{band} and \code{fit} are drawn separately before
+the event and from time 0 on. The column must not contain NA values, so
+remove subjects without the event first. Not available for visits.
+(Default: \code{NULL})}
 
 \item{group.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that colours subjects, smooth curves and fits and
@@ -167,6 +180,14 @@ drawn in level order, including levels without samples. With
 relative to the event as well; for \code{Date} times they are in days.
 The plot data hold all columns of \code{colData(x)}, so further layers
 can use them.
+
+Fits that stop at an aligned event follow DiGiulio et al. (2015,
+doi:10.1073/pnas.1502875112, Fig. 5). The prevalence and non-zero panels
+of \code{detection} follow MaAsLin 3 (Nickols et al. 2026,
+doi:10.1038/s41592-025-02923-9, Fig. 1b). Cycles of varying length, such
+as menstrual cycles, are compared by rescaling each cycle to a common
+length in a time column, then wrapping it with \code{period} (Gajer et
+al. 2012, doi:10.1126/scitranslmed.3003605).
 }
 \examples{
 data("hitchip1006", package = "miaTime")
@@ -225,14 +246,21 @@ plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     fit = "fitted")
 
 # Hours since Blautia hydrogenotrophica was added at 152 h, against the
-# range of acetate before it was added
+# range of acetate before it was added, with loess curves fitted
+# separately before and after
 tse$added <- 152
 before <- range(tse$Acetate[tse$Time_hr_num < 152])
 plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier",
-    align.to = "added") +
+    align.to = "added", smooth = "loess") +
     ggplot2::annotate("rect", xmin = -Inf, xmax = Inf,
         ymin = before[1L], ymax = before[2L], alpha = 0.2)
+
+# Share of bioreactors where Blautia was detected, and its counts when
+# detected
+plotTrend(tse, y = "Blautia_hydrogenotrophica", time.col = "Time_hr_num",
+    group = "StudyIdentifier", align.to = "added", detection = 0,
+    smooth = "mean")
 
 # Acetate over the day, one line per day and bioreactor
 plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
@@ -257,6 +285,16 @@ paired-sample analyses of microbiome data. \emph{mSystems} 3(6):e00219-18.
 Dakos V, et al. (2012). Methods for detecting early warnings of critical
 transitions in time series illustrated using simulated ecological data.
 \emph{PLoS One} 7(7):e41010.
+
+DiGiulio DB, et al. (2015). Temporal and spatial variation of the human
+microbiota during pregnancy. \emph{PNAS} 112(35):11060-11065.
+
+Gajer P, et al. (2012). Temporal dynamics of the human vaginal
+microbiota. \emph{Sci Transl Med} 4(132):132ra52.
+
+Nickols WA, et al. (2026). MaAsLin 3: refining and extending generalized
+multivariable linear models for meta-omic association discovery.
+\emph{Nat Methods} 23(3):554-564.
 
 Subramanian S, et al. (2014). Persistent gut microbiota immaturity in
 malnourished Bangladeshi children. \emph{Nature} 510(7505):417-421.
