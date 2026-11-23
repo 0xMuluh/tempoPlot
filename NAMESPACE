@@ -29,6 +29,7 @@ export(plotTBI)
 export(plotTiles)
 export(plotTimeEffect)
 export(plotTimeLoadings)
+export(plotTimeline)
 export(plotTransitionMatrix)
 export(plotTrend)
 export(plotTurnover)
@@ -62,6 +63,7 @@ exportMethods(plotTBI)
 exportMethods(plotTiles)
 exportMethods(plotTimeEffect)
 exportMethods(plotTimeLoadings)
+exportMethods(plotTimeline)
 exportMethods(plotTransitionMatrix)
 exportMethods(plotTrend)
 exportMethods(plotTurnover)
@@ -97,6 +99,7 @@ importFrom(ggplot2,
   .data,
   aes,
   arrow,
+  coord_cartesian,
   coord_equal,
   coord_polar,
   coord_radial,

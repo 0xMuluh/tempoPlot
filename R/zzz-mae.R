@@ -260,3 +260,9 @@ setMethod("plotIntervals", signature = c(x = "MultiAssayExperiment"),
 #' @export
 setMethod("plotProfiles", signature = c(x = "MultiAssayExperiment"),
     .mae_method(plotProfiles))
+
+#' @rdname plotTimeline
+#' @template mae-experiment
+#' @export
+setMethod("plotTimeline", signature = c(x = "MultiAssayExperiment"),
+    .mae_method(plotTimeline))
