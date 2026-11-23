@@ -115,3 +115,14 @@ test_that(".tile_edges reaches halfway to neighbours, visits +-0.5", {
         list(lower = c(0.5, 1.5, 3.5), upper = c(1.5, 2.5, 4.5)))
     expect_identical(.tile_edges(5), list(lower = 4.5, upper = 5.5))
 })
+
+test_that(".check_table_columns checks required and optional columns", {
+    df <- data.frame(a = 1, b = 2)
+    expect_silent(.check_table_columns(df, a.col = "a", b.col = NULL))
+    expect_error(.check_table_columns(df, a.col = "z"),
+        "'a.col' must be NULL or one column name of 'x'.", fixed = TRUE)
+    expect_error(.check_table_columns(df, a.col = NULL, null = FALSE),
+        "'a.col' must be one column name of 'x'.", fixed = TRUE)
+    expect_error(.check_table_columns(df, a.col = c("a", "b"), null = FALSE),
+        "'a.col'")
+})

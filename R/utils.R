@@ -577,3 +577,16 @@
     }
     lapply(tp, function(v) which(time == v))
 }
+
+# Error unless each argument given in ... (named) is one column name of
+# the table x, or NULL if null.
+.check_table_columns <- function(x, ..., null = TRUE) {
+    cols <- list(...)
+    for (arg in names(cols)) {
+        v <- cols[[arg]]
+        if (!(null && is.null(v)) && !(.is_one_name(v) && v %in% names(x))) {
+            stop("'", arg, "' must be ", if (null) "NULL or ",
+                "one column name of 'x'.", call. = FALSE)
+        }
+    }
+}

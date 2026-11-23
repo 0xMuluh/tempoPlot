@@ -76,14 +76,11 @@ setMethod("plotVolcano", signature = c(x = "SummarizedExperiment"),
 setMethod("plotVolcano", signature = c(x = "data.frame"),
     function(x, effect, p.col, threshold = 0.05, label.top = 10,
             feature.col = NULL, ...) {
-        for (arg in c("effect", "p.col", "feature.col")) {
-            col <- get(arg)
-            if (arg == "feature.col" && is.null(col)) next
-            if (!.is_one_name(col) || !col %in% names(x)) {
-                stop("'", arg, "' must be one column name of 'x'.",
-                    call. = FALSE)
-            }
-            if (arg != "feature.col" && !is.numeric(x[[col]])) {
+        .check_table_columns(x, effect = effect, p.col = p.col,
+            null = FALSE)
+        .check_table_columns(x, feature.col = feature.col)
+        for (arg in c("effect", "p.col")) {
+            if (!is.numeric(x[[get(arg)]])) {
                 stop("'", arg, "' must be a numeric column.", call. = FALSE)
             }
         }

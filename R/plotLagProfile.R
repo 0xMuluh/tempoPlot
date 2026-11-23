@@ -233,18 +233,3 @@ setMethod("plotLagProfile", signature = c(x = "data.frame"),
         labs(x = "lag", y = "autocorrelation", colour = colour.by) +
         .theme_tempoPlot()
 }
-
-# Error unless each argument given in ... (named) is NULL or one column
-# name of the table x.
-# Candidate for utils.R: plotIntervals and plotTimeEffect check the
-# columns of their tables in the same way.
-.check_table_columns <- function(x, ...) {
-    cols <- list(...)
-    for (arg in names(cols)) {
-        v <- cols[[arg]]
-        if (!is.null(v) && !(.is_one_name(v) && v %in% names(x))) {
-            stop("'", arg, "' must be NULL or one column name of 'x'.",
-                call. = FALSE)
-        }
-    }
-}

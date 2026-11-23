@@ -231,14 +231,9 @@ setMethod("plotTiles", signature = c(x = "data.frame"),
 # plotTiles().
 .check_effects <- function(x, time.col, effect, p.col, threshold,
         feature.col, group = NULL) {
-    for (arg in c("time.col", "effect", "p.col", "feature.col", "group")) {
-        v <- get(arg)
-        if (arg %in% c("p.col", "group") && is.null(v)) next
-        if (!.is_one_name(v) || !v %in% names(x)) {
-            stop("'", arg, "' must be one column name of 'x'.",
-                call. = FALSE)
-        }
-    }
+    .check_table_columns(x, time.col = time.col, effect = effect,
+        feature.col = feature.col, null = FALSE)
+    .check_table_columns(x, p.col = p.col, group = group)
     v <- x[[effect]]
     if (!(is.numeric(v) || is.character(v) || is.factor(v) ||
             is.logical(v))) {
