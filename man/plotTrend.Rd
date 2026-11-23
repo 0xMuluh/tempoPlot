@@ -184,6 +184,13 @@ tse$visit <- factor(ave(tse$time, tse$subject, FUN = rank))
 plotTrend(tse, y = "divergence", time.col = "visit", group = "subject",
     group.by = "sex", layout = "box")
 
+# Divergence from each subject's previous sample, computed by miaTime
+tse <- miaTime::addStepwiseDivergence(tse, group = "subject",
+    time.col = "time", assay.type = "counts",
+    name = c("stepwise", "step_time", "step_ref"))
+plotTrend(tse, y = "stepwise", time.col = "visit", group = "subject",
+    group.by = "sex", layout = "box")
+
 # Change in diversity from the first visit, mean by sex
 plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
     group.by = "sex", baseline = "difference", smooth = "mean")
@@ -207,13 +214,6 @@ plotTrend(tse, y = "diversity", time.col = "visit", group = "subject",
 data("minimalgut", package = "miaTime")
 tse <- minimalgut
 plotTrend(tse, y = "Acetate", time.col = "Time_hr_num",
-    group = "StudyIdentifier", group.by = "StudyIdentifier")
-
-# Dissimilarity of each sample to the previous one of its bioreactor,
-# computed by miaTime
-tse <- miaTime::addStepwiseDivergence(tse, group = "StudyIdentifier",
-    time.col = "Time_hr_num", assay.type = "counts")
-plotTrend(tse, y = "divergence", time.col = "Time_hr_num",
     group = "StudyIdentifier", group.by = "StudyIdentifier")
 
 # Fitted acetate of each bioreactor from a cubic time trend per reactor
