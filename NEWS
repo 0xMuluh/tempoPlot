@@ -1,3 +1,10 @@
+Changes in version 0.99.65 (2026-11-23)
++ plotTrend event labels in the right half end at their band, so they
+  stay inside the plot
++ plotDirection draws with coord_radial() and writes direction labels
+  along the circle, so faceted panels no longer overlap; requires
+  ggplot2 4.0.0
+
 Changes in version 0.99.64 (2026-11-23)
 + An interval between two samples takes group.by and facet.by from its
   later sample in every plot (plotDirection and plotTransitionMatrix

@@ -21,7 +21,7 @@ test_that("plotDirection measures angles counterclockwise from east", {
     expect_equal(sort(df$.angle), c(0, 90, 180))
     expect_equal(sort(df$.length), c(1, 2, 3))
     expect_s3_class(plotDirection(toy, "t", "id", "PC")$coordinates,
-        "CoordPolar")
+        "CoordRadial")
 })
 
 test_that("plotDirection drops zero moves and splits by facet.by", {
