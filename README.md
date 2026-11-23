@@ -60,6 +60,7 @@ human cohort and of the bioreactors.
 | | `plotCalendar()` |
 | How does a value change over time? | `plotTrend()` |
 | | `plotTimeEffect()` |
+| | `plotIntervals()` |
 | How does the composition change? | `plotComposition()` |
 | | `plotTiles()` |
 | | `plotHorizon()` |
