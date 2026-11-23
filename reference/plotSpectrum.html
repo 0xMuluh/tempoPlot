@@ -19,7 +19,7 @@ rhythms."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.67</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.68</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ rhythms."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/ma
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the power spectrum of a series</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotSpectrum.R" class="external-link"><code>R/plotSpectrum.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/table-column-check/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/table-column-check/R/plotSpectrum.R" class="external-link"><code>R/plotSpectrum.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/table-column-check/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotSpectrum.Rd</code></div>
     </div>
 
@@ -60,7 +60,15 @@ rhythms.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'SummarizedExperiment'</span></span>
-<span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">time.col</span>, group <span class="op">=</span> <span class="cn">NULL</span>, assay.type <span class="op">=</span> <span class="st">"counts"</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">plotSpectrum</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">time.col</span>,</span>
+<span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  fit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"power"</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for class 'MultiAssayExperiment'</span></span>
 <span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, experiment <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
@@ -104,6 +112,12 @@ retrieve <code>y</code> from when <code>y</code> is a feature name.
 (Default: <code>"counts"</code>)</p></dd>
 
 
+<dt id="arg-fit">fit<a class="anchor" aria-label="anchor" href="#arg-fit"></a></dt>
+<dd><p><code>Character scalar</code>. Draws no fit (<code>"none"</code>) or a
+straight line on log-log axes (<code>"power"</code>) for each subject; the
+subtitle gives its slope. (Default: <code>"none"</code>)</p></dd>
+
+
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
 <dd><p><code>Character scalar</code> or <code>integer scalar</code>. For a
 <code>MultiAssayExperiment</code>, the experiment to plot; its samples get
@@ -119,10 +133,18 @@ the <code>colData</code> of <code>x</code>. (Default: <code>1L</code>)</p></dd>
     <p>Frequencies are in cycles per <code>time.col</code> unit (per day for
 <code>Date</code>, per hour for <code>POSIXct</code> times), from one cycle over
 the series to half the median sampling rate. A linear trend is removed
-first. The power is normalised by the variance of the series. The
+first, and the first and last tenth of the series are tapered with a
+cosine bell, as <code><a href="https://rdrr.io/r/stats/spectrum.html" class="external-link">spectrum</a></code> does by default;
+the taper reduces the leakage of power from low to high frequencies.
+The power is normalised by the variance of the series. The
 periodogram allows uneven sampling; for even sampling it equals the
 classical periodogram. Subjects with fewer than four samples are left
 out.</p>
+<p>The slope of the log-log fit gives the noise colour of the series:
+about 0 for white noise, -1 for pink, -2 for brown and below for black
+noise (Faust et al. 2018, doi:10.1186/s40168-018-0496-2).
+<code><a href="plotNoise.html">plotNoise</a></code> classifies the features of each subject by
+this slope.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -140,6 +162,20 @@ data. <em>Astrophysics and Space Science</em> 39:447-462.</p>
 <span class="r-in"><span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">minimalgut</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotSpectrum-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Hourly samples with reads of four vessels of an artificial gut, hours</span></span></span>
+<span class="r-in"><span><span class="co"># 476 to 592, one sample per hour: the slope of the spectrum of the most</span></span></span>
+<span class="r-in"><span><span class="co"># abundant taxon on log-log axes</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"SilvermanAGutData"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">SilvermanAGutData</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">[</span>, <span class="va">tse</span><span class="op">$</span><span class="va">SampleType</span> <span class="op">==</span> <span class="st">"Hourly"</span> <span class="op">&amp;</span></span></span>
+<span class="r-in"><span>    <span class="va">tse</span><span class="op">$</span><span class="va">Normal_Noise_Sample</span> <span class="op">==</span> <span class="st">"Normal"</span> <span class="op">&amp;</span> <span class="va">tse</span><span class="op">$</span><span class="va">Time.hr</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">476</span><span class="op">:</span><span class="fl">592</span> <span class="op">&amp;</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="fu">SummarizedExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">assay</a></span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">Vessel</span>, <span class="va">tse</span><span class="op">$</span><span class="va">Time.hr</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/transformAssay.html" class="external-link">transformAssay</a></span><span class="op">(</span><span class="va">tse</span>, method <span class="op">=</span> <span class="st">"relabundance"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotSpectrum</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/summary.html" class="external-link">getTop</a></span><span class="op">(</span><span class="va">tse</span>, top <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>,</span></span>
+<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"Vessel"</span>, assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, fit <span class="op">=</span> <span class="st">"power"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotSpectrum-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>

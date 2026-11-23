@@ -19,7 +19,7 @@ of a subject and draws their distribution on a log density axis."><!-- mathjax -
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.67</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.68</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ of a subject and draws their distribution on a log density axis."><!-- mathjax -
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot the distribution of abundance changes between samples</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotChanges.R" class="external-link"><code>R/plotChanges.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/table-column-check/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/table-column-check/R/plotChanges.R" class="external-link"><code>R/plotChanges.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/table-column-check/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotChanges.Rd</code></div>
     </div>
 
@@ -169,15 +169,21 @@ depth; use relative or absolute abundances instead.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Changes over at most 4 hours in three bioreactors, with the Laplace</span></span></span>
-<span class="r-in"><span><span class="co"># distribution of the same median and mean absolute deviation</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/transformAssay.html" class="external-link">transformAssay</a></span><span class="op">(</span><span class="va">minimalgut</span>, method <span class="op">=</span> <span class="st">"relabundance"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">plotChanges</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
-<span class="r-in"><span>    assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, max.gap <span class="op">=</span> <span class="fl">4</span>, fit <span class="op">=</span> <span class="st">"laplace"</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Daily changes of the absolute abundances of genera in 20 women, with</span></span></span>
+<span class="r-in"><span><span class="co"># the Laplace distribution of the same median and mean absolute</span></span></span>
+<span class="r-in"><span><span class="co"># deviation</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"temporalMicrobiome20"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">temporalMicrobiome20</span></span></span>
+<span class="r-in"><span><span class="co"># Three samples have no day</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">tse</span><span class="op">[</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">day</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu">plotChanges</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"day"</span>, group <span class="op">=</span> <span class="st">"person_id"</span>, max.gap <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>    fit <span class="op">=</span> <span class="st">"laplace"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotChanges-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># The same by bioreactor</span></span></span>
+<span class="r-in"><span><span class="co"># Changes of relative abundances over at most 4 hours in each of three</span></span></span>
+<span class="r-in"><span><span class="co"># bioreactors</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"minimalgut"</span>, package <span class="op">=</span> <span class="st">"miaTime"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">mia</span><span class="fu">::</span><span class="fu"><a href="https://microbiome.github.io/mia/reference/transformAssay.html" class="external-link">transformAssay</a></span><span class="op">(</span><span class="va">minimalgut</span>, method <span class="op">=</span> <span class="st">"relabundance"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plotChanges</span><span class="op">(</span><span class="va">tse</span>, time.col <span class="op">=</span> <span class="st">"Time.hr"</span>, group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
 <span class="r-in"><span>    assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, max.gap <span class="op">=</span> <span class="fl">4</span>,</span></span>
 <span class="r-in"><span>    group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span><span class="op">)</span></span></span>
