@@ -19,7 +19,7 @@ reduced dimension."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.63</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.64</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ reduced dimension."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot directions of movement in an ordination</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotDirection.R" class="external-link"><code>R/plotDirection.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/interval-conventions/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/interval-conventions/R/plotDirection.R" class="external-link"><code>R/plotDirection.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/interval-conventions/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotDirection.Rd</code></div>
     </div>
 
@@ -122,7 +122,7 @@ components by index or name. (Default: <code>2</code>)</p></dd>
 <dt id="arg-facet-by">facet.by<a class="anchor" aria-label="anchor" href="#arg-facet-by"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> that splits the moves into panels. Each move takes
-the value of its earlier sample. (Default: <code>NULL</code>)</p></dd>
+the value of its later sample. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-max-gap">max.gap<a class="anchor" aria-label="anchor" href="#arg-max-gap"></a></dt>

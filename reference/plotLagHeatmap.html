@@ -19,7 +19,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tempoPlot</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.63</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.99.64</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ correlations as features by lag tiles."><!-- mathjax --><script src="https://cdn
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot lagged correlations of features with a target</h1>
-    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/devel/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/0xMuluh/tempoPlot/blob/interval-conventions/R/AllGenerics.R" class="external-link"><code>R/AllGenerics.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/interval-conventions/R/plotLagHeatmap.R" class="external-link"><code>R/plotLagHeatmap.R</code></a>, <a href="https://github.com/0xMuluh/tempoPlot/blob/interval-conventions/R/zzz-mae.R" class="external-link"><code>R/zzz-mae.R</code></a></small>
     <div class="hidden name"><code>plotLagHeatmap.Rd</code></div>
     </div>
 
@@ -127,8 +127,8 @@ features. (Default: <code>"counts"</code>)</p></dd>
 
 
 <dt id="arg-max-lag">max.lag<a class="anchor" aria-label="anchor" href="#arg-max-lag"></a></dt>
-<dd><p><code>Integer scalar</code>. Largest lag in samples, in both
-directions. (Default: <code>3</code>)</p></dd>
+<dd><p><code>Integer scalar</code>. Largest lag in both directions, in
+samples or, for visits, in visits. (Default: <code>3</code>)</p></dd>
 
 
 <dt id="arg-experiment">experiment<a class="anchor" aria-label="anchor" href="#arg-experiment"></a></dt>
@@ -153,13 +153,15 @@ looked up in <code>experiment</code>. (Default: <code>NULL</code>)</p></dd>
     <div id="details">
     <h2>Details</h2>
     <p>At lag \(k\), each feature at a sample is paired with the target
-\(k\) samples later in the same subject. Feature and target are
+\(k\) samples later in the same subject. For visits (a factor
+<code>time.col</code>), it is paired with the target \(k\) visits later, and
+samples without a sample \(k\) visits away are left out. Feature and target are
 centred on their mean over the pairs of each subject, so that
 differences between subjects do not drive the correlation, and the
 Spearman correlation is computed over all pairs. Positive lags show
 features that change before the target, negative lags features that
-follow it. Lags count samples, so they are comparable across subjects
-only for even sampling.</p>
+follow it. For other times, lags count samples, so they are comparable
+across subjects only for even sampling.</p>
     </div>
 
     <div id="ref-examples">
