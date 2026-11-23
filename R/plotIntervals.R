@@ -109,14 +109,8 @@ setMethod("plotIntervals", signature = c(x = "data.frame"),
 # and .end, in the class of start (visits as level codes). A missing end
 # is the start.
 .check_intervals <- function(x, feature.col, colour.by, facet.by) {
-    for (arg in c("feature.col", "colour.by", "facet.by")) {
-        v <- get(arg)
-        if (arg != "feature.col" && is.null(v)) next
-        if (!.is_one_name(v) || !v %in% names(x)) {
-            stop("'", arg, "' must be one column name of 'x'.",
-                call. = FALSE)
-        }
-    }
+    .check_table_columns(x, feature.col = feature.col, null = FALSE)
+    .check_table_columns(x, colour.by = colour.by, facet.by = facet.by)
     if (!all(c("start", "end") %in% names(x))) {
         stop("'x' must have columns 'start' and 'end'.", call. = FALSE)
     }

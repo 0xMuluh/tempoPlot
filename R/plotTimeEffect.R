@@ -112,16 +112,9 @@ setMethod("plotTimeEffect", signature = c(x = "SummarizedExperiment"),
 setMethod("plotTimeEffect", signature = c(x = "data.frame"),
     function(x, time.col, group.by = NULL, null = NULL, p.col = NULL,
             threshold = 0.05, size.by = NULL, ...) {
-        if (!.is_one_name(time.col) || !time.col %in% names(x)) {
-            stop("'time.col' must be one column name of 'x'.", call. = FALSE)
-        }
-        for (arg in c("group.by", "p.col", "size.by")) {
-            col <- get(arg)
-            if (!is.null(col) && !(.is_one_name(col) && col %in% names(x))) {
-                stop("'", arg, "' must be NULL or one column name of 'x'.",
-                    call. = FALSE)
-            }
-        }
+        .check_table_columns(x, time.col = time.col, null = FALSE)
+        .check_table_columns(x, group.by = group.by, p.col = p.col,
+            size.by = size.by)
         type <- .time_type(x[[time.col]])
         if (is.null(p.col)) {
             if (!is.numeric(x$estimate) ||
