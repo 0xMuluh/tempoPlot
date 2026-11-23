@@ -76,7 +76,6 @@ subject's first sample or to an event.</p>
 <span>  baseline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"difference"</span>, <span class="st">"fold"</span>, <span class="st">"log2fold"</span><span class="op">)</span>,</span>
 <span>  rolling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mean"</span>, <span class="st">"variance"</span>, <span class="st">"acf1"</span>, <span class="st">"slope"</span><span class="op">)</span>,</span>
 <span>  window <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  detection <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  events <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  align.to <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -199,16 +198,6 @@ line; subjects with fewer than <code>window</code> samples are dropped.
 window. (Default: <code>5</code>)</p></dd>
 
 
-<dt id="arg-detection">detection<a class="anchor" aria-label="anchor" href="#arg-detection"></a></dt>
-<dd><p><code>Numeric scalar</code>. Splits <code>y</code> into two panels,
-as in two-part models of zero-inflated data: its presence, a value
-above <code>detection</code>, as 1 or 0 (<code>"Prevalence"</code>), and its values
-in the samples where it is present (<code>"When present"</code>). Subject
-lines of the values break at absences, and <code>smooth = "mean"</code> gives
-the prevalence at each time. Not combined with <code>baseline</code>,
-<code>rolling</code>, <code>fit</code> or boxes and violins. (Default: <code>NULL</code>)</p></dd>
-
-
 <dt id="arg-period">period<a class="anchor" aria-label="anchor" href="#arg-period"></a></dt>
 <dd><p><code>Numeric scalar</code>. Wraps time into cycles of this
 length, in <code>time.col</code> units, to show daily or seasonal patterns;
@@ -226,21 +215,17 @@ visits), relative to the event with <code>align.to</code>: interventions
 such as antibiotic courses, or the time intervals where groups differ,
 as estimated by MetaLonDA or SplinectomeR. Rows with an <code>end</code> are
 drawn as grey bands with their label at the top, the others as
-vertical lines. Events apply to all subjects, unless they have the
-<code>group</code> column and <code>facet.by</code> is <code>group</code>: then each
-event is drawn in the panel of its subject. To draw time relative to an
-event of each subject, use <code>align.to</code>. (Default: <code>NULL</code>)</p></dd>
+vertical lines. Events apply to all subjects; for an event time per
+subject, use <code>align.to</code>. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-align-to">align.to<a class="anchor" aria-label="anchor" href="#arg-align-to"></a></dt>
 <dd><p><code>Character scalar</code>. Specifies the column from
 <code>colData(x)</code> with the time of an event for each subject, such as
 the start of a treatment, in the units of <code>time.col</code>. Time is then
-drawn relative to the event, marked by a dashed line at 0, and
-<code>smooth</code>, <code>band</code> and <code>fit</code> are drawn separately before
-the event and from time 0 on. The column must not contain NA values, so
-remove subjects without the event first. Not available for visits.
-(Default: <code>NULL</code>)</p></dd>
+drawn relative to the event, marked by a dashed line at 0. The column
+must not contain NA values, so remove subjects without the event
+first. Not available for visits. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-group-by">group.by<a class="anchor" aria-label="anchor" href="#arg-group-by"></a></dt>
@@ -279,13 +264,6 @@ drawn in level order, including levels without samples. With
 relative to the event as well; for <code>Date</code> times they are in days.
 The plot data hold all columns of <code>colData(x)</code>, so further layers
 can use them.</p>
-<p>Fits that stop at an aligned event follow DiGiulio et al. (2015,
-doi:10.1073/pnas.1502875112, Fig. 5). The prevalence and non-zero panels
-of <code>detection</code> follow MaAsLin 3 (Nickols et al. 2026,
-doi:10.1038/s41592-025-02923-9, Fig. 1b). Cycles of varying length, such
-as menstrual cycles, are compared by rescaling each cycle to a common
-length in a time column, then wrapping it with <code>period</code> (Gajer et
-al. 2012, doi:10.1126/scitranslmed.3003605).</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -294,13 +272,6 @@ paired-sample analyses of microbiome data. <em>mSystems</em> 3(6):e00219-18.</p>
 <p>Dakos V, et al. (2012). Methods for detecting early warnings of critical
 transitions in time series illustrated using simulated ecological data.
 <em>PLoS One</em> 7(7):e41010.</p>
-<p>DiGiulio DB, et al. (2015). Temporal and spatial variation of the human
-microbiota during pregnancy. <em>PNAS</em> 112(35):11060-11065.</p>
-<p>Gajer P, et al. (2012). Temporal dynamics of the human vaginal
-microbiota. <em>Sci Transl Med</em> 4(132):132ra52.</p>
-<p>Nickols WA, et al. (2026). MaAsLin 3: refining and extending generalized
-multivariable linear models for meta-omic association discovery.
-<em>Nat Methods</em> 23(3):554-564.</p>
 <p>Subramanian S, et al. (2014). Persistent gut microbiota immaturity in
 malnourished Bangladeshi children. <em>Nature</em> 510(7505):417-421.</p>
     </div>
@@ -380,34 +351,26 @@ malnourished Bangladeshi children. <em>Nature</em> 510(7505):417-421.</p>
 <span class="r-plt img"><img src="plotTrend-7.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Hours since Blautia hydrogenotrophica was added at 152 h, against the</span></span></span>
-<span class="r-in"><span><span class="co"># range of acetate before it was added, with loess curves fitted</span></span></span>
-<span class="r-in"><span><span class="co"># separately before and after</span></span></span>
+<span class="r-in"><span><span class="co"># range of acetate before it was added</span></span></span>
 <span class="r-in"><span><span class="va">tse</span><span class="op">$</span><span class="va">added</span> <span class="op">&lt;-</span> <span class="fl">152</span></span></span>
 <span class="r-in"><span><span class="va">before</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">Acetate</span><span class="op">[</span><span class="va">tse</span><span class="op">$</span><span class="va">Time_hr_num</span> <span class="op">&lt;</span> <span class="fl">152</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
-<span class="r-in"><span>    align.to <span class="op">=</span> <span class="st">"added"</span>, smooth <span class="op">=</span> <span class="st">"loess"</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>    align.to <span class="op">=</span> <span class="st">"added"</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">annotate</a></span><span class="op">(</span><span class="st">"rect"</span>, xmin <span class="op">=</span> <span class="op">-</span><span class="cn">Inf</span>, xmax <span class="op">=</span> <span class="cn">Inf</span>,</span></span>
 <span class="r-in"><span>        ymin <span class="op">=</span> <span class="va">before</span><span class="op">[</span><span class="fl">1L</span><span class="op">]</span>, ymax <span class="op">=</span> <span class="va">before</span><span class="op">[</span><span class="fl">2L</span><span class="op">]</span>, alpha <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plotTrend-8.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Share of bioreactors where Blautia was detected, and its counts when</span></span></span>
-<span class="r-in"><span><span class="co"># detected</span></span></span>
-<span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"Blautia_hydrogenotrophica"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
-<span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, align.to <span class="op">=</span> <span class="st">"added"</span>, detection <span class="op">=</span> <span class="fl">0</span>,</span></span>
-<span class="r-in"><span>    smooth <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-9.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Acetate over the day, one line per day and bioreactor</span></span></span>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, period <span class="op">=</span> <span class="fl">24</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-10.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTrend-9.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Rolling variance of acetate over 10 samples</span></span></span>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
 <span class="r-in"><span>    rolling <span class="op">=</span> <span class="st">"variance"</span>, window <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-11.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTrend-10.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Acetate with the batch phase and the addition of Blautia marked</span></span></span>
 <span class="r-in"><span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">152</span><span class="op">)</span>, end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span>, <span class="cn">NA</span><span class="op">)</span>,</span></span>
@@ -415,7 +378,7 @@ malnourished Bangladeshi children. <em>Nature</em> 510(7505):417-421.</p>
 <span class="r-in"><span><span class="fu">plotTrend</span><span class="op">(</span><span class="va">tse</span>, y <span class="op">=</span> <span class="st">"Acetate"</span>, time.col <span class="op">=</span> <span class="st">"Time_hr_num"</span>,</span></span>
 <span class="r-in"><span>    group <span class="op">=</span> <span class="st">"StudyIdentifier"</span>, group.by <span class="op">=</span> <span class="st">"StudyIdentifier"</span>,</span></span>
 <span class="r-in"><span>    events <span class="op">=</span> <span class="va">events</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plotTrend-12.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plotTrend-11.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
