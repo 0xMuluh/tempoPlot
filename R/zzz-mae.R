@@ -278,3 +278,15 @@ setMethod("plotRuns", signature = c(x = "MultiAssayExperiment"),
 #' @export
 setMethod("plotStates", signature = c(x = "MultiAssayExperiment"),
     .mae_method(plotStates))
+
+#' @rdname plotRmcorr
+#' @template mae-experiment
+#' @export
+setMethod("plotRmcorr", signature = c(x = "MultiAssayExperiment"),
+    .mae_method(plotRmcorr))
+
+#' @rdname plotChanges
+#' @template mae-experiment
+#' @export
+setMethod("plotChanges", signature = c(x = "MultiAssayExperiment"),
+    .mae_method(plotChanges))

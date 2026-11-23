@@ -2,6 +2,7 @@
 
 export(plotAlluvial)
 export(plotCalendar)
+export(plotChanges)
 export(plotComposition)
 export(plotDOC)
 export(plotDirection)
@@ -20,6 +21,7 @@ export(plotProcrustes)
 export(plotProfiles)
 export(plotRanks)
 export(plotRecurrence)
+export(plotRmcorr)
 export(plotRuns)
 export(plotSpectrum)
 export(plotStates)
@@ -38,6 +40,7 @@ export(plotTurnover)
 export(plotVolcano)
 exportMethods(plotAlluvial)
 exportMethods(plotCalendar)
+exportMethods(plotChanges)
 exportMethods(plotComposition)
 exportMethods(plotDOC)
 exportMethods(plotDirection)
@@ -56,6 +59,7 @@ exportMethods(plotProcrustes)
 exportMethods(plotProfiles)
 exportMethods(plotRanks)
 exportMethods(plotRecurrence)
+exportMethods(plotRmcorr)
 exportMethods(plotRuns)
 exportMethods(plotSpectrum)
 exportMethods(plotStates)
@@ -169,6 +173,7 @@ importFrom(stats,
   aggregate,
   ave,
   coef,
+  complete.cases,
   cor,
   cov,
   density,
@@ -180,6 +185,7 @@ importFrom(stats,
   na.pass,
   optimize,
   pbeta,
+  pt,
   quantile,
   residuals,
   sd,
