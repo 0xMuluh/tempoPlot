@@ -1,9 +1,9 @@
 # Plot an effect over time
 
 `plotTimeEffect()` draws a model estimate at each time with its
-interval, against a reference line at zero: a difference between groups
-at each time point, a time by group interaction, or a GAM difference
-curve.
+interval, against a line at its value without an effect (zero by
+default): a difference between groups at each time point, a time by
+group interaction, or a GAM difference curve.
 
 ## Usage
 
@@ -19,6 +19,7 @@ plotTimeEffect(
   time.col,
   group.by = NULL,
   null = NULL,
+  null.value = 0,
   p.col = NULL,
   threshold = 0.05,
   size.by = NULL,
@@ -67,6 +68,11 @@ plotTimeEffect(x, ..., experiment = 1L)
   `time.col` and `estimate`, and optionally `group.by`. Each permutation
   is drawn as a thin translucent line behind the observed effect.
   (Default: `NULL`)
+
+- null.value:
+
+  `Numeric scalar`. The value of the effect without an effect, drawn as
+  a line, such as 1 for a ratio. (Default: `0`)
 
 - p.col:
 

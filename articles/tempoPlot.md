@@ -822,7 +822,7 @@ Session info
 `#> [13] IRanges_2.48.0                  S4Vectors_0.52.0               `\
 `#> [15] BiocGenerics_0.60.0             generics_0.1.4                 `\
 `#> [17] MatrixGenerics_1.26.0           matrixStats_1.5.0              `\
-`#> [19] tempoPlot_0.99.70               knitr_1.52                     `\
+`#> [19] tempoPlot_0.99.71               knitr_1.52                     `\
 `#> [21] BiocStyle_2.42.0               `\
 `#> `\
 `#> loaded via a namespace (and not attached):`\

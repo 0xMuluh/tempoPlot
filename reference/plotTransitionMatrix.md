@@ -2,7 +2,7 @@
 
 `plotTransitionMatrix()` counts the transitions between the states of
 consecutive samples of each subject and draws them as a state by state
-matrix.
+matrix or as a graph of states joined by arrows.
 
 ## Usage
 
@@ -16,6 +16,7 @@ plotTransitionMatrix(
   time.col,
   group,
   as.relative = TRUE,
+  layout = c("matrix", "graph"),
   facet.by = NULL,
   max.gap = NULL,
   ...
@@ -36,7 +37,10 @@ plotTransitionMatrix(x, ..., experiment = 1L)
 - ...:
 
   additional arguments passed to
-  [`geom_tile`](https://ggplot2.tidyverse.org/reference/geom_tile.html).
+  [`geom_tile`](https://ggplot2.tidyverse.org/reference/geom_tile.html),
+  or to
+  [`geom_curve`](https://ggplot2.tidyverse.org/reference/geom_segment.html)
+  for the arrows of `layout = "graph"`.
 
 - state.col:
 
@@ -60,6 +64,11 @@ plotTransitionMatrix(x, ..., experiment = 1L)
 
   `Logical scalar`. Shows the share of transitions from each state
   (`TRUE`) or the counts (`FALSE`). (Default: `TRUE`)
+
+- layout:
+
+  `Character scalar`. Draws a state by state matrix (`"matrix"`) or the
+  states on a circle joined by arrows (`"graph"`). (Default: `"matrix"`)
 
 - facet.by:
 
@@ -91,6 +100,12 @@ the diagonal holds the samples that stayed in their state. Samples with
 a missing state break the chain: no transition is counted to or from
 them.
 
+In the graph, as in the state diagrams of Gajer et al. (2012,
+doi:10.1126/scitranslmed.3003605, Fig. 5), the width of an arrow is the
+share (or count) of transitions from one state to another. The size of a
+state is the number of transitions from it, and its fill the share that
+stayed in it.
+
 ## Examples
 
 ``` r
@@ -105,5 +120,11 @@ plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
 # Counts by sex
 plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
     group = "subject", as.relative = FALSE, facet.by = "sex")
+#> Warning: 'group' has 929 subjects with a single sample.
+
+
+# The same transitions as a graph
+plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
+    group = "subject", layout = "graph")
 #> Warning: 'group' has 929 subjects with a single sample.
 ```
