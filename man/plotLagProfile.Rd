@@ -9,11 +9,13 @@
 \usage{
 plotLagProfile(x, ...)
 
-\S4method{plotLagProfile}{SummarizedExperiment}(x, name = "variogram", ...)
+\S4method{plotLagProfile}{SummarizedExperiment}(x, name = "variogram", model = NULL, ...)
 
 \S4method{plotLagProfile}{data.frame}(
   x,
   type = c("dissimilarity", "ratio"),
+  model = NULL,
+  period = NULL,
   feature.col = "FeatureID",
   group = NULL,
   colour.by = NULL,
@@ -35,11 +37,22 @@ and \code{\link[ggplot2:geom_path]{geom_line}} for autocorrelations.}
 \item{name}{\code{Character scalar}. Specifies the entry of
 \code{metadata(x)} holding the table. (Default: \code{"variogram"})}
 
+\item{model}{\code{NULL}, a \code{data.frame} from
+\code{miaTime::getVariogramModel()}, or for a
+\code{SummarizedExperiment} the name of the entry of
+\code{metadata(x)} holding one, as stored by
+\code{miaTime::addVariogramModel()}. Draws the fitted variogram
+instead of the line joining the estimates. (Default: \code{NULL})}
+
 \item{type}{\code{Character scalar}. For variograms, draws the
 dissimilarity at each lag (\code{"dissimilarity"}) or, for a variogram
 computed with \code{split.by}, the ratio between its levels
 (\code{"ratio"}), on a log scale with a line at 1.
 (Default: \code{"dissimilarity"})}
+
+\item{period}{\code{NULL} or \code{Numeric scalar}. The period of a
+seasonal form in \code{model}, as given to
+\code{miaTime::getVariogramModel()}. (Default: \code{NULL})}
 
 \item{feature.col}{\code{Character scalar}. For autocorrelations,
 specifies the column of feature names; \code{NULL} for a table of one
@@ -67,8 +80,9 @@ A \code{ggplot} object.
 \code{plotLagProfile()} draws a statistic against time lag: the
 variogram \eqn{D(L)}, how far samples of the same subject are apart at
 each lag, with its confidence interval, as stored by
-\code{miaTime::addVariogram()}; or the autocorrelation of each feature
-in each subject.
+\code{miaTime::addVariogram()}, optionally with the curve fitted by
+\code{miaTime::getVariogramModel()}; or the autocorrelation of each
+feature in each subject.
 }
 \details{
 The variogram is a table with the columns \code{lag}, \code{estimate},
@@ -76,6 +90,12 @@ The variogram is a table with the columns \code{lag}, \code{estimate},
 \code{lag} and \code{type}, the \code{split.by} column. With
 \code{split.by}, each level or comparison is drawn in its own colour,
 slightly shifted apart at each lag.
+
+With \code{model}, the fitted form of each level (exponential,
+two-timescale, power or linear, optionally seasonal) is drawn from its
+estimated parameters over the fitted lag range, in the colour of the
+level. The model must be fitted with the same \code{split.by} as the
+variogram.
 
 An autocorrelation table has the columns \code{lag} and \code{acf},
 one row per feature, subject and lag, as in Gibbons et al. (2017,
@@ -107,6 +127,15 @@ plotLagProfile(tse, name = "variogram_sex")
 
 # Their ratio
 plotLagProfile(tse, name = "variogram_sex", type = "ratio")
+
+# Exponential forms fitted to each sex, in the form of miaTime's
+# getVariogramModel(); estimates from a fit to the same data
+model <- data.frame(sex = rep(c("female", "male"), each = 3),
+    type = "parameter", form = "exponential",
+    parameter = c("nugget", "partial.sill", "timescale"),
+    estimate = c(0.0059, 0.189, 1.00, 0, 0.294, 2.30),
+    min.lag = 0.2, max.lag = 8.2)
+plotLagProfile(tse, name = "variogram_sex", model = model)
 
 # Hourly samples with reads of four vessels of an artificial gut, hours
 # 476 to 592, one sample per hour, and the five most abundant taxa
