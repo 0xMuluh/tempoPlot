@@ -15,6 +15,7 @@ plotTransitionMatrix(x, ...)
   time.col,
   group,
   as.relative = TRUE,
+  layout = c("matrix", "graph"),
   facet.by = NULL,
   max.gap = NULL,
   ...
@@ -27,7 +28,9 @@ plotTransitionMatrix(x, ...)
 object.}
 
 \item{...}{additional arguments passed to
-\code{\link[ggplot2:geom_tile]{geom_tile}}.}
+\code{\link[ggplot2:geom_tile]{geom_tile}}, or to
+\code{\link[ggplot2:geom_segment]{geom_curve}} for the arrows of
+\code{layout = "graph"}.}
 
 \item{state.col}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that contains the state of each sample, such as a
@@ -45,6 +48,10 @@ community type or the dominant taxon.}
 \item{as.relative}{\code{Logical scalar}. Shows the share of transitions
 from each state (\code{TRUE}) or the counts (\code{FALSE}).
 (Default: \code{TRUE})}
+
+\item{layout}{\code{Character scalar}. Draws a state by state matrix
+(\code{"matrix"}) or the states on a circle joined by arrows
+(\code{"graph"}). (Default: \code{"matrix"})}
 
 \item{facet.by}{\code{Character scalar}. Specifies the column from
 \code{colData(x)} that splits the transitions into panels. Each
@@ -67,12 +74,18 @@ A \code{ggplot} object.
 \description{
 \code{plotTransitionMatrix()} counts the transitions between the states
 of consecutive samples of each subject and draws them as a state by
-state matrix.
+state matrix or as a graph of states joined by arrows.
 }
 \details{
 Rows are the state before a transition and columns the state after it;
 the diagonal holds the samples that stayed in their state. Samples with a
 missing state break the chain: no transition is counted to or from them.
+
+In the graph, as in the state diagrams of Gajer et al. (2012,
+doi:10.1126/scitranslmed.3003605, Fig. 5), the width of an arrow is the
+share (or count) of transitions from one state to another. The size of a
+state is the number of transitions from it, and its fill the share that
+stayed in it.
 }
 \examples{
 # Dominant genus of each sample: the four most common and "Other"
@@ -84,4 +97,8 @@ plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
 # Counts by sex
 plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
     group = "subject", as.relative = FALSE, facet.by = "sex")
+
+# The same transitions as a graph
+plotTransitionMatrix(tse, state.col = "dominant", time.col = "time",
+    group = "subject", layout = "graph")
 }
