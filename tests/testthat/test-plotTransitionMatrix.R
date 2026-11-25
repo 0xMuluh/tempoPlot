@@ -94,3 +94,28 @@ test_that("plotTransitionMatrix fills shares on the sequential scale", {
     expect_identical(ld$fill[which.max(p$data$value)], "#FDE725")
     expect_identical(p$theme$legend.position, "bottom")
 })
+
+test_that("plotTransitionMatrix draws transitions as a graph", {
+    expect_error(plotTransitionMatrix(toy, "state", "t", "id",
+        layout = "net"), "'arg'")
+    p <- plotTransitionMatrix(toy, "state", "t", "id", layout = "graph")
+    # One arrow, A to B, with the share 1/3 of transitions from A
+    arrows <- layer_data(p, 1L)
+    expect_identical(nrow(arrows), 1L)
+    expect_equal(p$layers[[1L]]$data$value, 1 / 3)
+    # A sits at the top and B at the bottom; the arrow stops short of both.
+    expect_true(arrows$y < 1 && arrows$yend > -1 && arrows$y > arrows$yend)
+    # States sized by the transitions from them, filled by the share that
+    # stayed; B has no transitions from it.
+    nodes <- p$layers[[2L]]$data
+    expect_identical(as.character(nodes$from), "A")
+    expect_identical(nodes$.out, 3L)
+    expect_equal(nodes$.stay, 2 / 3)
+    expect_setequal(layer_data(p, 3L)$label, c("A", "B"))
+    # Counts per panel
+    p <- plotTransitionMatrix(toy, "state", "t", "id", layout = "graph",
+        as.relative = FALSE, facet.by = "arm")
+    expect_identical(p$layers[[1L]]$data$value, 1L)
+    expect_identical(as.character(p$layers[[1L]]$data$arm), "x")
+    expect_s3_class(p$facet, "FacetWrap")
+})

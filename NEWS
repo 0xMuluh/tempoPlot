@@ -1,3 +1,8 @@
+Changes in version 0.99.71 (2026-11-25)
++ plotTransitionMatrix draws the transitions as a graph of states
+  (layout = "graph")
++ plotTimeEffect draws its line at null.value, such as 1 for a ratio
+
 Changes in version 0.99.70 (2026-11-25)
 + plotLagProfile draws the variogram fitted by miaTime::getVariogramModel()
   (model, period)

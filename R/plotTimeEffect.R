@@ -1,9 +1,9 @@
 #' Plot an effect over time
 #'
 #' \code{plotTimeEffect()} draws a model estimate at each time with its
-#' interval, against a reference line at zero: a difference between groups
-#' at each time point, a time by group interaction, or a GAM difference
-#' curve.
+#' interval, against a line at its value without an effect (zero by
+#' default): a difference between groups at each time point, a time by
+#' group interaction, or a GAM difference curve.
 #'
 #' @param x a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
 #'   object with the results in \code{metadata(x)}, or a \code{data.frame}
@@ -26,6 +26,10 @@
 #'   columns \code{permutation}, \code{time.col} and \code{estimate}, and
 #'   optionally \code{group.by}. Each permutation is drawn as a thin
 #'   translucent line behind the observed effect. (Default: \code{NULL})
+#'
+#' @param null.value \code{Numeric scalar}. The value of the effect
+#'   without an effect, drawn as a line, such as 1 for a ratio.
+#'   (Default: \code{0})
 #'
 #' @param p.col \code{Character scalar}. Specifies the column of p-values
 #'   to draw on a log scale instead of the effect, with a dashed line at
@@ -110,8 +114,9 @@ setMethod("plotTimeEffect", signature = c(x = "SummarizedExperiment"),
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotTimeEffect", signature = c(x = "data.frame"),
-    function(x, time.col, group.by = NULL, null = NULL, p.col = NULL,
-            threshold = 0.05, size.by = NULL, ...) {
+    function(x, time.col, group.by = NULL, null = NULL, null.value = 0,
+            p.col = NULL, threshold = 0.05, size.by = NULL, ...) {
+        .check_number(null.value)
         .check_table_columns(x, time.col = time.col, null = FALSE)
         .check_table_columns(x, group.by = group.by, p.col = p.col,
             size.by = size.by)
@@ -141,16 +146,16 @@ setMethod("plotTimeEffect", signature = c(x = "data.frame"),
                 "numeric estimate.", call. = FALSE)
         }
         .plot_time_effect(as.data.frame(x), time.col, group.by, null,
-            p.col, threshold, size.by, ...)
+            null.value, p.col, threshold, size.by, ...)
     }
 )
 
 #' @importFrom ggplot2 ggplot geom_hline geom_line geom_point aes .data
 #'   labs scale_y_log10
-.plot_time_effect <- function(df, time.col, group.by, null, p.col,
-        threshold, size.by, ...) {
+.plot_time_effect <- function(df, time.col, group.by, null, null.value,
+        p.col, threshold, size.by, ...) {
     p <- ggplot(df) + if (is.null(p.col)) {
-        geom_hline(yintercept = 0, colour = "grey40")
+        geom_hline(yintercept = null.value, colour = "grey40")
     } else {
         list(geom_hline(yintercept = threshold, colour = "grey40",
             linetype = "dashed"), scale_y_log10())

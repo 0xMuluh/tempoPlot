@@ -16,6 +16,7 @@ plotTimeEffect(x, ...)
   time.col,
   group.by = NULL,
   null = NULL,
+  null.value = 0,
   p.col = NULL,
   threshold = 0.05,
   size.by = NULL,
@@ -50,6 +51,10 @@ columns \code{permutation}, \code{time.col} and \code{estimate}, and
 optionally \code{group.by}. Each permutation is drawn as a thin
 translucent line behind the observed effect. (Default: \code{NULL})}
 
+\item{null.value}{\code{Numeric scalar}. The value of the effect
+without an effect, drawn as a line, such as 1 for a ratio.
+(Default: \code{0})}
+
 \item{p.col}{\code{Character scalar}. Specifies the column of p-values
 to draw on a log scale instead of the effect, with a dashed line at
 \code{threshold}. (Default: \code{NULL})}
@@ -70,9 +75,9 @@ A \code{ggplot} object.
 }
 \description{
 \code{plotTimeEffect()} draws a model estimate at each time with its
-interval, against a reference line at zero: a difference between groups
-at each time point, a time by group interaction, or a GAM difference
-curve.
+interval, against a line at its value without an effect (zero by
+default): a difference between groups at each time point, a time by
+group interaction, or a GAM difference curve.
 }
 \details{
 The y axis shows the effect, not the value of a variable; to draw fitted

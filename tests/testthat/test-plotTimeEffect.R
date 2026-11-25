@@ -93,3 +93,12 @@ test_that("plotTimeEffect draws p-values on a log scale", {
     expect_identical(order(points$size), order(effect$n))
     expect_identical(p$labels$y, "p")
 })
+
+test_that("plotTimeEffect draws the line at null.value", {
+    expect_identical(layer_data(plotTimeEffect(effect, "t"), 1L)$yintercept,
+        0)
+    p <- plotTimeEffect(effect, "t", null.value = 1)
+    expect_identical(layer_data(p, 1L)$yintercept, 1)
+    expect_error(plotTimeEffect(effect, "t", null.value = "1"),
+        "'null.value'")
+})
