@@ -3,8 +3,9 @@
 `plotLagProfile()` draws a statistic against time lag: the variogram
 \\(D(L)\\), how far samples of the same subject are apart at each lag,
 with its confidence interval, as stored by
-[`miaTime::addVariogram()`](https://rdrr.io/pkg/miaTime/man/getVariogram.html);
-or the autocorrelation of each feature in each subject.
+[`miaTime::addVariogram()`](https://rdrr.io/pkg/miaTime/man/getVariogram.html),
+optionally with the curve fitted by `miaTime::getVariogramModel()`; or
+the autocorrelation of each feature in each subject.
 
 ## Usage
 
@@ -12,12 +13,14 @@ or the autocorrelation of each feature in each subject.
 plotLagProfile(x, ...)
 
 # S4 method for class 'SummarizedExperiment'
-plotLagProfile(x, name = "variogram", ...)
+plotLagProfile(x, name = "variogram", model = NULL, ...)
 
 # S4 method for class 'data.frame'
 plotLagProfile(
   x,
   type = c("dissimilarity", "ratio"),
+  model = NULL,
+  period = NULL,
   feature.col = "FeatureID",
   group = NULL,
   colour.by = NULL,
@@ -50,12 +53,24 @@ plotLagProfile(x, ..., experiment = 1L)
   `Character scalar`. Specifies the entry of `metadata(x)` holding the
   table. (Default: `"variogram"`)
 
+- model:
+
+  `NULL`, a `data.frame` from `miaTime::getVariogramModel()`, or for a
+  `SummarizedExperiment` the name of the entry of `metadata(x)` holding
+  one, as stored by `miaTime::addVariogramModel()`. Draws the fitted
+  variogram instead of the line joining the estimates. (Default: `NULL`)
+
 - type:
 
   `Character scalar`. For variograms, draws the dissimilarity at each
   lag (`"dissimilarity"`) or, for a variogram computed with `split.by`,
   the ratio between its levels (`"ratio"`), on a log scale with a line
   at 1. (Default: `"dissimilarity"`)
+
+- period:
+
+  `NULL` or `Numeric scalar`. The period of a seasonal form in `model`,
+  as given to `miaTime::getVariogramModel()`. (Default: `NULL`)
 
 - feature.col:
 
@@ -96,6 +111,11 @@ The variogram is a table with the columns `lag`, `estimate`, `lower` and
 `split.by` column. With `split.by`, each level or comparison is drawn in
 its own colour, slightly shifted apart at each lag.
 
+With `model`, the fitted form of each level (exponential, two-timescale,
+power or linear, optionally seasonal) is drawn from its estimated
+parameters over the fitted lag range, in the colour of the level. The
+model must be fitted with the same `split.by` as the variogram.
+
 An autocorrelation table has the columns `lag` and `acf`, one row per
 feature, subject and lag, as in Gibbons et al. (2017,
 doi:10.1371/journal.pcbi.1005364, Fig. 5). Each feature in each subject
@@ -131,6 +151,16 @@ plotLagProfile(tse, name = "variogram_sex")
 
 # Their ratio
 plotLagProfile(tse, name = "variogram_sex", type = "ratio")
+
+
+# Exponential forms fitted to each sex, in the form of miaTime's
+# getVariogramModel(); estimates from a fit to the same data
+model <- data.frame(sex = rep(c("female", "male"), each = 3),
+    type = "parameter", form = "exponential",
+    parameter = c("nugget", "partial.sill", "timescale"),
+    estimate = c(0.0059, 0.189, 1.00, 0, 0.294, 2.30),
+    min.lag = 0.2, max.lag = 8.2)
+plotLagProfile(tse, name = "variogram_sex", model = model)
 
 
 # Hourly samples with reads of four vessels of an artificial gut, hours

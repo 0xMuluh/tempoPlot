@@ -814,16 +814,16 @@ Session info
 `#> `\
 `#> other attached packages:`\
 `#>  [1] patchwork_1.3.2                 miaTime_1.3.7                  `\
-`#>  [3] mia_1.21.34                     TreeSummarizedExperiment_2.21.0`\
-`#>  [5] Biostrings_2.81.9               XVector_0.53.0                 `\
-`#>  [7] SingleCellExperiment_1.35.2     MultiAssayExperiment_1.39.1    `\
-`#>  [9] SummarizedExperiment_1.43.0     Biobase_2.73.2                 `\
-`#> [11] GenomicRanges_1.65.4            Seqinfo_1.3.2                  `\
-`#> [13] IRanges_2.47.5                  S4Vectors_0.51.10              `\
-`#> [15] BiocGenerics_0.59.13            generics_0.1.4                 `\
-`#> [17] MatrixGenerics_1.25.0           matrixStats_1.5.0              `\
-`#> [19] tempoPlot_0.99.69               knitr_1.52                     `\
-`#> [21] BiocStyle_2.41.0               `\
+`#>  [3] mia_1.21.34                     TreeSummarizedExperiment_2.22.0`\
+`#>  [5] Biostrings_2.82.0               XVector_0.54.0                 `\
+`#>  [7] SingleCellExperiment_1.36.0     MultiAssayExperiment_1.40.0    `\
+`#>  [9] SummarizedExperiment_1.44.0     Biobase_2.74.0                 `\
+`#> [11] GenomicRanges_1.66.0            Seqinfo_1.4.0                  `\
+`#> [13] IRanges_2.48.0                  S4Vectors_0.52.0               `\
+`#> [15] BiocGenerics_0.60.0             generics_0.1.4                 `\
+`#> [17] MatrixGenerics_1.26.0           matrixStats_1.5.0              `\
+`#> [19] tempoPlot_0.99.70               knitr_1.52                     `\
+`#> [21] BiocStyle_2.42.0               `\
 `#> `\
 `#> loaded via a namespace (and not attached):`\
 `#>   [1] RColorBrewer_1.1-3          shape_1.4.6.1              `\
@@ -831,27 +831,27 @@ Session info
 `#>   [5] ggbeeswarm_0.7.3            farver_2.1.2               `\
 `#>   [7] rmarkdown_2.32              fs_2.1.0                   `\
 `#>   [9] ragg_1.5.2                  vctrs_0.7.3                `\
-`#>  [11] DelayedMatrixStats_1.35.0   htmltools_0.5.9            `\
-`#>  [13] S4Arrays_1.13.3             BiocNeighbors_2.7.3        `\
+`#>  [11] DelayedMatrixStats_1.36.0   htmltools_0.5.9            `\
+`#>  [13] S4Arrays_1.14.0             BiocNeighbors_2.8.0        `\
 `#>  [15] SparseArray_1.13.5          sass_0.4.10                `\
 `#>  [17] bslib_0.12.0                htmlwidgets_1.6.4          `\
 `#>  [19] desc_1.4.3                  plyr_1.8.9                 `\
-`#>  [21] DECIPHER_3.9.6              cachem_1.1.0               `\
+`#>  [21] DECIPHER_3.10.0             cachem_1.1.0               `\
 `#>  [23] igraph_2.3.4                iterators_1.0.14           `\
 `#>  [25] lifecycle_1.0.5             pkgconfig_2.0.3            `\
 `#>  [27] rsvd_1.0.6                  Matrix_1.7-6               `\
 `#>  [29] R6_2.6.1                    fastmap_1.2.0              `\
 `#>  [31] rbibutils_2.4.1             digest_0.6.39              `\
-`#>  [33] tempted_0.1.2               scater_1.41.3              `\
+`#>  [33] tempted_0.1.2               scater_1.42.0              `\
 `#>  [35] irlba_2.4.1                 textshaping_1.0.5          `\
-`#>  [37] vegan_2.7-6                 beachmat_2.29.3            `\
+`#>  [37] vegan_2.7-6                 beachmat_2.30.0            `\
 `#>  [39] labeling_0.4.3              abind_1.4-8                `\
 `#>  [41] mgcv_1.9-4                  compiler_4.6.1             `\
 `#>  [43] withr_3.0.3                 S7_0.2.2                   `\
-`#>  [45] BiocParallel_1.47.0         viridis_0.6.5              `\
+`#>  [45] BiocParallel_1.48.0         viridis_0.6.5              `\
 `#>  [47] DBI_1.3.0                   MASS_7.3-66                `\
 `#>  [49] quantreg_6.1                rappdirs_0.3.4             `\
-`#>  [51] DelayedArray_0.39.8         bluster_1.23.1             `\
+`#>  [51] DelayedArray_0.40.0         bluster_1.24.0             `\
 `#>  [53] permute_0.9-10              tools_4.6.1                `\
 `#>  [55] vipor_0.4.7                 otel_0.2.0                 `\
 `#>  [57] beeswarm_0.4.0              ape_5.8-1                  `\
@@ -859,14 +859,14 @@ Session info
 `#>  [61] nlme_3.1-171                grid_4.6.1                 `\
 `#>  [63] cluster_2.1.8.3             reshape2_1.4.5             `\
 `#>  [65] gtable_0.3.6                tidyr_1.3.2                `\
-`#>  [67] BiocSingular_1.29.3         ScaledMatrix_1.21.0        `\
+`#>  [67] BiocSingular_1.30.0         ScaledMatrix_1.22.0        `\
 `#>  [69] foreach_1.5.2               ggrepel_0.9.8              `\
 `#>  [71] pillar_1.11.1               stringr_1.6.0              `\
 `#>  [73] yulab.utils_0.2.5           splines_4.6.1              `\
-`#>  [75] dplyr_1.2.1                 treeio_1.37.1              `\
+`#>  [75] dplyr_1.2.1                 treeio_1.38.0              `\
 `#>  [77] lattice_0.23-1              survival_3.8-12            `\
 `#>  [79] SparseM_1.84-2              tidyselect_1.2.1           `\
-`#>  [81] DirichletMultinomial_1.55.1 scuttle_1.23.2             `\
+`#>  [81] DirichletMultinomial_1.56.0 scuttle_1.24.0             `\
 `#>  [83] gridExtra_2.3.1             bookdown_0.48              `\
 `#>  [85] xfun_0.62                   stringi_1.8.9              `\
 `#>  [87] lazyeval_0.2.3              yaml_2.3.12                `\
@@ -877,8 +877,8 @@ Session info
 `#>  [97] jquerylib_0.1.4             Rcpp_1.1.2                 `\
 `#>  [99] parallel_4.6.1              MatrixModels_0.5-4         `\
 `#> [101] pkgdown_2.2.1               ggplot2_4.0.3              `\
-`#> [103] ggalluvial_0.12.6           sparseMatrixStats_1.25.0   `\
-`#> [105] glmnet_5.1                  decontam_1.33.0            `\
+`#> [103] ggalluvial_0.12.6           sparseMatrixStats_1.26.0   `\
+`#> [105] glmnet_5.1                  decontam_1.34.0            `\
 `#> [107] viridisLite_0.4.3           tidytree_0.4.8             `\
 `#> [109] scales_1.4.0                np_0.80-1                  `\
 `#> [111] purrr_1.2.2                 crayon_1.5.3               `\
