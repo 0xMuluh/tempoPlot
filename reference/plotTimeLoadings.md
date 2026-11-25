@@ -89,7 +89,7 @@ if (requireNamespace("tempted", quietly = TRUE)) {
     plotTimeLoadings(tse, source = "tempted")
 }
 #> Calculate the 1th Component
-#> Convergence reached at dif=8.87596940345795e-08, iter=2
+#> Convergence reached at dif=8.87596919510545e-08, iter=2
 #> Calculate the 2th Component
-#> Convergence reached at dif=2.19221530172096e-05, iter=6
+#> Convergence reached at dif=2.19221544600143e-05, iter=6
 ```

@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/0xMuluh/tempoPlot/blob/lag-model/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/0xMuluh/tempoPlot/blob/devel/DESCRIPTION)
 
 0xMuluh (2026). *tempoPlot: Microbiome Time Series Visualization*. R
 package version 0.99.70, <https://github.com/0xMuluh/tempoPlot>.
