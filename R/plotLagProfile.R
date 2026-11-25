@@ -3,8 +3,9 @@
 #' \code{plotLagProfile()} draws a statistic against time lag: the
 #' variogram \eqn{D(L)}, how far samples of the same subject are apart at
 #' each lag, with its confidence interval, as stored by
-#' \code{miaTime::addVariogram()}; or the autocorrelation of each feature
-#' in each subject.
+#' \code{miaTime::addVariogram()}, optionally with the curve fitted by
+#' \code{miaTime::getVariogramModel()}; or the autocorrelation of each
+#' feature in each subject.
 #'
 #' @param x a \code{data.frame} with a variogram or an autocorrelation
 #'   table, or a \code{\link[SummarizedExperiment]{SummarizedExperiment}}
@@ -18,6 +19,17 @@
 #'   computed with \code{split.by}, the ratio between its levels
 #'   (\code{"ratio"}), on a log scale with a line at 1.
 #'   (Default: \code{"dissimilarity"})
+#'
+#' @param model \code{NULL}, a \code{data.frame} from
+#'   \code{miaTime::getVariogramModel()}, or for a
+#'   \code{SummarizedExperiment} the name of the entry of
+#'   \code{metadata(x)} holding one, as stored by
+#'   \code{miaTime::addVariogramModel()}. Draws the fitted variogram
+#'   instead of the line joining the estimates. (Default: \code{NULL})
+#'
+#' @param period \code{NULL} or \code{Numeric scalar}. The period of a
+#'   seasonal form in \code{model}, as given to
+#'   \code{miaTime::getVariogramModel()}. (Default: \code{NULL})
 #'
 #' @param feature.col \code{Character scalar}. For autocorrelations,
 #'   specifies the column of feature names; \code{NULL} for a table of one
@@ -44,6 +56,12 @@
 #' \code{lag} and \code{type}, the \code{split.by} column. With
 #' \code{split.by}, each level or comparison is drawn in its own colour,
 #' slightly shifted apart at each lag.
+#'
+#' With \code{model}, the fitted form of each level (exponential,
+#' two-timescale, power or linear, optionally seasonal) is drawn from its
+#' estimated parameters over the fitted lag range, in the colour of the
+#' level. The model must be fitted with the same \code{split.by} as the
+#' variogram.
 #'
 #' An autocorrelation table has the columns \code{lag} and \code{acf},
 #' one row per feature, subject and lag, as in Gibbons et al. (2017,
@@ -81,6 +99,15 @@
 #' # Their ratio
 #' plotLagProfile(tse, name = "variogram_sex", type = "ratio")
 #'
+#' # Exponential forms fitted to each sex, in the form of miaTime's
+#' # getVariogramModel(); estimates from a fit to the same data
+#' model <- data.frame(sex = rep(c("female", "male"), each = 3),
+#'     type = "parameter", form = "exponential",
+#'     parameter = c("nugget", "partial.sill", "timescale"),
+#'     estimate = c(0.0059, 0.189, 1.00, 0, 0.294, 2.30),
+#'     min.lag = 0.2, max.lag = 8.2)
+#' plotLagProfile(tse, name = "variogram_sex", model = model)
+#'
 #' # Hourly samples with reads of four vessels of an artificial gut, hours
 #' # 476 to 592, one sample per hour, and the five most abundant taxa
 #' data("SilvermanAGutData", package = "miaTime")
@@ -117,12 +144,20 @@ NULL
 #' @importFrom methods setMethod
 #' @export
 setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
-    function(x, name = "variogram", ...) {
+    function(x, name = "variogram", model = NULL, ...) {
         if (!.is_one_name(name) || is.null(metadata(x)[[name]])) {
             stop("'name' must be an entry of metadata(x); compute it with ",
                 "miaTime::addVariogram().", call. = FALSE)
         }
-        plotLagProfile(as.data.frame(metadata(x)[[name]]), ...)
+        if (is.character(model)) {
+            if (!.is_one_name(model) || is.null(metadata(x)[[model]])) {
+                stop("'model' must be an entry of metadata(x); compute it ",
+                    "with miaTime::addVariogramModel().", call. = FALSE)
+            }
+            model <- metadata(x)[[model]]
+        }
+        plotLagProfile(as.data.frame(metadata(x)[[name]]), model = model,
+            ...)
     }
 )
 
@@ -131,12 +166,16 @@ setMethod("plotLagProfile", signature = c(x = "SummarizedExperiment"),
 #' @importFrom ggplot2 facet_wrap vars
 #' @export
 setMethod("plotLagProfile", signature = c(x = "data.frame"),
-    function(x, type = c("dissimilarity", "ratio"),
-            feature.col = "FeatureID", group = NULL, colour.by = NULL,
-            facet.by = group, ...) {
+    function(x, type = c("dissimilarity", "ratio"), model = NULL,
+            period = NULL, feature.col = "FeatureID", group = NULL,
+            colour.by = NULL, facet.by = group, ...) {
         type <- match.arg(type)
         # Only facet.by applies to variograms.
         acf <- "acf" %in% names(x)
+        if (!is.null(model) && (acf || type == "ratio")) {
+            stop("'model' applies to variograms with type = ",
+                "\"dissimilarity\".", call. = FALSE)
+        }
         .check_table_columns(x, feature.col = if (acf) feature.col,
             group = if (acf) group, colour.by = if (acf) colour.by,
             facet.by = facet.by)
@@ -144,7 +183,7 @@ setMethod("plotLagProfile", signature = c(x = "data.frame"),
             .plot_autocorrelation(x, feature.col, group, colour.by,
                 facet.by, ...)
         } else {
-            .variogram_profile(x, type, ...)
+            .variogram_profile(x, type, model, period, ...)
         }
         if (!is.null(facet.by)) {
             p <- p + facet_wrap(vars(.data[[facet.by]]))
@@ -153,8 +192,9 @@ setMethod("plotLagProfile", signature = c(x = "data.frame"),
     }
 )
 
-# Plot of the variogram table x: estimates of type with their intervals.
-.variogram_profile <- function(x, type, ...) {
+# Plot of the variogram table x: estimates of type with their intervals,
+# and the curves of a miaTime::getVariogramModel() table if given.
+.variogram_profile <- function(x, type, model = NULL, period = NULL, ...) {
     if (!all(c("lag", "estimate", "lower", "upper") %in% names(x))) {
         stop("'x' must have the columns lag and acf (autocorrelations), ",
             "or lag, estimate, lower and upper (a variogram).",
@@ -175,18 +215,77 @@ setMethod("plotLagProfile", signature = c(x = "data.frame"),
     # name the comparisons, such as "male / female".
     split <- setdiff(names(x)[seq_len(match("type", names(x), 0L))],
         c("lag", "type"))
-    .plot_lag_profile(x, if (length(split) == 1L) split, type, ...)
+    split <- if (length(split) == 1L) split
+    curve <- if (!is.null(model)) {
+        .model_curves(as.data.frame(model), split, range(x$lag), period)
+    }
+    .plot_lag_profile(x, split, type, curve, ...)
+}
+
+# The fitted variogram of each level of split (columns lag and .fitted)
+# from the parameter rows of a miaTime::getVariogramModel() table, over the
+# fitted lag range (else lags).
+.model_curves <- function(model, split, lags, period) {
+    if (!all(c("type", "form", "parameter", "estimate") %in%
+            names(model))) {
+        stop("'model' must be a table from miaTime::getVariogramModel().",
+            call. = FALSE)
+    }
+    # As in the variogram, the split.by column precedes type.
+    msplit <- names(model)[seq_len(match("type", names(model)) - 1L)]
+    if (!identical(msplit, if (!is.null(split)) split else character())) {
+        stop("'model' must be fitted with the same split.by as the ",
+            "variogram.", call. = FALSE)
+    }
+    if (any(grepl("\\.seasonal$", model$form)) && is.null(period)) {
+        stop("Seasonal forms in 'model' need 'period'.", call. = FALSE)
+    }
+    model <- model[model$type == "parameter", , drop = FALSE]
+    level <- if (!is.null(split)) model[[split]] else rep(1L, nrow(model))
+    do.call(rbind, lapply(split(model, level, drop = TRUE), function(m) {
+        if ("min.lag" %in% names(m)) lags <- c(m$min.lag[1L], m$max.lag[1L])
+        h <- seq(lags[1L], lags[2L], length.out = 101L)
+        res <- data.frame(lag = h, .fitted = .variogram_form(h, m$form[1L],
+            stats::setNames(m$estimate, m$parameter), period))
+        if (!is.null(split)) res[[split]] <- m[[split]][1L]
+        res
+    }))
+}
+
+# The variogram of form at lags h given its estimates, named by parameter
+# as in miaTime::getVariogramModel().
+.variogram_form <- function(h, form, est, period) {
+    p <- function(n) est[[n]]
+    base <- sub("\\.seasonal$", "", form)
+    g <- p("nugget") + switch(base,
+        exponential = p("partial.sill") * (1 - exp(-h / p("timescale"))),
+        two.timescale =
+            p("partial.sill.1") * (1 - exp(-h / p("timescale.1"))) +
+            p("partial.sill.2") * (1 - exp(-h / p("timescale.2"))),
+        power = p("scale") * h^p("exponent"),
+        linear = p("slope") * h,
+        stop("'model' has an unknown form: ", form, ".", call. = FALSE))
+    if (base != form) {
+        g <- g + p("seasonal") * (1 - cos(2 * pi * h / period))
+    }
+    g
 }
 
 #' @importFrom ggplot2 ggplot aes .data geom_line geom_pointrange labs
 #'   position_dodge geom_hline scale_y_log10
-.plot_lag_profile <- function(df, split, type = "dissimilarity", ...) {
+.plot_lag_profile <- function(df, split, type = "dissimilarity",
+        curve = NULL, ...) {
     # Levels at the same lag are shifted apart so their intervals show.
     dodge <- position_dodge(width = 0.02 * diff(range(df$lag)))
+    line <- if (is.null(curve)) {
+        geom_line(position = dodge)
+    } else {
+        geom_line(aes(y = .data$.fitted), data = curve)
+    }
     p <- ggplot(df, aes(x = .data$lag, y = .data$estimate,
             colour = if (!is.null(split)) .data[[split]],
             group = if (!is.null(split)) .data[[split]] else 1L)) +
-        geom_line(position = dodge) +
+        line +
         geom_pointrange(aes(ymin = .data$lower, ymax = .data$upper),
             position = dodge, ...) +
         .scale_categorical("colour") +

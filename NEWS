@@ -1,3 +1,7 @@
+Changes in version 0.99.70 (2026-11-25)
++ plotLagProfile draws the variogram fitted by miaTime::getVariogramModel()
+  (model, period)
+
 Changes in version 0.99.69 (2026-11-23)
 + Reference index of the pkgdown site grouped by question, Bootstrap 5
 + BiocCheck notes addressed: R >= 4.6.0, no suppressWarnings() in

@@ -132,3 +132,65 @@ test_that("plotLagProfile colours, facets and reads autocorrelations", {
         plotLagProfile(toy, "autocorrelation", group = "subject")$data,
         plotLagProfile(acfs, group = "subject")$data)
 })
+
+test_that("plotLagProfile draws the fitted variogram of each level", {
+    model <- data.frame(sex = rep(c("female", "male"), each = 3),
+        type = "parameter", form = "exponential",
+        parameter = c("nugget", "partial.sill", "timescale"),
+        estimate = c(0.01, 0.2, 1, 0, 0.3, 2), min.lag = 0.2, max.lag = 8)
+    p <- plotLagProfile(tse, name = "by_sex", model = model)
+    ld <- layer_data(p, 1L)
+    expect_length(unique(ld$group), 2L)
+    expect_equal(range(ld$x), c(0.2, 8))
+    f <- ld[ld$colour == "#0072B2", ]
+    expect_equal(f$y, 0.01 + 0.2 * (1 - exp(-f$x / 1)))
+    # Curves and estimates share the colour of their level.
+    expect_setequal(ld$colour, layer_data(p, 2L)$colour)
+    # Stored by addVariogramModel()
+    metadata(tse)$model <- model
+    expect_equal(layer_data(plotLagProfile(tse, name = "by_sex",
+        model = "model"), 1L), ld)
+})
+
+test_that("plotLagProfile evaluates each form of getVariogramModel", {
+    h <- c(0.5, 2, 6)
+    est <- c(nugget = 0.1, partial.sill = 0.2, timescale = 2,
+        partial.sill.1 = 0.1, partial.sill.2 = 0.3, timescale.1 = 1,
+        timescale.2 = 5, scale = 0.05, exponent = 0.5, slope = 0.02,
+        seasonal = 0.04)
+    f <- tempoPlot:::.variogram_form
+    expect_equal(f(h, "exponential", est), 0.1 + 0.2 * (1 - exp(-h / 2)))
+    expect_equal(f(h, "two.timescale", est), 0.1 +
+        0.1 * (1 - exp(-h)) + 0.3 * (1 - exp(-h / 5)))
+    expect_equal(f(h, "power", est), 0.1 + 0.05 * sqrt(h))
+    expect_equal(f(h, "linear", est), 0.1 + 0.02 * h)
+    expect_equal(f(h, "linear.seasonal", est, period = 4),
+        0.1 + 0.02 * h + 0.04 * (1 - cos(2 * pi * h / 4)))
+})
+
+test_that("plotLagProfile checks the model", {
+    model <- data.frame(type = "parameter", form = "linear",
+        parameter = c("nugget", "slope"), estimate = c(0.1, 0.02))
+    # Without min.lag, the curve spans the lags of the variogram.
+    ld <- layer_data(plotLagProfile(v, model = model), 1L)
+    expect_equal(range(ld$x), range(v$lag[!is.na(v$estimate)]))
+    expect_error(plotLagProfile(vs, model = model), "same split.by")
+    expect_error(plotLagProfile(vs, type = "ratio", model = model),
+        "dissimilarity")
+    expect_error(plotLagProfile(v, model = model[, -2]), "getVariogramModel")
+    expect_error(plotLagProfile(tse, model = "missing"), "addVariogramModel")
+    model$form <- "linear.seasonal"
+    expect_error(plotLagProfile(v, model = model), "period")
+})
+
+test_that("plotLagProfile draws a getVariogramModel fit", {
+    skip_if_not("getVariogramModel" %in% getNamespaceExports("miaTime"))
+    set.seed(1)
+    fit <- miaTime::getVariogramModel(tse, time.col = "time",
+        group = "subject", assay.type = "hellinger", method = "euclidean",
+        squared = TRUE, form = "exponential")
+    ld <- layer_data(plotLagProfile(tse, model = fit), 1L)
+    est <- stats::setNames(fit$estimate, fit$parameter)
+    expect_equal(ld$y, est[["nugget"]] + est[["partial.sill"]] *
+        (1 - exp(-ld$x / est[["timescale"]])))
+})
